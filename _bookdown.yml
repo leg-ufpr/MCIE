@@ -1,0 +1,12 @@
+output_dir: _book
+book_filename: "MCIEbook"
+chapter_name: "Chapter "
+
+rmd_files: [
+    "index.Rmd",
+    "introduction.Rmd",
+    "likelihood.Rmd",
+    "bibliography.Rmd"
+]
+
+before_chapter_script: "config/_setup.R"

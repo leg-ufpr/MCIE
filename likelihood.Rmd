@@ -1,0 +1,145 @@
+# Verossimilhança
+
+Neste Capítulo apresentamos conceitos fundamentais de inferência estatística
+com ênfase aos relacionados à função de verossimilhança.
+
+```{definition}
+**Função de verossimilhança** - Sejam dados $\mathbf{y}$ uma realização de um vetor aleatório $\mathbf{Y}$ com função de probabilidade ou densidade probabilidade $\mathrm{f}(\mathbf{Y},\boldsymbol{\theta})$. 
+A função de verossimilhança ou simplesmente verossimilhança para $\boldsymbol{\theta}$ dado os valores observados $\mathbf{y}$ 
+é a função $\mathrm{L}(\boldsymbol{\theta}| \mathbf{y}) \equiv \mathrm{f}(\mathbf{Y},\boldsymbol{\theta})$. 
+
+```
+
+A função de verossimilhança é dada pela expressão da distribuição conjunta de todas as variáveis aleatórias envolvidas no modelo, porém vista como função dos parâmetros, uma vez que tendo os dados sido observados, são quantidades fixas. Para cada particular valor do parâmetro que pode ser escalar ou vetor, 
+a verossimilhança é uma medida de compatibilidade, plausibilidade ou similaridade do modelo com a amostra observada medida pela probabilidade ou densidade conjunta dos valores observados. Fracamente falando, pode-se
+dizer que a verossimilhança nos fornece a probabilidade de observar o que
+foi realmente observado, dado o modelo assumido para os dados.
+
+A expressão da verossimilhança $\mathrm{L}(\boldsymbol{\theta}| \mathbf{y})$ 
+pode ser mais cuidadosamente definida considerando a natureza das variáveis aleatórias.
+Para modelos discretos não há ambiguidade e o valor da função de verossimilhança é a probabilidade de ocorrer o dado observado,
+\[
+L(\boldsymbol{\theta}|\mathbf{y}) \equiv P_{\boldsymbol{\theta}}(\mathbf{Y}=\mathbf{y}). \]
+Já para modelos contínuos a probabilidade de um particular conjunto de 
+valores ser observado é nula. Entretanto, na prática medidas contínuas são tomadas com algum grau de precisão em um intervalo
+$(y_{iI} \leq y_i \leq y_{iS} )$ e a verossimilhança para um conjunto de observações é:
+\begin{equation}\label{eq:verogeral}
+L(\boldsymbol{\theta}|\mathbf{y}) = P_{\boldsymbol{\theta}}(y_{1I} \leq y_1 \leq y_{1S}, y_{2I} \leq y_2 \leq y_{2S}, 
+\ldots, y_{nI} \leq y_n \leq y_{nS}).
+\end{equation}
+Esta definição é geral e requer a especificação da distribuição conjunta
+de $\mathrm{Y}$. Fazendo a suposição de observações independentes tem-se que:
+\begin{equation}\label{eq:veroind}
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) = \mathrm{P}_{\boldsymbol{\theta} }(y_{1I} \leq y_1 \leq y_{1S}) \cdot \mathrm{P}_{\boldsymbol{\theta}}(y_{2I} \leq y_2 \leq y_{2S}), \ldots ,
+\mathrm{P}_{\boldsymbol{\theta}}(y_{nI} \leq y_n \leq y_{nS}).
+\end{equation}
+Até este ponto a definição pode ser utilizada tanto para dados considerados
+pontuais quanto para  dados intervalares, como no caso de dados censurados.
+Vamos supor agora uma situação mais simples e comum na qual todos os dados
+são medidos a um grau de precisão comum.
+Neste caso, cada dado é medido em um intervalo 
+$(y_i - \delta/2 \leq Y_i \leq y_i + \delta/2)$
+e a verossimilhança é dada por:
+\begin{align*}
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) &= \prod_{i=1}^n \mathrm{P}_{\boldsymbol{\theta} }(y_i - \delta/2 \leq Y_i \leq y_i + \delta/2) \\
+&= \prod_{i=1}^n \int_{y_i - \delta/2}^{y_i + \delta/2} \mathrm{f}(y_i , \boldsymbol{\theta}) \mathrm{d}y_i.
+\end{align*}
+Se o grau de precisão é alto, ou seja $\delta$ é pequeno em relação a variabilidade dos dados a expressão se reduz a
+\[ L(\boldsymbol{\theta}|\mathbf{y}) \approx \left(\prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta}) \right) \delta^n  , \]
+e se $\delta$ não depende dos valores dos parâmetros temos a verossimilhança
+como produto das densidades individuais,  
+\begin{equation}\label{eq:veroiid}
+L(\boldsymbol{\theta}|\mathbf{y}) \approx \prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta})  ,
+\end{equation}
+e de forma mais geral para observações não independentes 
+com a densidade multivariada: 
+\begin{equation}\label{eq:veromv}
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \approx \mathrm{f}(\mathbf{y}, \boldsymbol{\theta}) .
+\end{equation}
+
+No caso onde os elementos de $\mathbf{y}$ são independentes a verossimilhança é simplesmente um produto das distribuições de cada variável aleatória $Y_i$ individualmente, ou seja, $L(\boldsymbol{\theta}| \mathbf{y}) = \prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta})$. 
+Neste caso, o procedimento de inferência pode ser bastante facilitado tanto analítica como computacionalmente. Porém, cabe ressaltar que isso não é uma exigência, e situações onde as amostras não são independentes são tratadas da mesma forma, escrevendo a verossimilhança de uma forma adequada, 
+considerando a distribuição conjunta do vetor $\mathbf{Y}$. 
+
+Esta parte do texto concentra-se exclusivamente no uso da função de verossimilhança como base para inferência estatística, seja na obtenção de estimativas pontuais, intervalares ou testes de hipótese. Começamos revisando conceitos de estimação e relações com a função de verossimilhança.
+
+## Estimação pontual
+
+Seja $Y_1, Y_2, \ldots, Y_n$ variáveis aleatórias com forma conhecida da
+função probabilidade no caso de variáveis aleatórias discretas ou 
+da função densidade de probabilidade para variáveis aleatórias contínuas, em ambos os casos denotadas por $\mathrm{f}(\mathbf{Y}, \boldsymbol{\theta})$. 
+O vetor $\boldsymbol{\theta}$ denota os parâmetros desconhecidos, sendo que um único elemento de $\boldsymbol{\theta}$ será denotado por $\theta$, o qual queremos estimar através de uma 
+amostra $y_1, y_2, \ldots, y_n$, de realizações das variáveis aleatórias $Y_1, Y_2, \ldots, Y_n$. Denota-se de forma simplificada, $Y_i \sim \mathrm{f}(\boldsymbol{\theta})$ com $i = 1, \ldots, n$. 
+
+```{definition}
+**Estatística** - Uma estatística é uma variável aleatória $T = t(\mathbf{Y})$, onde a função $t(\cdot)$ não depende de $\theta$.
+
+```
+
+```{definition}
+**Estimador** - Uma estatística $T$ é um estimador para $\theta$ se o valor realizado $t = t(\boldsymbol{y})$ é usado como uma estimativa para o valor de $\theta$.
+
+```
+
+```{definition}
+**Distribuição amostral** - A distribuição de probabilidade de $T$ é chamada de distribuição amostral do estimador $t(\mathbf{Y})$.
+
+```
+
+```{definition}
+**Viés** - O viés de um estimador $T$ é a quantidade $$B(T) = E(T - \theta).$$ O estimador $T$ é dito não viciado para $\theta$ se $B(T) = 0$, tal que $E(T) = \theta$. O estimador $T$ é assintoticamente não viciado para $\theta$ se $E(T) \to \theta$ quando $n \to \infty$.
+
+```
+
+```{definition}
+**Eficiência relativa** - A eficiência relativa entre dois estimadores $T_1$ e $T_2$ é a razão $er = \frac{V(T_1)}{V(T_2)}$ em que $\mathrm{V}(\cdot)$ denota variância.
+
+```
+
+```{definition}
+**Erro quadrático médio** - O erro quadrático médio de um estimador $T$ é a quantidade \[ EQM(T) = E( ( T - \theta)^2 ) = V(T) + B(T)^2 . \]
+
+```
+
+```{definition}
+**Consistência** - Um estimador $T$ é **médio quadrático consistente** para $\theta$ se o $EQM(T) \to 0$ quando $n \to \infty$. O estimador $T$ é **consistente em probabilidade** se $\forall \epsilon > 0$, $P( | T - \theta | > \epsilon) \to 0$, quando $ n \to \infty$.
+
+```
+
+Estas definições introduzem conceitos e propriedades básicas para uma estatística ser um estimador adequado para um determinado parâmetro. Fracamente falando, o desejo é obter um estimador que seja assintoticamente não-viciado, ou seja, conforme o tamanho da amostra aumenta ele se aproxima cada vez mais do verdadeiro valor do parâmetro. Além disso, é interessante que ele seja eficiente, ou seja, apresente a menor variância possível entre todos os estimadores de $\theta$. Esta definição de eficiência, introduz o conceito de variância minima. Sendo assim, para saber se um estimador é eficiente é necessário conhecer um limite inferior para a variância de um estimador, uma vez que tal quantidade exista e seja passível de calcular, ao propor um estimador para $\theta$, basta calcular a sua variância e comparar com a menor possível, se ele atingir este limite será eficiente. Além disso, tomando sua esperança pode-se concluir sobre o seu viés dependendo da situação em termos assintóticos. O Teorema~\ref{teo:cramer}, ajuda a responder sobre a eficiência de um estimador qualquer. Mas antes precisamos de mais algumas definições.
+
+Como dito, a verossimilhança é uma medida de compatibilidade da amostra observada com um particular vetor de parâmetros, desta forma é natural definir como estimador para o vetor de parâmetros $\boldsymbol{\theta}$, aquele particular vetor digamos, $\boldsymbol{\hat{\theta}}$, que tenha a maior compatibilidade com a amostra, ou em outras palavras o vetor que maximiza a função de verossimilhança ou compatibilidade.
+O particular valor assumido pela função de verossimilhança não é importante, 
+o que interessa para **inferência** são os valores relativos de 
+$\mathrm{L}(\boldsymbol{\theta}, \mathrm{y})$ para diferentes conjuntos de $\boldsymbol{\theta}$. 
+
+```{definition}
+**Estimativa de máxima verossimilhança** - Seja $\mathrm{L}(\boldsymbol{\theta}, \mathbf{y})$ a função de verossimilhança. 
+O valor $\boldsymbol{\hat{\theta}} = \boldsymbol{\hat{\theta}}(\mathbf{y}) $ é a estimativa de máxima verossimilhança para $\boldsymbol{\theta}$ se $\mathrm{L}(\boldsymbol{\hat{\theta}}) \ge \mathrm{L}(\boldsymbol{\theta})$, $\forall \boldsymbol{\theta}$.
+
+```
+
+```{definition}
+**Estimador de máxima verossimilhança** - Se $\boldsymbol{\hat{\theta}}(\mathbf{y})$ é a estimativa de máxima verossimilhança, então $\boldsymbol{\hat{\theta}}(\mathbf{Y})$ é o estimador de máxima verossimilhança (EMV).
+
+```
+
+Nesta etapa é preciso ter cuidado com a notação. Veja que $\boldsymbol{\hat{\theta}}(\mathbf{y})$ é um vetor de escalares, por outro lado $\boldsymbol{\hat{\theta}}(\mathbf{Y})$ é um vetor de variáveis aleatórias. Daqui em diante usaremos apenas $\boldsymbol{\hat{\theta}}$, para ambos sendo que o contexto indicará o real sentido de $\boldsymbol{\hat{\theta}}$. A função de verossimilhança contêm toda a informação proveniente dos dados sobre o vetor de parâmetros $\boldsymbol{\theta}$. Apesar disso, a $\mathrm{L}(\boldsymbol{\theta})$ é computacionalmente incoveniente, uma vez que esta função apresentará valores muito próximos de zero. Por razões meramente computacionais é mais comum usar a função de log-verossimilhança, definida por:
+
+```{definition}
+**Log-verossimilhança** - Se $\mathrm{L}(\boldsymbol{\theta})$ é a função de verossimilhança, então $\mathrm{l}(\boldsymbol{\theta}) = \log \mathrm{L}(\boldsymbol{\theta})$ é a função de log-verossimilhança.
+
+```
+
+Segue do fato da função logaritmo ser monótona crescente que maximizar $\mathrm{L}(\boldsymbol{\theta})$ e $\mathrm{l}(\boldsymbol{\theta})$ 
+levam ao mesmo ponto de máximo. Neste ponto estamos habilitados a enunciar um dos teoremas mais fortes da inferência estatística.
+
+
+```{theorem}
+**Limite inferior de Cramer-Rao** - Se $T$ é um estimador não-viciado para $\theta$ e $\mathrm{l}(\theta, \mathbf{Y})$ é duas vezes diferenciável com respeito a $\theta$, então
+\[ \mathrm{V}(T) \ge \frac{1}{\mathrm{E}( - \mathrm{l}^{\dprime}(\theta, \mathbf{Y}) )} . \]
+
+```
+
+Este teorema informa o limite inferior para a variância de um estimador $T$ qualquer. O estimador de máxima verossimilhança apresenta propriedades ótimas e uma delas é a eficiência, ou seja, assintoticamente o EMV atinge o limite inferior de Cramer-Rao. Antes de discutirmos as propriedades dos estimadores de máxima verossimilhança, vamos apresentar uma forma de introduzir a incerteza associada a estimativa de um parâmetro qualquer. Lembre-se que o estimador é um variável aleatória, a estimativa é uma realização desta variável aleatória. Sendo assim, quando reportamos apenas a estimativa pontual, estamos ignorando a incerteza associada a esta estimativa. 
+Uma forma, tradicional de se medir e informar a incerteza associada é com a construção de intervalos de confiança.

@@ -1,0 +1,21 @@
+bookdown::gitbook:
+  highlight: default
+  css: config/rmcd.css
+  config:
+    download: [pdf, epub]
+    toc:
+      before: |
+        <center><li><strong><a href="./">
+          Statistical Inference
+        </a></strong></li></center>
+      after: |
+        </hr>
+bookdown::pdf_book:
+  highlight: monochrome
+  keep_tex: yes
+  citation_package: natbib
+  dev: "cairo_pdf"
+  includes:
+    in_header: latex/preamble.tex
+    before_body: latex/before.tex
+bookdown::epub_book: default

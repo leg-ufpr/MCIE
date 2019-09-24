@@ -1,0 +1,20 @@
+Package: MCIE
+Title: Métodos Computacionais para Inferência Estatística
+Version: 0.0.1
+Imports:
+  bookdown,
+  knitr,
+  lattice,
+  latticeExtra,
+  tweedie,
+  statmod,
+  compoisson,
+  rootSolve,
+  bbmle,
+  MRDCr
+Suggests:
+  sp,
+  plyr
+Remotes:
+  rstudio/bookdown,
+  leg-ufpr/MCIE@devel
