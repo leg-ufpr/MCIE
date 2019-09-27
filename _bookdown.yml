@@ -10,3 +10,17 @@ rmd_files: [
 ]
 
 before_chapter_script: "config/_setup.R"
+
+language:
+  label:
+    fig: 'Figura '
+    tab: 'Tabela '
+    eq: 'Equação '
+    thm: 'Teorema '
+    lem: 'Código '
+    def: 'Definição '
+    cor: 'Corolário '
+    prp: 'Proposição '
+    ex: 'Exemplo '
+    proof: 'Prova '
+    remark: 'Destaque '
