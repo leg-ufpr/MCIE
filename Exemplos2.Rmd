@@ -1,0 +1,859 @@
+# Exemplos não convencionais
+
+## Exemplo - Modelo AR1
+
+Nos exemplos do Capítulo 3 consideramos observações independentes e a verossimilhança é
+portanto dada pelo produto das densidades. Vamos considerar agora um modelo simples, porém
+com observações correlacionadas. Tomamos o caso de um modelo AR1 (autoregressivo de ordem
+1) para dados gaussianos que é um modelo básico em séries temporais. Um texto de
+referência na área é @Toloi:2004. Vamos considerar uma versão simplificada deste modelo
+assumindo que o processo possui média zero e variância unitária. Desta forma, o modelo é
+definido por:
+
+\begin{align}
+y_{t+1} &= \rho y_t + e_{t+1} \label{eq:ar1-1} \\
+\nonumber e_t &\sim N(0, \sigma^2=1) \\
+\nonumber \mbox{com } & |\rho| < 1
+\end{align}
+
+Decorre deste modelo que
+\begin{align*}
+[Y_i|Y_{i-1}] &\sim N(\rho \, y[i-1], 1)  \;\; ; \;\; i = 2, \ldots, n \;, \\
+[Y_1] &\sim N(0, 1/(1-\rho^2))  \;\; ; \;\;  i = 2, \ldots , n.
+\end{align*}
+
+Uma simulação da série fixando os valores necessários é feita com os comandos a seguir.
+Definimos o valor do parâmetro $\rho = 0,7$ e o número de observações $n = 100$.
+A série simulada é mostrada na Figura \@ref(fig:simar1).
+
+```{r simar1, echo = FALSE, fig.width = 8, fig.height = 2, fig.cap = 'Valores da série simulada - Modelo AR1.'}
+set.seed(1242)
+rho <- 0.7 ; n <- 100
+y <- numeric(n) ## cria vetor com elementos nulos
+y[1] <- rnorm(1, m=0, sd=sqrt(1/(1-rho^2)))
+for(i in 2:n)
+  y[i] <- rho * y[i-1] + rnorm(1)
+```
+
+A expressão da função de verossimilhança é equivalente à distribuição conjunta para as $n$
+observações, uma distribuição gaussiana multivariada neste caso. Vamos explorar aqui
+algumas formas alternativas de escrever esta função.
+
+Podemos escrever a distribuição conjunta com a expressão da distribuição multivariada
+gaussiana de $[Y_1, Y_2, \ldots, Y_n]$ induzida pelo modelo ou pelo produto das
+distribuições condicionais univariadas. No caso do modelo AR1 as distribuições univariadas
+dependem apenas da observação anterior e temos então que a expressão da verossimilhança é:
+
+\begin{align*}
+\mathrm{L}(\rho) &\equiv [Y_1, Y_2, \ldots, Y_n] = [Y_1] [Y_2|Y_1] \ldots [Y_n|Y_{n-1}] = [Y_1] \prod_{i=2}^n [Y_i|Y_{i-1}]. 
+\end{align*}
+
+Uma verosimilhança aproximada é obtida ignorando-se a contribuição da primeira observação,
+ou seja pela distribuição condicional à primeira observação,
+
+$$
+\mathrm{L_A}(\rho)  =  \prod_{i=2}^n [Y_i|Y_{i-1}].
+$$
+É possível encontrar o estimador do parâmetro em forma fechada com $\mathrm{L_A}(\rho)$
+mas métodos numéricos são necessários para maximizar $\mathrm{L}(\rho)$. 
+
+Entretanto, no que se segue vamos sempre utilizar métodos numéricos uma vez que o foco
+aqui não é discutir este modelo em particular mas sim ilustrar implementações que possam
+ser adaptadas para modelos que possuam estrutura similar.
+
+Começamos definindo no código \@ref(lem:veroAR1a) a função de verossimilhança aproximada.
+Por conveniência definimos também uma versão vetorizada da função que é útil para
+processar diversos valores do parâmetro de uma só vez como, por exemplo, quando fazemos
+gráficos da função.
+
+```{lemma, veroAR1a}
+**Função de log-verossimilhança (aproximada) para modelo AR1 com média 0 e variância 1.**
+```
+
+```{r}
+llAR1.a <- function(par, sigma=1, dados){
+    n <- length(dados)
+    ll <- sum(dnorm(dados[2:n], mean=par*dados[1:(n-1)], 
+                    sd=sigma, log=TRUE))
+    return(ll)
+}
+llAR1.a.V <- Vectorize(llAR1.a, "par")
+```
+
+Com o comando a seguir obtém-se, por algorítimos numéricos, a estimativa do parâmetro $\rho$ que maximiza a função de verossimilhança aproximada.  
+
+```{r}
+unlist(rho.est.a <- optimize(llAR1.a, int=c(0, 1), dados=y, maximum=TRUE))
+(rho.a <- rho.est.a$maximum)
+```
+
+No código \@ref(lem:veroAR1} a seguir definimos a verossimilhança completa que inclui a distribuição da primeira observação, e a respectiva forma vetorizada da função.
+\[ 
+[Y_1] \sim N(0, 1/(1-\rho^2)) .
+\]
+
+```{lemma, veroAR1}
+**Função de log-verossimilhança (completa) para modelo AR1 com média 0 e variância 1.**
+```
+
+```{r}
+llAR1 <- function(par, sigma = 1, dados){
+  n <- length(dados)
+  ll <- dnorm(dados[1], mean=0, sd=sigma*sqrt(1/(1-par^2)), log=TRUE) +
+    sum(dnorm(dados[2:n],mean=par*dados[1:(n-1)],sd=sigma,log=TRUE)) 
+}
+llAR1.V <- Vectorize(llAR1, "par")
+```
+
+Com esta função obtemos uma estimativa que, neste caso, é bem próxima à 
+obtida com a verossimilhança aproximada. 
+
+```{r}
+unlist(rho.est <- optimize(llAR1, c(0,1), dados=y, maximum=TRUE))
+(rho.emv <- rho.est$maximum)
+```
+
+A seguir vamos traçar gráficos das funções de verossimilhança. Inicialmente vamos definir
+uma função deviance que é genérica no sentido de que pode ser calculada uma dada
+verossimilhança. 
+
+```{lemma, veroAR1}
+**Função _deviance_ modelo AR1.**
+```
+
+```{r}
+devfun <- function(par, llfun, est, ...) 
+     2*(llfun(est, ...) - llfun(par, ...))
+```
+
+Os gráficos das funções de verossimilhança e deviance aproximadas e completas para os
+dados simulados são mostrados na Figura \@ref(fig:veroar1). Para a primeira consideramos 
+valores em todo o espaço paramétrico enquanto que para segunda tomamos apenas valores ao 
+redor da estimativa de máxima verossimilhança (completa). O intervalo de confiança foi
+definido aqui pela a faixa de valores para $\rho$ cuja verossimilhança seja de ao menos
+10\% da verosimilhança maximizada ($r=0,10$). Para isto encontramos o valor de corte 
+correspondente na função deviance $cD = -2 \log(r) = \Sexpr{format(-2*log(0.1), dig=3)}$ 
+e usamos a função \code{uniroot.all()} do pacote \code{rootSolve} para encontrar os limites do intervalo.
+
+```{r veroar1, echo = FALSE, fig.width = 8, fig.height = 5, fig.cap = 'Valores da série simulada - Modelo AR1.'}
+rho.vals <- seq(0,1,l=100)
+ll.vals.a <- llAR1.a.V(rho.vals, dados=y)  
+ll.vals <- llAR1.V(rho.vals, dados=y)  
+plot(rho.vals, ll.vals.a, type="l", xlab=expression(rho), ylab=expression(l(rho)), col=2) 
+lines(rho.vals, ll.vals, type="l")  
+```
+
+
+
+<<intervalos,echo=F,results=hide>>=
+require(rootSolve)
+ICdev <- function(par, devfun, cD, ...) devfun(par, ...) - cD 
+(IC.rel10 <- uniroot.all(ICdev, c(0,1), devfun=devfun, cD=-2*log(0.1), 
+                         llfun=llAR1.V, est=rho.emv, dados=y))
+@
+
+\setkeys{Gin}{width=0.9\textwidth}
+\begin{figure}[tbhp]
+\centering
+<<fig=T,echo=F,width=8,height=4>>=
+par(mfrow=c(1,2))
+curve(llAR1.a.V(x, dados=y), 0, 1, xlab=expression(rho), ylab=expression(l(rho)), col=2)  
+curve(llAR1.V(x, dados=y), 0, 1, add=T)  
+segments(rho.a, llAR1.a(0, dados=y), rho.a, rho.est.a$objective, lty=3, col=2)
+segments(rho.emv, llAR1(0, dados=y), rho.emv, rho.est$objective, lty=3)
+#abline(v=rho.a)
+
+curve(devfun(x, est=rho.a, llfun=llAR1.a.V, dados=y), 0.56, 0.88, xlab=expression(rho), ylab=expression(D(rho)), col=2)  
+curve(devfun(x, est=rho.emv, llfun=llAR1.V, dados=y), 0.56, 0.88, add=T)  
+arrows(rho.emv, 1, rho.emv,0, length=0.12) 
+text(rho.emv, 1, substitute(hat(rho) == a,  list(a=round(rho.emv, dig=3))), pos=3)
+segments(IC.rel10, c(0,0), IC.rel10, devfun(IC.rel10, llfun=llAR1.V, est=rho.emv, dados=y), lty=2) 
+IC.rel10r <- round(IC.rel10, dig=3) 
+text(IC.rel10[1], 4.5, substitute(group("(", list(a, b), ")")["10%"], list(a=IC.rel10r[1], b=IC.rel10r[2])), pos=4)
+## adicionando ao gráfico
+## IC probabilistico (assintótico) 95%
+#(cD <- qchisq(0.95, df=1))
+#(IC.95 <- uniroot.all(ICdev, c(0,1), devfun=devAR1, cD=cD, llfun=llAR1.a.V, est=rho.emv, dados=y))
+#IC.95r <- round(IC.95, dig=3)
+## adicionando ao gráfico
+#segments(IC.95, c(0,0), IC.95, devAR1(IC.95, est=rho.emv, llfun=llAR1.a.V, dados=y), col=2) 
+#text(0.55, 6, substitute(group("(", list(a, b), ")")[95], list(a=IC.95r[1], b=IC.95r[2])))
+@
+\caption{Função de verossimilhança (esquerda) e \textit{deviance} (direita) 
+aproximada (vermelha) e completa (preta) com estimativas pontual e intervalar
+do parâmetro $\rho$ para os dados simulados do modelo AR1.}  
+\label{fig:vero-ar1}
+\end{figure}
+
+
+<<>>=
+<<intervalos>>
+@
+
+Em implementações que visam eficiência
+a função \code{llAR1()} pode ser reescrita 
+evitando o uso de \code{dnorm()} e utilizando a expressões das densidades
+escritas em função de estatísticas suficientes.
+Isto reduz o tempo computacional em procedimentos interativos e/ou que avaliam 
+a função muitas vezes.
+
+Passamos agora a outra forma de escrever a verossimilhança
+utilizando a expressão da densidade conjunta (multivariada).
+\begin{equation}\label{eq:AR1mv} [Y_1, \ldots,  Y_N] \sim N(0, \Sigma) , \end{equation}
+em que os elementos de $\Sigma$ são
+$\Sigma_{ij} = \rho^{|i-j|}(1/(1-\rho^2))$.
+Os elementos da matriz são portanto função da distância $|i-j|$ entre as observações.
+No comando a seguir ilustramos como montar esta matriz calculando  as distâncias
+entre pares de pontos e depois calculando os valores para $\rho=0,70$.
+
+%Antes de escrever a função de verossimilhança, mostramos a seguir três formas equivalentes para obter a matriz
+%de distâncias
+%dos dados da série hipotética com apenas cinco observações  usada para montar a matriz de variância
+%com parâmetros $\sigma^2=1$ e $\rho=0,70$.
+%<<eval=F>>=
+%D <- outer(1:5, 1:5, FUN=function(i,j) abs(i-j))
+%D <- abs(outer(1:5, 1:5, FUN="-"))
+%D <- diag(5); D <- abs(row(D)-col(D))
+%Sigma <- (0.7^D) * 1/(1-0.7^2)
+%@
+
+<<>>=
+n <- length(y)
+{S <- diag(n) ; S <- abs(row(S)-col(S))}
+S <- 0.7^S * (1/(1-0.7^2))
+@
+
+A expressão da (log)verossimilhança é obtida pela a densidade da gaussiana multivariada, 
+sendo então:
+\begin{equation}\label{eq:veroAR1}
+  l(\underline{\theta}) = l(\sigma, \rho) =
+  -\frac{n}{2}\log(2\pi) - \frac{1}{2}\log(|\Sigma|) - \exp\{\frac{1}{2}y\prime \Sigma^{-1}y\}.
+\end{equation}
+Os três comandos a seguir mostram diferentes formas de avaliar esta densidade que 
+produzem os mesmos resultados porém com tempos de execução distintos.
+Para ilustrar comparamos os tempos de execução de 100 avaliações destas funções.
+Os valores dos tempos não são relevantes e podem variar de um computador para outro.
+O relevante aqui é a comparação dos tempos, por exemplo tomando suas razões.
+<<>>=
+system.time(replicate(100, mvtnorm::dmvnorm(y,rep(0,n),S,log=T)))
+
+system.time(replicate(100, (-n/2) * log(2*pi) - 
+    determinant(S,log=T)$mod/2 - 0.5*mahalanobis(y,center=0,cov=S)))
+
+system.time(replicate(100, {Schol <- chol(S);
+             (-n/2) * log(2*pi) - sum(log(diag(Schol))) - 
+             0.5*crossprod(backsolve(Schol, y, transpose=T))}))
+@
+
+
+O custo computacional é determinado pelas operações que envolvem a matriz de covariância.
+A primeiro utiliza a implementação do pacote \pkg{mvtnorm}.
+A segunda forma é a mais lenta pois acaba fazendo contas redundantes na cálculo do determinante e a forma quadrática $y^{\prime}\Sigma^{-1} y$.
+A terceira forma é a mais eficiente pois 
+tem o custo associado ao cálculo da decomposição de Choleski de $\Sigma$
+que, 
+uma vez calculado, é usado para calcular de forma computacionalmente barata o 
+tanto determinante quanto a forma quadrática. 
+Estas diferenças podem ser muito relevantes em 
+modelos que possuem alguma estrutura de covariância
+ quando avalia-se a função
+várias vezes, como algoritmos de maximização ou de inferência por simulação. 
+As diferenças serão maiores com o aumento do número de dados.
+
+Mas, para o caso considerado aqui, ganhos adicionais de tempo computacional
+ainda podem ser obtidos.
+Em certos casos, resultados analíticos podem ser usados ao
+escrever as funções.
+No modelo AR1 considerado aqui
+a matriz $\Sigma$ tem inversa de forma conhecida.
+e o código pode ser escrito de forma mais eficiente evitando inversão 
+ de matriz (ou solução de sistema).
+Os elementos de $\Sigma^{-1}$ são:
+\[  \left\{ \begin{array}{ll}
+ \Sigma^{-1}_{i,i} = 1         &  \mbox{ para } i=1 \mbox{ e } i=n \\
+ \Sigma^{-1}_{i,i} = 1+\rho^2  &  \mbox{ para } 1 < i < n \\
+ \Sigma^{-1}_{i,j} = -\rho     &  \mbox{ para } |i-j| = 1 \\
+ \Sigma^{-1}_{i,j} = 0         &  \mbox{ para } |i-j| > 1
+\end{array} \right.
+\]
+A matriz para os dados simulados poderia ser montada da forma
+como mostrado a seguir onde exibimos as cinco primeiras linhas e colunas. 
+<<>>=
+iS <- diag(1+0.7^2, n)
+diag(iS)[1] <- diag(iS)[n] <- 1
+iS[abs(row(iS)-col(iS))==1] <- -0.7
+iS[1:5, 1:5]
+@
+
+Desta forma o código pode ser escrito de forma mais eficiente evitando inversão 
+ de matriz (ou solução de sistema) no cálculo da forma quadrática.
+Além disto, o determinante de $\Sigma$ possui expressão
+conhecida ${\rm det}(\Sigma) = 1/(1-\rho^2)$.
+Com estes resultados o cálculo da verossimilhança 
+pode ser ainda substancialmente acelerados
+em comparação com os códigos anteriores. 
+<<eval=F,echo=F>>=
+#conferindo: comparando varias formas!!
+llAR1(0.7, dados=y)
+
+mvtnorm::dmvnorm(y, rep(0,n), S, log=T)
+
+-(n/2) * log(2*pi) - 0.5*c(determinant(S, log=T)$mod) - 
+                     0.5*mahalanobis(y, center=0, cov=S)
+
+Schol <- chol(S)
+(-n/2) * log(2*pi) - sum(log(diag(Schol))) - 
+        0.5*drop(crossprod(backsolve(Schol, y, transpose=T)))
+
+-(n/2) * log(2*pi) +
+     0.5*c(determinant(iS, log=T)$mod) - 
+     0.5*mahalanobis(y, center=0, cov=iS, inverted=TRUE)
+
+iSchol <- chol(iS)
+(-n/2) * log(2*pi) + sum(log(diag(iSchol))) - 
+        0.5*drop(crossprod(iSchol %*% y))
+
+0.5*(-n*log(2*pi) + log(1-0.7^2) - 
+        drop(crossprod(y, iS %*% y)))
+
+0.5*(-n*log(2*pi) + log(1-0.7^2) -
+     mahalanobis(y, center=0, cov=iS, inverted=TRUE))
+@
+
+Usando tais resultados pode-se obter tempos cumputacionais ainda
+mais rápidos que os anteriores.
+<<>>=
+system.time(replicate(100, {iSchol <- chol(iS)
+(-n/2) * log(2*pi) + sum(log(diag(iSchol))) - 
+        0.5*drop(crossprod(iSchol %*% y))}))
+
+system.time(replicate(100, 0.5*(-n*log(2*pi) + log(1-0.7^2) -
+     mahalanobis(y, center=0, cov=iS, inverted=TRUE))))
+
+     system.time(replicate(100, 0.5*(-n*log(2*pi) + log(1-0.7^2) - 
+        drop(crossprod(y, iS %*% y)))))
+@
+
+Finalmente vamos comparar com o tempo para o cálculo
+utilizando a forma fatorada da verossimilhança, 
+com produto de distribuições univariadas. 
+
+<<>>=
+system.time(replicate(100, llAR1(0.7, dados=y)))
+@
+
+
+E ainda há outras melhorias possíveis!
+A matriz inversa $\Sigma^{-1}$ é esparsa (muitos elementos iguais a zero)
+e algorítmos e funções específicas como os do pacote \pkg{Matrix}
+podem ser utilizados não só para eficiência mas também para
+reduzir o uso de memória para armazenar tais matrizes.
+Deixamos tal implementação como sugentão ao leitor.
+
+No código~\ref{cod:veroAR1mv} implementamos a função de verossimilhança
+que é depois maximizada para obter a estimativa do parâmetro $\rho$.
+
+\begin{program}[htbp]
+\caption{Função de verossimilhança escrita como densidade multivariada para modelo AR1 com $\mu=0$ e $\sigma=1$.}
+\label{cod:veroAR1mv}
+\begin{tikzpicture}
+  \node [mybox] (box){
+    \begin{minipage}{0.955\textwidth}
+<<>>=
+llAR1mv <- function(par, sigma = 1, dados){
+    n <- length(dados)
+    iS <- diag(1+par^2, n)
+    diag(iS)[1] <- diag(iS)[n] <- 1
+    iS[abs(row(iS)-col(iS))==1] <- -par
+    return(0.5*(-n*log(2*pi) - 2*n*log(sigma) + log(1-par^2) - 
+                drop(crossprod(dados, iS %*% dados))/sigma^2))
+}
+@ 
+    \end{minipage}
+};
+\end{tikzpicture}
+\end{program}
+
+<<eval=T>>=
+unlist(optimize(llAR1mv, c(0,1), dados=y, maximum=TRUE))
+@
+
+<<eval=F,echo=F>>=
+llAR1.a(0.7, dados=y)
+
+## conferindo, a seguir devem fornecer os mesmos resultados
+llAR1(0.7, dados=y)
+llAR1mv(0.7, dados=y)
+
+unlist(optimize(llAR1mv, c(0,1), dados=y, maximum=TRUE))
+
+#DD <- outer(1:n, 1:n, FUN=function(i,j) abs(i-j))
+optimize(llAR1mv, c(0,1), dados=y, maximum=TRUE)
+
+system.time(optimize(llAR1mv, c(0,1), dados=y, maximum=TRUE))
+system.time(optimize(llAR1mv, c(0,1), dados=y, maximum=TRUE))
+
+llAR1.V <- Vectorize(llAR1, "par")
+llAR1mv.V <- Vectorize(llAR1mv, "par")
+rho.emv <- optimize(llAR1mv, c(0,1), dados=y, maximum=TRUE)$max
+curve(llAR1.a.V(x, dados=y), 0.4, 0.95, xlab=expression(rho), ylab=expression(l(rho)))  
+curve(llAR1.V(x, dados=y), 0.4, 0.95, col=2, lwd=2, add=T)  
+curve(llAR1mv.V(x, dados=y), 0.4, 0.95, col=4, add=T)  
+abline(v=c(rho.a, rho.emv), col=1:2)
+@
+
+Vamos agora não mais fixar o valor para a variância $\sigma^2$ e considerá-la
+um parâmetro também a ser estimado.
+Neste caso os elementos da matrix de covariância em~\ref{eq:AR1mv} são
+$\Sigma_{ij} = \rho^{|i-j|}(\sigma^2/(1-\rho^2))$.
+A função de log-verossimilhança $l(\underline{\theta}) = l(\sigma, \rho)$ fica como a seguir.
+A implementação supõe que o primeiro argumento da função
+é um vetor de comprimento dois com os valores para  $\sigma$ e $\rho$ , nesta ordem.
+<<echo=F,eval=F>>=
+##
+## função mais completa só para testes
+llAR1mv2 <- function(par, dados, lagM, repar=FALSE, precision=FALSE, trace=FALSE){
+    ## par: vetor com valores de (sigma, rho), nesta ordem
+    n <- length(dados) 
+    if(repar){
+      sigma <- exp(par[1])
+      rho <- (exp(2*par[2])-1)/(exp(2*par[2])+1)
+    } 
+    else{ sigma <- par[1]; rho <- par[2]}
+    if(precision){
+        iS <- diag(1+rho^2, n)
+        diag(iS)[1] <- diag(iS)[n] <- 1
+        iS[abs(row(iS)-col(iS))==1] <- -rho
+        res <- 0.5*(-n*log(2*pi) - 2*n*log(sigma) + log(1-rho^2) - 
+                    drop(crossprod(dados, iS %*% dados))/sigma^2)
+    }
+    else{
+        if(missing(lagM)) 
+            lagM <- outer(1:n, 1:n, FUN=function(i,j) abs(i-j))
+        Schol <- chol((rho^lagM) * 1/(1-rho^2))
+        res <- -(n/2)*log(2*pi) - n*log(sigma) - sum(log(diag(Schol))) - 
+            drop(0.5*crossprod(backsolve(Schol, dados, transpose=T)))/sigma^2
+    }
+    if(trace) (print(c(sigma=sigma, rho=rho, ll=res)))
+    return(res)
+}
+@
+\begin{program}[htbp]
+\caption{Função de log-verossimilhança $l(\sigma, \rho)$ para modelo AR1 com $\mu=0$.}
+\label{cod:veroAR1mv2}
+\begin{tikzpicture}
+  \node [mybox] (box){
+    \begin{minipage}{0.955\textwidth}
+<<>>=
+llAR1mv2 <- function(par, dados, repar=FALSE){
+  ## par: vetor com valores de (sigma, rho), nesta ordem
+  n <- length(dados) 
+  if(repar){
+    sigma <- exp(par[1])
+    rho <- (exp(2*par[2])-1)/(exp(2*par[2])+1)
+  } 
+  else{ sigma <- par[1]; rho <- par[2]}
+  iS <- diag(1+rho^2, n)
+  diag(iS)[1] <- diag(iS)[n] <- 1
+  iS[abs(row(iS)-col(iS))==1] <- -rho
+  return(0.5*(-n*log(2*pi) - 2*n*log(sigma) + log(1-rho^2) - 
+              drop(crossprod(dados, iS %*% dados))/sigma^2))
+}
+@ 
+\end{minipage}
+};
+\end{tikzpicture}
+\end{program}
+
+Nesta parametrização dos parãmetros do modelo AR1 temos que o espaço paramétrico
+é restrito $\sigma > 0$ e $|\rho| < 1$.
+Uma possível reparametrização para qual o espaço paramétrico é o $\Re^2$
+é adotar $\tau = \log(\sigma)$ e a transformação de Fisher
+$\varphi = \frac{1}{2} \log\left(\frac{1+\rho}{1-\rho}\right)$.
+Esta opção é implementada pelo argumento \verb|repar| na função de verossimilhança
+definida em \ref{cod:veroAR1mv2}. Desta forma as três chamadas a seguir produzem o 
+mesmo valor.
+
+<<echo=F,results=hide,eval=F>>=
+llAR1mv(0.7, dados=y)
+## devem retornar os mesmos valores:
+llAR1mv2(c(1, 0.7), dados=y)
+#llAR1mv2(c(1, 0.7), y, precision=T)
+## e aqui tb
+llAR1mv2(c(log(1), 0.5 * log((1+0.7)/(1-0.7))), dados=y, repar=TRUE)
+
+llAR1mv(0.6, dados=y)
+## devem retornar os mesmos valores:
+llAR1mv2(c(1, 0.6), dados=y)
+#llAR1mv2(c(1, 0.6), y, precision=T)
+
+llAR1mv2(c(2, 0.7), dados=y)
+#llAR1mv2(c(2, 0.7), y, precision=T)
+
+
+system.time(replicate(100, llAR1mv2(c(1, 0.7), dados=y)))
+#system.time(replicate(100, llAR1mv2(c(1, 0.7), y, precision=T)))
+@ 
+
+<<>>=
+c(llAR1mv(0.7, dados=y), llAR1mv2(c(1, 0.7), dados=y),
+  llAR1mv2(c(log(1), 0.5*log((1+0.7)/(1-0.7))), dados=y, repar=TRUE))
+@
+
+O código para obter as estimativas dos parâmetros 
+por maximização numérica para os casos sem e com reparametrização 
+é dado a seguir.
+No primeiro caso é necessário utilizar o método  \verb|L-BFGS-B|
+para poder delimitar o espaço paramétrico com os argumentos
+\verb|lower| e \verb|upper|.
+No segundo isto não é necessário uma ver que o espaço paramétrico para
+o modelo reparametrizado é irrestrito.
+Pelo princípio da invariância tem-se que
+os valores maximizados das verossimilhanças são iguais.
+Eventuais diferenças, se houverem devem ser pequenas e devidas
+a "erros"\ numéricos. Mostramos ainda como os valores das estimativas
+no segundo caso, quando transformados de volta, produzem 
+os mesmo valores  primeiro.
+<<>>=
+opar <- optim(c(1, 0.7), fn=llAR1mv2, dados=y, method="L-BFGS-B", 
+              lower=c(0, -1), upper = c(Inf, 1),
+              control=list(fnscale=-1), hessian=TRUE)
+unlist(opar[1:2]) 
+
+rpar <- optim(c(log(1), 0.5* log((1+0.7)/(1-0.7))), fn=llAR1mv2, 
+         dados=y, repar=TRUE, control=list(fnscale=-1), hessian=TRUE)
+unlist(rpar[1:2])
+c(exp(rpar[[1]][1]), (exp(2*rpar[[1]][2])-1)/(exp(2*rpar[[1]][2])+1))
+@
+
+A Figura~\ref{fig:devAR1} mostra as superfícies de verossimilhança para ambas parametrizações.
+Neste caso, a parametrização original produziu contornos mais próximos de um comportamento quadrático.
+Outro fato relevante revelado na figura é a quase ortogonalidade entre os parâmetros que pode ser observada em ambos os casos.
+Isto pode ser verificado numericamente na matriz de covariância dos estimadores obtida pela inversa da matriz de observação.
+Temos aqui que os elementos fora da diagonal possuem valores pequenos em comparação com os da diagonal,
+ou seja a matriz é proxima de uma matriz diagonal.
+<<echo=F,results=hide>>=
+Nseq <- 201
+s.s <- seq(0.77, 1.22, len=Nseq)
+r.s <- seq(0.5, 0.93, len=Nseq)
+t.s <- expand.grid(s.s, r.s)
+vero1 <- apply(as.matrix(t.s), 1, llAR1mv2, dados=y)
+dev1 <- -2 * (vero1 - opar$value)
+range(dev1)
+
+s.s2 <- seq(log(0.77), log(1.22), len=Nseq)
+r.s2 <- seq(0.5*log((1+0.5)/(1-0.5)), 0.5*log((1+0.93)/(1-0.93)), len=Nseq)
+t.s2 <- expand.grid(s.s2, r.s2)
+                    
+vero2 <- apply(as.matrix(t.s2), 1, llAR1mv2, dados=y, repar=TRUE)
+dev2 <- -2 * (vero2 - rpar$value)
+range(dev2)
+@ 
+
+<<AR1-2d-ori,echo=F,eval=F>>=
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(s.s, r.s, matrix(dev1,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,
+        xlab=expression(sigma), ylab=expression(rho))
+points(t(opar[[1]]), pch=20, col=2)
+@ 
+
+<<AR1-2d-rep,echo=F,eval=F>>=
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(s.s2, r.s2, matrix(dev2,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,
+        xlab=expression(tau),ylab=expression(varphi))
+points(t(rpar[[1]]), pch=20, col=2)
+@ 
+\setkeys{Gin}{width=0.8\textwidth}
+\begin{figure}[tb]
+\centering
+<<echo=F,fig=T,width=8,height=4.0>>=
+par(mfrow=c(1,2),mar=c(2.8, 2.8, 1.7, 1),mgp = c(1.8, 0.7, 0))
+<<AR1-2d-ori>>
+<<AR1-2d-rep>>
+@
+\caption{Superfícies de deviance para o modelo AR1 para parâmetros originais (esquerda) e transformados (direita).}
+\label{fig:devAR1}
+\end{figure}
+
+<<>>=
+-solve(opar$hessian)
+-solve(rpar$hessian)
+@ 
+
+Vamos focar agora na inferência sobre o parâmetro $\rho$ neste modelo de dois parâmetros,
+ou seja, o parâmetro $\sigma^2$ é considerado \textit{nuisance}.
+No modelo definido em~\ref{eq:AR1mv} e matriz de covariâncias 
+pode ser reescrito como $\Sigma = \sigma^2 R_{\rho}$ destacando 
+que a matriz de correlação $R_{\rho}$ tem seus termos dependendo apenas do
+parâmetro $\rho$.
+A função de verrosimilhança~\ref{eq:veroAR1} fica equivalente a 
+\begin{equation}\label{eq:veroAR1s}
+  l(\underline{\theta}) = l(\sigma, \rho) =
+  -\frac{n}{2}\log(2\pi) - \frac{n}{2}\log(\sigma^2) - \frac{1}{2}|R_{\rho}| - \exp\{\frac{1}{2\sigma^2}y^{\prime} R_{\rho}^{-1}y\} .
+\end{equation}
+Tomando-se a derivada em relação à $\sigma^2$ e igualando à zero obtém-se 
+o estimador deste parâmetro em relação à $\rho$, 
+\[ \hat{\sigma}_{\rho}^2 = \frac{y^{\prime} R_{\rho}^{-1}y}{n} .\]
+A verossimilhança concentrada ou \textit{perfilhada} de $\rho$ é então obtida
+substituindo-se  $\sigma^2$ por $\hat{\sigma}_{\rho}^2$
+em~\ref{eq:veroAR1s} e temos então:
+\[ pl(\rho) = -\frac{n}{2}\left(\log(2\pi) + \log(\sigma^2) + 1\right) - \frac{1}{2} \log(|R_{\rho}|) . \]
+Esta função é implementada em~\ref{cod:pveroAR1} e retorna dois valores: o da verossilhança
+$l(\rho, \sigma^2_{\rho})$ e  de $\sigma^2_{\rho}$, a estimativa de $\sigma^2_{\rho}$ ao valor de $\rho$. 
+
+A implementação da função de verossimilhança perfilhada é simples. Tomamos a verossilhança que tem apenas $\rho$ como parâmetro e adicionamos a opção para que se $\sigma$ não for fornecido seja calculado para o valor corrente de $\rho$
+Se o valor de $\sigma$ for fonecido é tomado como constante e a verossimilhança condicional à este valor é calculada.
+
+\begin{program}[htbp]
+\caption{Função para cálculo da verossimilhança perfilhada $l(\rho|\sigma_{\rho})$ e condicional $l(\rho|\sigma)$ para o modelo AR1 com $\mu=0$.}
+\label{cod:pveroAR1}
+\begin{tikzpicture}
+  \node [mybox] (box){
+    \begin{minipage}{0.955\textwidth}
+<<>>=
+llAR1.rho <- function(rho, sigma, dados){
+    n <- length(dados)
+    iS <- diag(1+rho^2, n)
+    diag(iS)[1] <- diag(iS)[n] <- 1
+    iS[abs(row(iS)-col(iS))==1] <- -rho
+    if(missing(sigma))
+        sigma2 <- drop(crossprod(dados, iS %*% dados)/n)
+    else sigma2 <- sigma^2
+    return(0.5*(-n*log(2*pi) - n*log(sigma2) + log(1-rho^2) - 
+                drop(crossprod(dados, iS %*% dados))/sigma2))
+}
+@ 
+    \end{minipage}
+};
+\end{tikzpicture}
+\end{program}
+
+<<echo=F,eval=F>>=
+## vero perfilhada (testes)
+llAR1.rho(0.7, dados=y)
+llAR1.rho(opar[[1]][2], dados=y)
+unlist(opar[1:2])
+
+llAR1.rho(0.7, sigma=opar[[1]][1], dados=y)
+llAR1.rho(opar[[1]][2], sigma=opar[[1]][1], dados=y)
+unlist(opar[1:2])
+@ 
+
+O gráfico da deviance perfilhada é visualizado à direita na Figura~\ref{fig:perfAR1}.
+Também é traçada a verossimilhança condicional
+na qual o valor de $\sigma^2$ é fixado em sua estimativa de máxima verossimilhança
+\[\hat{\sigma}^2 =  \hat{\sigma}_{\hat{\rho}}^2 = \frac{y^{\prime} \hat{R}_{\hat{\rho}}^{-1}y}{n} .\]
+As funções diferem considerando uma maior região do espaço paramétrico conforme mostrado
+no gráfico do centro. Entretanto, 
+na região do espaço paramétrico relevante para inferências
+no entorno do ponto de máximo as funções são quase indistinguíveis.
+Isto é  mais um reflexo da quase ortogonalidade entre os parâmetros 
+ao redor do máximo da função.
+No gráfico da deviance mostrada à esquerda e linhas indicam os cortes para obtenção
+das perfilhadas e condicionais.
+
+\setkeys{Gin}{width=0.95\textwidth}
+\begin{figure}[tb]
+\centering
+<<echo=F,results=hide,fig=T,width=9,height=3>>=
+par(mfrow=c(1,3),mar=c(2.6, 2.6, 1.5, 0.8),mgp=c(1.5, 0.6, 0))
+## verossimilhanças condicionais e perfilhadas
+sigma.rho <- function(rho, dados){ 
+    n <- length(dados)
+    iS <- diag(1+rho^2, n)
+    diag(iS)[1] <- diag(iS)[n] <- 1
+    iS[abs(row(iS)-col(iS))==1] <- -rho
+    return(sqrt(drop(crossprod(dados, iS %*% dados))/n))
+}
+#sigma.rho(0.7, dados=y)
+#sigma.rho(opar[[1]][2], dados=y)
+
+vero.perf.s <- sapply(r.s, llAR1.rho, dados=y)
+dev.perf.s <- -2 * (vero.perf.s - opar$value)
+sigma.perf.s <- sapply(r.s, sigma.rho, dados=y)
+
+vero.cond.s <- sapply(r.s, llAR1.rho, sigma=opar[[1]][1], dados=y)
+dev.cond.s <- -2 * (vero.cond.s - opar$value)
+##
+r.seq <- seq(0.01, 0.99, length=Nseq)
+vero.perf.seq <- sapply(r.seq, llAR1.rho, dados=y)
+dev.perf.seq <- -2 * (vero.perf.seq - opar$value)
+sigma.perf.seq <- sapply(r.seq, sigma.rho, dados=y)
+
+vero.cond.seq <- sapply(r.seq, llAR1.rho, sigma=opar[[1]][1], dados=y)
+dev.cond.seq <- -2 * (vero.cond.seq - opar$value)
+##
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(s.s, r.s, matrix(dev1,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,
+        xlab=expression(sigma),ylab=expression(rho))
+points(t(opar[[1]]), pch=20, col=2)
+abline(v=opar[[1]][1], h=opar[[1]][2], lty=3, col=2, lwd=1.5)
+lines(sigma.perf.s, r.s, lty=2, lwd=1.7)    
+
+plot(r.seq, dev.perf.seq, type="l", xlab=expression(rho),
+     ylab=expression(pl(rho, hat(sigma)[rho])))
+lines(r.seq, dev.cond.seq, lty=2, col=2)
+legend(0.4, 70, c("Perfilhada","Condicional"), col=1:2, lty=1:2, cex=0.8)
+
+plot(r.s, dev.perf.s, type="l", xlab=expression(rho),
+     ylab=expression(pl(rho, hat(sigma)[rho])))
+lines(r.s, dev.cond.s, lty=2, col=2)
+legend(0.6, 10, c("Perfilhada","Condicional"), col=1:2, lty=1:2, cex=0.8)
+@
+\caption{Superfície de deviance (esquerda) com indicações dos cortes para obtenção das perfilhadas e condicionais.
+  Deviances perfilhadas e condicionais para o parâmetro $\rho$ do modelo AR1 com $\mu=0$.}
+\label{fig:perfAR1}
+\end{figure}
+
+Para finalizar consideramos o modelo AR1 mais geral, que inclui um termo para descrever a média do processo.
+Uma forma de escrever tal modelo é:
+\begin{align}
+y_{y+1} &= \alpha + \rho y_t + e_{t+1} \label{eq:ar1alpha} \\
+\nonumber e_{t+1} & \sim {\rm N}(0, \sigma^2)
+\end{align}
+A média do processo é dada por:
+\[ {\rm E}[y_t] = \mu = \frac{\alpha}{1-\rho},  \]
+e o modelo acima pode ser então reescrito na forma:
+\begin{equation}\label{eq:ar1mu} 
+y_{y+1} = (1-\rho) + \rho y_t + e_{t+1}. \end{equation}
+Para a expressão da verossimilhança, simplesmente acrescenta-se o termo 
+de média a~\ref{eq:veroAR1} que fica:
+\begin{equation}\label{eq:veroAR1mu}
+  l(\underline{\theta}) = l(\sigma, \rho) =
+  -\frac{n}{2}\log(2\pi) - \frac{1}{2}\log(|\Sigma|) - \exp\{\frac{1}{2}(y-\mu)^{\prime} \Sigma^{-1})y-\mu)\}.
+\end{equation}
+
+O código retornando o negativo da função de verossimilhança 
+é implementado em~\ref{cod:veroAR1mu}
+e a seguir são mostradas as estimativas para os dados aqui considerados.
+
+\begin{program}[htbp]
+\caption{Função de verossimilhança para o modelo AR1.}
+\label{cod:veroAR1mu}
+\begin{tikzpicture}
+  \node [mybox] (box){
+    \begin{minipage}{0.955\textwidth}
+<<>>=
+llAR1mv3 <- function(par, dados){
+    ## par: vetor com valores de (mu, sigma, rho), nesta ordem
+    n <- length(dados) 
+    mu <- par[1]; sigma <- par[2]; rho <- par[3]
+    iS <- diag(1+rho^2, n)
+    diag(iS)[1] <- diag(iS)[n] <- 1
+    iS[abs(row(iS)-col(iS))==1] <- -rho
+    ymu <- dados - (1-rho)*mu
+    return(-0.5*(-n*log(2*pi) - 2*n*log(sigma) + log(1-rho^2) - 
+                 drop(crossprod(ymu, iS %*% ymu))/sigma^2))
+}
+@ 
+\end{minipage}
+};
+\end{tikzpicture}
+\end{program}
+
+<<echo=F,eval=F>>=
+llAR1mv3(c(0,1,0.5), dados=y)
+par3 <- optim(c(0,1,0.5), llAR1mv3, hessian=TRUE, dados=y)
+unlist(par3[1:2])
+round(solve(par3$hessian), dig=4)
+@ 
+
+<<>>=
+par3 <- optim(c(0,1,0.5), llAR1mv3, dados=y)
+unlist(par3[1:2])
+@ 
+
+Existem pacotes e funções específicas para ajustar modelos de
+séries temporais no \R{}, 
+descritos na \textit{Time Series Task View}\footnote{\textsl{http://cran.r-project.org/web/views/TimeSeries.html}}
+As funções \code{ar()} e \code{arima()} estão entre as disponíveis e produzem resultados como mostrado
+a seguir, que diferem dos anteriores pois incluem a média na estimação o modelo com três parâmetros $(\mu, \sigma, \rho)$.
+<<>>=
+(fit.ar <- ar(y, order.max=1, method="mle"))
+with(fit.ar, x.mean)
+(fit.arima <- arima(y, order=c(1,0,0), method="ML"))
+@
+
+Note que enquanto nosso código retorna as estimativas
+de $(\mu, \sigma, \rho)$ na parametrização definida em~\ref{eq:ar1mu}
+as funções \code{ar()} e \code{arima()}
+retornam estimativas de  $(\alpha, \sigma^2, \rho)$ 
+definida em~\ref{eq:ar1alpha}.
+\begin{align*}
+  \Sexpr{round(coef(fit.arima)[2], dig=4)} &= \hat{\alpha} = (1-\hat{\rho}) \hat{\mu} =
+  (1 - \Sexpr{round(par3[[1]][3], dig=4)}) \cdot \Sexpr{round(par3[[1]][1], dig=4)} = \Sexpr{round((1-par3[[1]][3])*par3[[1]][1], dig=4)}\\
+  \Sexpr{round(with(fit.arima, sigma2), dig=4)} &= \hat{\sigma}^2 = \Sexpr{round(par3[[1]][2], dig=4)}^2 = \Sexpr{round(par3[[1]][2]^2, dig=4)} 
+\end{align*}
+
+Aproveitamos esta última função para ilustrar e funcionalidade do pacote \pkg{bbmle} e de função genérica de ajuste de modelos \code{mle2()}.
+A função recebe o negativo da log-verossimilhança do modelo desejado, tal como em~\ref{cod:veroAR1mu} neste exemplo.
+Internamente a função \code{optim()} é utilizada por \textit{default} na otimização e outras podem ser selecionadas.
+Entretando a função "envoltório"\ \code{mle2()} prepara os resultados de forma que várias explorações do ajuste
+tais como intervalos de confiança e verossimilhnaças perfilhadas
+podem ser facilmente obtidas, sem a necessidade de programações adicionais.
+
+\begin{program}[htbp]
+\caption{Função de verossimilhança para o modelo AR1 modeficada para uso com \texttt{bbmle::mle2()}.}
+\label{cod:veroAR1mu}
+\begin{tikzpicture}
+  \node [mybox] (box){
+    \begin{minipage}{0.955\textwidth}
+<<>>=
+llAR1.bb <- function(mu, sigma, rho, dados){
+    n <- length(dados) 
+    iS <- diag(1+rho^2, n)
+    diag(iS)[1] <- diag(iS)[n] <- 1
+    iS[abs(row(iS)-col(iS))==1] <- -rho
+    ymu <- dados - (1-rho)*mu
+    return(-0.5*(-n*log(2*pi) - 2*n*log(sigma) + log(1-rho^2) - 
+                 drop(crossprod(ymu, iS %*% ymu))/sigma^2))
+}
+@ 
+\end{minipage}
+};
+\end{tikzpicture}
+\end{program}
+
+<<echo=F,results=hide>>=
+options(warn=-2)
+@ 
+
+O ajuste produz os mesmos resultados obtidos anteriormente por outros métodos.
+<<>>=
+require(bbmle)
+ar1bb <- mle2(llAR1.bb, start=list(mu=0, sigma=1, rho=0.5), 
+              data=list(dados=y))
+coef(ar1bb)
+logLik(ar1bb)
+@ 
+
+Gráficos das funções das deviances perfilhadas 
+(expressos na escala de suas raízes quadradas),
+e respectivos intervalos de confiança 
+são facilmente obtidos por funções auxiliares.
+<<eval=F,echo=F>>=
+confint(ar1bb)
+plot(profile(ar1bb))
+@ 
+
+\setkeys{Gin}{width=0.95\textwidth}
+\begin{figure}[tb]
+\centering
+<<echo=F,results=hide,fig=T,width=7.5,height=2.5>>=
+par(mfrow=c(1,3), mgp=c(2,1,0), mar=c(3,3,1.5, 0.3))
+plot(profile(ar1bb))
+@ 
+\caption{Deviances perfilhadas para o ajuste do modelo AR1.}
+\label{fig:AR1bb}
+\end{figure}
+
+
+%% Nota: ajuste com 
+%          lower=c(mu=-Inf,sigma=0,rho=-1), upper=c(mu=Inf, sigma=Inf, rho=1), method="L-BFGS-B")
+% não prozum Intervalos e perfis!!!
