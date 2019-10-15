@@ -25,7 +25,7 @@ Bonat, W. H., Ribeiro Jr, P.J & Zeviani, W. M. (2019). Métodos Computacinais pa
 ```
 
 <!--------------------------------------------- -->
-[wagner]: http://leg.ufpr.br/doku.php/pessoais:wbonat
+[wagner]: http://leg.ufpr.br/~wagner
 [walmes]: http://leg.ufpr.br/doku.php/pessoais:walmes
 [pj]: http://leg.ufpr.br/~paulojus/
 [MCIEbook]]: http://cursos.leg.ufpr.br/MCIE/
