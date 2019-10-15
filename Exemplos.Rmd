@@ -1,0 +1,1155 @@
+# Ilustrando ideias
+
+## Estimação pontual
+
+```{example, label="ex1"}
+**Distribuição Poisson** - 
+```  
+
+Neste exemplo vamos considerar um problema para o qual o estimador de máxima verossimilhança pode ser obtido analiticamente, porém vamos explorar diversas formas de obtê-lo também numéricamente utilizando métodos numéricos disponíveis em **R**. 
+Vamos começar mostrando quatro representações da função de verossimilhança. 
+Para facilitar a notação vamos omitir a dependência da função de verossimilhança em $\mathbf{y}$, ou seja, $\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) = \mathrm{L}(\boldsymbol{\theta})$, seguindo de forma análoga para a 
+log-verossimilhança e funções obtidas apartir destas.
+
+O modelo que vamos considerar é o modelo Poisson. Sendo assim, seja $Y_i \sim P(\theta)$ com $i = 1, \ldots, n$, variáveis aleatórias independentes e denote $\overline{y} = \sum_{i=1}^n y_i/n$. A função de verossimilhança é o produto das $n$ distribuições de Poisson com parâmetro $\theta$ que neste caso é assumido comum a todas as variáveis aleatórias e desconhecido. A função de verossimilhança é dada pela expressão a seguir, notando-se que, observada uma determinada amostra, o termo no denominador é uma constante.
+
+$$
+\mathrm{L}(\theta) = \prod_{i=1}^n \frac{\exp\{-\theta\} \theta^{y_i}}{y_i!} = 
+\frac{\exp\{-n \theta\} \theta^{\sum_{i=1}^n y_i}}{\prod_{i=1}^n y_i !}.
+$$
+  
+Um representação alternativa é a função de verossimilhança relativa. 
+Sendo, $\hat{\theta}$ o EMV para $\theta$ a função de verossimilhança relativa é dada por $\mathrm{LR}(\theta) = \frac{\mathrm{L}(\theta)}{\mathrm{L}(\hat{\theta})}$ que para esse exemplo, após uma série de simplificações, tem a seguinte expressão
+$$
+\mathrm{LR}(\theta) = \exp\{-n(\theta-\hat{\theta})\} (\theta/\hat{\theta})^{n \overline{y}}.
+$$
+  
+A verossimilhança relativa assume sempre valores no intervalo unitário o que facilita a construção e visualização de gráficos. Note ainda que nesta representação o termo constante no denominador é cancelado. Uma vez que o termo constante envolve o cálculo de fatoriais o fato de cancelar é conveniente computationalmente, porque o cálculo de fatoriais é altamente suceptível a problemas numéricos.
+
+Outra possibilidade é usar a função de log-verossimilhança $\mathrm{l}(\theta) = \log \mathrm{L}(\theta)$ que normalmente é preferida para se trabalhar analítica e computacionalmente. Para o exemplo da distribuição de Poisson, a expressão é como se segue
+com o último termo constante para uma determinada amostra.
+
+$$
+  \mathrm{l}(\theta) = - n \theta + n \overline{y} \log(\theta) - \sum_{i=1}^n \log(y_i!).
+$$
+  
+Por fim, podemos ainda utilizar a função _deviance_ dada por, 
+$\mathrm{D}(\theta) = -2 \mathrm{LR}(\theta) = 2\{ \mathrm{l}(\hat{\theta}) - \mathrm{l}(\theta) \}$, 
+que é comumente reportada por algoritmos e utilizada na obtenção de intervalos de confiança e testes de hipóteses devido as suas propriedades assintóticas, ver Teorema \@ref(thm:ASS). Assim como na verossimilhança relativa, a sua expressão elimina o termo constante ficando na forma:
+
+$$
+\mathrm{D}(\theta) = 2 n \{(\hat{\theta}-\theta)-\overline{y} \log(\hat{\theta}/\theta)\}.
+$$
+  
+Neste caso o estimador de máxima verossimilhança para $\theta$ pode ser encontrado analiticamente maximizando a função de log-verossimilhança. 
+O primeiro passo é encontrar a verossimilhança e a log-verossimilhança.
+
+\begin{align*}
+\mathrm{L}(\theta) &= \prod_{i=1}^n \frac{ \exp\{-\theta\} \theta^{y_i}}{y_i !} = \frac{ \exp\{-n \theta\} 
+  \theta^{\sum_{i=1}^n y_i}}{\prod_{i=1}^n y_i !} \\
+\mathrm{l}(\theta) &= - n \theta + (\sum_{i=1}^n y_i) \log (\theta) - \sum_{i=1}^n \log y_i ! \\
+\end{align*}
+
+Para encontrar o ponto de máximo da log-verossimilhança vamos usar a estratégia padrão de cálculo diferencial que consiste em encontrar a primeira derivada e a sua raiz. Usando a nossa terminologia vamos obter a função escore e encontrar o ponto onde ela cruza o eixo das abscissas.
+
+\begin{align*}
+\mathrm{U}(\theta) &= - n + \frac{\sum_{i=1}^n y_i}{\theta}  \\
+\end{align*}
+
+Resolvendo a equação, temos
+\begin{align*}
+\mathrm{U}(\hat{\theta}) &= - n + \frac{\sum_{i=1}^n y_i}{\hat{\theta}} = 0  \\
+\hat{\theta} &= \frac{\sum_{i=1}^n y_i}{n} = \overline{y}. 
+\end{align*}
+
+Por fim, podemos também obter a segunda derivada e verificar se ela é negativa para confirmar que o ponto encontrado é realmente um ponto de máximo
+
+\begin{align*}
+\mathrm{H}(\theta) =  -\frac{ \sum_{i=1}^n y_i}{ \theta^2}.
+\end{align*}
+
+Dado que $y_i$ e $\theta$ são estritamente positivos a segunda derivada
+$\mathrm{H}(\theta)$ é negativa, mostrando que o ponto obtido é de 
+máximo ao menos local.
+
+Para ilustrar graficamente as diferentes representações da verossimilhança 
+vamos simular uma amostra da distribuição de Poisson com parâmetro $\theta = 10$.
+Note que vamos fixar a semente usando a função `set.seed()` para que os
+resultados sejam reproduzíveis.
+
+```{r}
+set.seed(20)
+y <- rpois(20, lambda = 10)
+```
+
+A Figura \@ref(fig:veroExemplo1), apresenta os gráficos dessas quatro formas de visualização da função de verossimilhança para os dados simulados. 
+Utilizamos a função definida no código \@ref(lem:verosPois) que permite
+escolher a representação desejada da verossimilhança. As verossimilhanças relativa e _deviance_ requerem que o valor da verossimilhança maximizada seja informado no argumento 
+`maxlogL`, que é constante para uma determinada amostra. Deixamos este cálculo fora da função para evitar que esta quantidade constante seja recalculada nas sucessivas avaliações da função. Para facilitar a obtenção dos gráficos definimos a função na forma vetorizada utilizando `sapply()`. Assim, a função pode receber um vetor de valores para o parâmetro.
+
+```{lemma, verosPois}
+**Função com diferentes representações da verossimilhança - Distribuição Poisson.**
+```
+
+```{r echo = TRUE}
+veroPois <- function(par, dados, tipo, maxlogL){
+  tipo = match.arg(tipo, choices=c("L","LR","logL","dev"))
+  ll <- sapply(par, function(p) sum(dpois(dados, lambda=p, log=TRUE)))
+  return(switch(tipo, "L" = exp(ll),
+                "LR" = exp(ll-maxlogL),
+                "logL" = ll,
+                "dev" = 2*(maxlogL-ll)))} 
+```
+
+Os comandos a seguir mostram a obtenção da log-verossimilhança maximizada $\mathrm{l}(\hat{\theta})$ e a chamada para obter o gráfico da função _deviance_ $\mathrm{D}(\theta)$. Para os demais gráficos basta alterar os valores do 
+argumento `tipo.` 
+
+```{r echo = TRUE, eval = FALSE}
+mll <- sum(dpois(y, lambda = mean(y), log = TRUE))
+curve(veroPois(x, dados = y, tipo = "dev", maxlogL = mll), 8, 11, 
+      ylab=expression(D(theta)), xlab=expression(theta))
+```
+
+```{r veroExemplo1, echo = FALSE, fig.width = 8, fig.height = 2, fig.cap = 'Diferentes formas de visualizar a função de verossimilhança - Distribuição Poisson.'}
+par(mfrow = c(1, 4), mar=c(2.6, 2.6, 1.2, 0.5), mgp = c(1.6, 0.6, 0))
+mll <- sum(dpois(y, lambda=mean(y), log=TRUE))
+curve(veroPois(x, dados=y, tipo="L", maxlogL=mll), 8, 11, 
+      ylab=expression(L(theta)), xlab=expression(theta))
+curve(veroPois(x, dados=y, tipo="LR", maxlogL=mll), 8, 11,
+      ylab=expression(LR(theta)),xlab=expression(theta))
+curve(veroPois(x, dados=y, tipo="logL", maxlogL=mll), 8, 11,
+      ylab=expression(l(theta)),xlab=expression(theta))
+curve(veroPois(x, dados=y, tipo="dev", maxlogL=mll), 8, 11,
+      ylab=expression(D(theta)),xlab=expression(theta))
+```
+
+Apesar das quatro formas serem equivalentes a forma usual para encontrar 
+o estimador de máxima verossimilhança é a log-verossimilhança. 
+De forma geral, cálculos analíticos com a função de verossimilhança 
+$\mathrm{L}(\theta)$ podem ser mais trabalhosos e sua computação mais 
+sensível a valores pequenos o que pode gerar problemas numéricos, 
+por exemplo excedendo a capacidade de representação de números. 
+Por outro lado, a verosimilhança relativa e a _deviance_ requerem o 
+valor da função de verosimilhança avaliado na estimativa o que pode ser
+complicado em alguns casos.
+
+Embora neste exemplo o EMV possa ser encontrado analiticamente, vamos 
+ilustrar a sua obtenção usando métodos numéricos comumente utilizados 
+para encontrar o EMV em situações mais desafiadoras. 
+Mas antes disto vamos redefinir a função de verossimilhança escrita 
+agora como função da estatística suficiente calculada com os valores da amostra.
+Definimos $\mathrm{l}(\theta)$ como opção _default_. 
+O argumento `amostra` deve receber uma lista com o tamanho e a soma dos 
+termos da amostra. Omitimos em $\mathrm{L}(\theta)$ e $\mathrm{l}(\theta)$ o termo que não depende do parâmetro. $\mathrm{LR}(\theta)$ e $\mathrm{D}(\theta)$ não se alteram pois os termos se cancelam em seu cálculo.
+
+```{lemma, RedPoisson}
+**Redefinição da função com diferentes representações da verossimilhança - Distribuição de Poisson.**
+  ```
+
+```{r}
+veroPois <- function(par, amostra, tipo="logL", maxlogL){
+  tipo = match.arg(tipo, choices=c("L","LR","logL","dev"))
+  ll <- with(amostra, -n*par + soma * log(par))  
+  return(switch(tipo, "L" = exp(ll),
+                "LR" = exp(ll-maxlogL),
+                "logL" = ll,
+                "dev" = 2*(maxlogL-ll)))} 
+```
+
+Comandos equivalentes aos anteriores para obtenção do gráfico são como a seguir.
+
+```{r, eval = FALSE}
+am <- list(n=length(y), soma=sum(y))
+emv <- mean(y)
+mll <- veroPois(emv, amostra=am, tipo="logL")
+curve(veroPois(x, amostra=am, tipo="dev", maxlogL=mll), 8, 11, 
+      ylab=expression(D(lambda)), xlab=expression(lambda))
+```
+
+Para ilustrar a obtenção da estimativa do parâmetro por métodos numéricos vamos  
+considerar as seguintes opções:
+  
+  1. solução da equação de estimação (função escore) $\mathrm{U}(\theta) = 0$ por um método sem uso de gradientes (Brent) e por um método com uso apenas do gradiente (gradiente descendente) e com o uso de gradiente e hessiano (Newton-Raphson);
+2. maximização direta da função de log-verossimilhança usando maximizadores numéricos.
+
+Começamos escrevendo uma função para avaliar a função escore.
+
+```{lemma, fcescore}
+**Função escore - Distribuição de Poisson.**
+  ```
+
+```{r}
+UPois <- function(theta, amostra){
+  return(with(amostra, n - soma/theta))
+}
+```
+
+Para obter a estimativa utilizamos inicialmente a função `uniroot()` que implementa o método de Brent para encontrar a raiz de uma equação não linear. Note que para usar este algoritmo precisamos definir um intervalo de busca através do argumento `interval.` Neste caso, especificamos o intervalo entre o menor e o maior valor observado na amostra, conforme mostra o código abaixo.
+
+```{r}
+am <- list(n=length(y), soma=sum(y))
+emv <- mean(y)
+uniroot(UPois, interval = range(y), amostra = am)$root
+```
+
+Um dos algoritmos mais utilizado para encontrar a raiz de uma equação não-linear é o do gradiente descendente que é muito simples de implementar e entender. Basicamente, a derivada da função nos fornece a direção de maior descida, então basta andar nesta direção a um passo de tamanho digamos, $\alpha$ o que leva a seguinte equação de iteração
+
+$$
+\theta^{r+1} = \theta^{r} - \alpha \mathrm{U}(\theta^r),
+$$
+onde $\alpha$ é um parâmetro de _tuning_ que precisa ser escolhido cuidadosamente e caso a caso. O código \@ref(lem:gradesc) é uma implementação minima deste método e vamos usá-la neste exemplo e na sequência do livro.
+
+```{lemma, gradesc}
+**Método gradiente descendente.**
+  ```
+
+```{r}
+grad_des <- function(U, x1, alpha, max_iter = 100, tol = 1e-04, ...) { 
+  sol <- c(); sol[1] <- x1 
+  for(i in 1:max_iter) { 
+    sol[i+1] <- sol[i] - alpha*U(sol[i], ...) 
+    if(abs(U(sol[i+1], ...)) < tol) break
+  }
+  return(sol)
+}
+```
+
+O método de Newton-Raphson é uma outra opção muito popular para a solução de equações não-lineares, utilizando uma expansão em séries de Taylor de $\mathrm{U}(\theta)$,
+resolve a equação a seguir até que algum critério de convergência seja atingido
+
+$$\theta^{r+1} = \theta^{r} + \frac{\mathrm{U}(\theta^r)}{\mathrm{H}(\theta^r)}.$$
+  
+Note que a única diferença em relação ao método do gradiente descendente é que o parâmetro de _tuning_ $\alpha$ é substituído por $\frac{1}{\mathrm{H}(\theta)}$, ou seja, pelo recíproco do Hessiano. Para implementar o algorítmo precisamos primeiro definir a função
+$\mathrm{H}(\theta) = \mathrm{U}^{\prime}(\theta)$.
+
+```{lemma, dd}
+**Segunda derivada da log-verossimilhança - Distribuição de Poisson.**
+  ```
+
+```{r}
+HPois <- function(theta, amostra){
+  return(-amostra$soma/theta^2)
+}
+```
+
+Uma variante do método é utilizar $\mathrm{H}(\theta) = -\mathrm{I_E}(\theta)$, conhecido como _Fisher scoring_ onde $\mathrm{I_E}(\theta) = \mathrm{E}(\mathrm{H}(\theta))$ é conhecida como matriz de informação de Fisher. O método de Newton-Raphson é implementado no código \@ref(lem:nr)
+
+```{lemma, nr}
+**Método de Newton-Raphson.**
+  ```
+
+```{r}
+newton <- function(U, H, x1, tol = 1e-04, max_iter = 10, ...) { 
+  solucao <- c()
+  solucao[1] <- x1
+  for(i in 1:max_iter) {
+    solucao[i+1] = solucao[i] + U(solucao[i], ...)/H(solucao[i], ...)
+    if( abs(solucao[i+1] - solucao[i]) < tol) break
+  }
+  return(solucao)
+}
+```
+
+Finalmente, podemos usar os dois métodos para encontrar o EMV.
+
+```{r}
+iter_gd <- grad_des(U = UPois, x1 = 5, alpha = 0.5, amostra = am)
+iter_nr <- newton(U = UPois, H = HPois, x1 = 5, amostra = am)
+
+# EMV método Gradiente descendente
+round(iter_gd[length(iter_gd)], 4)
+
+# EMV método Newton-Raphson
+round(iter_nr[length(iter_nr)], 4)
+```
+
+No exemplo a estimativa $\hat{\theta}$ foi obtida em `r length(iter_gd)` iterações pelo algoritmo gradiente descendente e `r length(iter_nr)` pelo método de Newton-Raphson.
+Em ambos os casos a estimativa foi $9.4$ como esperado e já obtido pela função `uniroot()`.
+
+Existem ainda funções no **R** que implementam estes algoritmos de forma mais genérica, incluindo a opção de usar derivadas obtidas numéricamente para modelos em que não há 
+expressões fechadas para estas funções.
+
+Vimos diversas alternativas para resolver a equação escore e encontrar o EMV. Uma outra opção é maximizar diretamente a função de log-verosimilhança $\mathrm{l}(\theta)$.
+Para o caso de um único paramêtro utilizamos a função `optimize()`
+que utiliza o algoritmo de Brent, porém diversas outras funções estão disponíveis
+no **R** e em seus pacotes extras, sendo mais comum o uso da função `optim()`. 
+Abaixo ilustramos o uso da função `optimize()` para maximizar a log-verossimilhança.
+
+```{r}
+unlist(optimize(veroPois, int=range(y), maximum=TRUE, amostra=am)[1:2])
+```
+
+Obviamente, todas as abordagens levam a obtenção do mesmo valor para a estimativa de máxima verossimilhança. 
+
+Como o estimador de máxima verossimilhança é uma função de uma variável 
+aleatória ele também é uma variável aleatória. Conforme as propriedades 
+apresentadas no Capítulo 2 o EMV é assintoticamente não-viciado e sua 
+distribuição amostral é assintóticamente gaussiana. 
+Para exemplificar estas propriedades vamos fazer um pequeno estudo de 
+simulação. O objetivo é ilustrar como se comporta o viés e a distribuição 
+do EMV conforme aumenta-se o tamanho da amostra.
+Para isto, simulamos $1000$ conjuntos de dados de acordo com o modelo 
+Poisson com $\theta = 3.5$ e $\theta = 10$. 
+Vamos retirar amostras de tamanho $5, 50$ e $100$ e para cada 
+amostra calcular o EMV. 
+
+A Figura \@ref(fig:distExemplo1) apresenta os resultados deste estudo de simulação. 
+Pelas propriedades do EMV temos que 
+$\hat{\theta} \sim \mathrm{N}(\theta, \frac{\theta}{n})$.
+Na Figura \@ref(fig:distExemplo1) sobrepomos o histograma das estimativas 
+obtidas nas simulações com a distribuição assintótica (normal).
+
+```{r distExemplo1, echo = FALSE, fig.width = 7.5, fig.height = 5, fig.cap = 'Illustração da distribuição assintótica do estimador de máxima verossimilhança- Distribuição Poisson.'}
+set.seed(123)
+emv5 <- replicate(1000, {mean(rpois(5, lam=3.5))})
+emv50 <- replicate(1000, {mean(rpois(50, lam=3.5))})
+emv100 <- replicate(1000, {mean(rpois(100, lam=3.5))})
+emv1000 <- replicate(1000, {mean(rpois(100, lam=3.5))})
+par(mfrow=c(2,3))
+hist(emv5, prob = TRUE, ylab = "Densidade", xlab = expression(hat(theta)), 
+     main = " n = 5", ylim = c(0, 0.6), xlim = c(0, 6.2))
+media = 3.5 ; sd <- sqrt(media/5) ## usando I_E ...
+curve(dnorm(x,media,sd), 0, 8, add=TRUE)
+abline(v=mean(emv5),col="red")
+text(x=mean(emv5) , y= 0.59, label=substitute(avg(hat(theta)) == a, list(a=mean(emv5))), pos=4)
+#
+hist(emv50,prob=TRUE, ylab = "Densidade", xlab = expression(hat(theta)), 
+     main=" n = 50", ylim=c(0, 1.55), xlim = c(0, 6.2))
+media = 3.5 ; sd <- sqrt(media/50) ## usando I_E ...
+curve(dnorm(x, media, sd), 2, 6, add=TRUE)
+abline(v=mean(emv50), col="red")
+text(x=mean(emv50), y= 1.52, label = substitute(avg(hat(theta)) == a, list(a=mean(emv50))), pos=4)
+#
+hist(emv100,prob=TRUE,ylab="Densidade",xlab=expression(hat(theta)), main=" n = 100", ylim=c(0, 2.55), xlim = c(0, 6.2))
+media = 3.5 ; sd <- sqrt(media/100) ## usando I_E ...
+curve(dnorm(x, media, sd), 2, 5, add=TRUE)
+abline(v=mean(emv100), col="red")
+text(x=mean(emv100), y= 2.52, label=substitute(avg(hat(theta)) == a, list(a=mean(emv100))), pos=4)
+
+#
+set.seed(123)
+emv5 <- replicate(1000, {mean(rpois(5, lam=10))})
+emv50 <- replicate(1000, {mean(rpois(50, lam=10))})
+emv100 <- replicate(1000, {mean(rpois(100, lam=10))})
+emv1000 <- replicate(1000, {mean(rpois(100, lam=10))})
+hist(emv5,prob=TRUE,ylab="Densidade",xlab=expression(hat(theta)), main=" n = 5", ylim=c(0, 0.3), xlim = c(6, 14.5))
+media = 10 ; sd <- sqrt(media/5) ## usando I_E ...
+curve(dnorm(x,media,sd), 5, 17, add=TRUE)
+abline(v=mean(emv5),col="red")
+text(x=mean(emv5) , y= 0.29, label=substitute(avg(hat(theta)) == a, list(a=mean(emv5))), pos=4)
+#
+hist(emv50,prob=TRUE,ylab="Densidade",xlab=expression(hat(theta)), main=" n = 50",ylim=c(0,0.90), xlim = c(6,14.5))
+sd <- sqrt(10^2/(10*50))
+curve(dnorm(x,media,sd),5,15, add=TRUE)
+abline(v=mean(emv50),col="red")
+text(x=mean(emv50), y= 0.895, label=substitute(avg(hat(theta)) == a, list(a=mean(emv50))), pos=4)
+#
+hist(emv100,prob=TRUE, ylab="Densidade",xlab=expression(hat(lambda)), main=" n = 100",ylim=c(0,1.3), xlim = c(6, 14.5))
+sd <- sqrt(10^2/(10*100))
+curve(dnorm(x,media,sd),5,15, add=TRUE)
+abline(v=mean(emv100),col="red")
+text(x= mean(emv100), y= 1.28, label=substitute(avg(hat(theta)) == a, list(a=mean(emv100))), pos=4)
+
+```
+
+Como é possível visualizar na Figura \@ref(fig:distExemplo1) a distribuição empírica apresenta um comportamento muito próximo da distribuição teórica, mesmo para valores pequenos de $\theta$ e amostras pequenas $n = 5$ e $n = 50$. De forma geral, o viés vai diminuindo conforme a amostra aumenta. Nos gráficos a notação $avg(\hat{\theta})$ representa a média das estimativas de máxima verossimilhança obtida baseada nas $1000$ simulações realizadas. Note que tal média é também uma estimativa para a esperança de $\hat{\theta}$ que sabemos neste caso ser assintóticamente $\theta$.
+É também evidente que com uma amostra maior a variância do EMV vai diminuindo, até no caso limite quando $n \to \infty$ a variância converge para $0$ mostrando a consistência do EMV. Em termos gráficos a distribuição deve se tornar uma distribuição degenerada no ponto $\theta$. É interessante observar que mesmo com uma amostra pequena, os resultados válidos assintoticamente já apresentam resultados excelentes. É claro que este é um exemplo simples, porém como veremos na sequência deste livro mesmo em modelos mais complexos, como nos modelos lineares generalizados (MLG) estes resultados permanecem igualmente bons.
+
+## Intervalos de confiança
+
+```{example, label="ex2"}
+**Intervalo de confiança: Distribuição exponencial** - 
+``` 
+
+Como vimos no Capítulo 2 há pelo menos três formas básicas para obtenção 
+de intervalos de confiança baseados na função de verossimilhança. A intuitivamente mais simples é baseada na verossimilhança relativa, isto é, o intervalo é definido pelo conjunto de valores do parâmetro que tenham uma verossimilhança não inferior a um certo percentual da verossimilhança máxima. O intervalo obtido desta forma não tem interpretações probabilísticas. A segunda forma baseia-se na função _deviance_. Considerando a sua distribuição assintótica (ver Teorema \@ref(thm:ASS)), define-se um ponto de corte nesta função e o intervalo é dado pelo conjunto dos valores para o parâmetro que possuem _deviance_ inferior a esse valor. A terceira utiliza uma aproximação quadrática da superfície de log-verossimilhança. As últimas duas opções associam uma interpretação frequentista ao intervalo de confiança. Desta forma, os objetivos deste exemplo são: mostrar como obter os intervalos de confiança por cada uma das três abordagens, explorar as relações existentes e discutir algumas possíveis dificuldades computacionais que podem ocorrer quando trabalhamos diretamente com a função _deviance_.
+
+Considere o caso onde amostras independentes de uma variável aleatória 
+$Y_i$ com $i = 1,\ldots,n$ cada uma com distribuição exponencial de 
+parâmetro $\theta$ esteja disponível, vamos denotar isto por, $Y_i \sim \mathrm{Exp}(\theta)$. O objetivo é estimar o parâmetro $\theta$ e fornecer 
+um ou mais intervalos de confiança, digamos $\hat{\theta}_L$ e $\hat{\theta}_U$ para $\theta$. Se adotarmos, um enfoque frequentista o intervalo terá probabilidade $1 - \alpha$ de conter $\theta$. Note que a estrutura probabilística está em $\hat{\theta}_L$ e $\hat{\theta}_U$. 
+
+O primeiro passo é sempre escrever a função de verossimilhança,
+$$
+\mathrm{L}(\theta) = \prod_{i=1}^n \theta \exp\{-\theta y_i\} = \theta^n \exp\{-\theta \sum_{i=1}^n y_i\} = \theta^n \exp\{-n \overline{y} \theta \}.
+$$
+
+Consequentemente, a função de log-verossimilhança é
+$$
+\mathrm{l}(\theta) = n \log \theta - \theta \sum_{i=1}^n y_i = n \log \theta - \theta n \overline{y}.
+$$
+Derivando a log-verossimilhança em $\theta$ chegamos a função escore
+
+$$
+U(\theta) = n \theta^{-1} - n \overline{y}.
+$$
+
+Para encontrar a estimativa de máxima verossimilhança basta igualar a função escore a $0$ e isolar o $\theta$ isto resulta
+
+$$
+\hat{\theta} = \frac{1}{\overline{y}}.
+$$
+
+A segunda derivada da função de log-verossimilhança tem um papel fundamental na construção de intervalos de confiança por aproximação quadrática da função de verossimilhança, uma vez que ela mede a curvatura da função no entorno do ponto de máximo. Em termos estatísticos, trabalhamos com a informação observada ou esperada, uma vez que esta quantidade descreve o comportamento assintótico dos estimadores de máxima verossimilhança,
+já que sua inversa fornece a variância do estimador. Neste caso a função de log-verossimilhança é côncava e polinomial de ordem infinita. As informações esperada e observada são iguais e dependem do valor do parâmetro e na prática é necessário usar a informação estimada pela amostra.
+$$
+I_O(\theta) = I_E(\theta) = n \theta^{-2}  \;\; \mbox{ e } \;\; I_O(\hat{\theta}) = I_E(\hat{\theta}) = n  \hat{\theta}^{-2}. 
+$$
+
+Para encontrar o intervalo de confiança vamos começar pela função _deviance_, lembrando que de acordo com o Teorema \@ref(thm:ASS), a _deviance_ segue uma distribuição $\chi^2$ com $d$ graus de liberdade, no exemplo $d = 1$. Desta forma o valor de $c^*$ é obtido definindo algum quantil $q_{1-\alpha}$ da distribuição qui-quadrado com $1$ grau de liberdade e $1-\alpha$ de confiança. Como exemplo, fixando $\alpha = 0,05$ toma-se o valor do quantil $c^* = 3,84$. Com isto, temos os elementos necessários para construir o intervalo de confiança baseado na função _deviance_ que é dado pelo conjunto de valores que obedecem:
+
+\begin{eqnarray}
+  \mathrm{D}(\theta) &=& 2 [ \mathrm{l}(\hat{\theta}) - \mathrm{l}(\theta)]  \nonumber \\
+            &=& 2 [ n \log \hat{\theta} - \hat{\theta} n \overline{y} - ( n \log \theta - \theta n \overline{y}) ] \nonumber \\
+            &=& 2n [ \log \left(\hat{\theta}/\theta \right) + \overline{y} ( \theta - \hat{\theta}) ] \leq c^*
+(\#eq:devexp)            
+\end{eqnarray}
+
+Os limites $(\hat{\theta}_L, \hat{\theta}_U)$ são encontrados resolvendo a equação em
+\@ref(eq:devexp), mas mesmo em uma situação simples como a deste exemplo a obtenção das raízes requer a solução de uma equação não-linear que não tem solução analítica. 
+Desta forma, algum método numérico é necessário para encontrar os limites do intervalo. 
+
+Uma outra opção para encontrar o intervalo de confiança é fazer uma aproximação quadrática utilizando séries de Taylor para a função $\mathrm{l}(\theta)$ em torno do ponto $\hat{\theta}$ e usar esta aproximação no lugar da função de log-verossimilhança original. Neste caso, os limites do intervalo são as raízes de um polinômio de segundo grau e os intervalos são da forma
+\[  \hat{\theta} \pm z_{\frac{\alpha}{2}} \sqrt{ V(\hat{\theta})} , \]
+o que corresponde a usar o resultado do Teorema \@ref(thm:DEMV).
+
+Para a distribuição exponencial, temos que a $\mathrm{V}(\hat{\theta}) = \mathrm{I_O}^{-1}(\hat{\theta}) = \hat{\theta}^2/n$, logo o intervalo de confiança é dado por
+\[\hat{\theta}_L = \hat{\theta} - z_{\frac{\alpha}{2}} \hat{\theta}/\sqrt{n} 
+\quad \text{e} \quad \hat{\theta}_U = \hat{\theta} + z_{\frac{\alpha}{2}} \hat{\theta}/\sqrt{n} . 
+\]
+
+Aqui a construção do intervalo de confiança fica bastante facilitada. Conhecendo o valor de $z_{\frac{\alpha}{2}}$ o intervalo se resume a uma conta simples, ou seja, não é necessário utilizar métodos numéricos para obtenção dos limites do intervalo. 
+Como a distribuição amostral de $\hat{\theta}$ é assintoticamente gaussiana podemos escolher o valor de $z_{\frac{\alpha}{2}}$ como o quantil da distribuição normal, 
+com $(1-\alpha)$ 100\% de confiança, escolhendo $\alpha = 0,05$, 
+temos aproximadamente que $z_{\frac{\alpha}{2}} = 1,96$. 
+No caso de $d=1$ o quantil da distribuição $\chi^2_{(1)}$ é o quadrado de um score $z$ da distribuição normal e o método também corresponde a obter o intervalo como na função _deviance_ porém utilizando a sua aproximação quadrática dada por:
+\[ \mathrm{D}(\theta) \approx n \left(\frac{\theta-\hat{\theta}}{\hat{\theta}}  \right)^2. \]
+Desta forma as raízes que definem os limites dos intervalos equivalentes aos anteriores são:
+\[ 
+\left(\hat{\theta}_L \approx \hat{\theta} (1-\sqrt{c^*/n}) \;\; , \;\; 
+\hat{\theta}_U \approx \hat{\theta} (1+\sqrt{c^*/n})\right) . 
+\]
+
+A última opção que vamos considerar é a construção do intervalo definindo um valor limite para a verossimilhança relativa. Um intervalo baseado em verossimilhança relativa 
+é da forma $LR(\theta) = \frac{L(\theta)}{L(\hat{\theta})} \ge r$, onde $r$ representa um percentual do máximo da função de verossimilhança, para o qual admite-se ainda obter uma estimativa aceitável de $\theta$. Por exemplo, definindo $r=0.25$, o intervalo é definido pelo valores que apresentam uma verosimilhança que seja ao menos 25\% da máxima para o conjunto de dados. Para escolher um valor de $r$ comparável com o escolhido para a _deviance_, note o seguinte:
+\begin{eqnarray*}
+   \frac{L(\theta)}{L(\hat{\theta})} &\ge& r \\
+     \log \left[ \frac{L(\theta)}{L(\hat{\theta})} \right] &\ge& \log r \\
+     -2[ l(\theta) - l(\hat{\theta})] &\ge& 2 \cdot \log r\\
+     -3,84 & \ge& 2 \cdot \log r \\
+     r &\approx& 0,146
+\end{eqnarray*}
+
+A Tabela \@ref(tab:ICreldev) mostra a relação entre alguns valores de corte da verossimilhança relativa e os valores correspondentes em log-verossimilhança e em  _deviance_.  Na prática, os níveis de confiança são aproximados e válidos apenas assintóticamente. 
+
+```{r ICreldev, echo = F}
+r <- paste0(c(50,26,15,3.6),"%")
+cc <- c(0.693,1.347,1.897,3.324)
+cas <- c(1.386, 2.694, 3.794,6.648)
+PP <- c(0.761, 0.899, 0.949, 0.99)
+tt = data.frame("r" = r, "c" = cc, "c*" = cas, "Prob" = PP)
+knitr::kable(tt, caption = 'Relação entre valores de corte para obtenção de intervalos de confiança com funções verossimilhança relativa, log-verossimilhança e deviance.', align = c("l","l","l","l"))
+```
+
+
+Com isso, podemos observar que usar a verossimilhança relativa ou a _deviance_ são formas equivalentes de construir o intervalo de confiança. A diferença está na interpretação que é associada aos intervalos. Uma discussão aprofundada pode ser encontrada em @Royal:1997. A vantagem em usar a _deviance_ é que conhecemos a sua distribuição assintótica o que permite a construção de intervalos de confiança com interpretação probabilística. 
+Da mesma forma que para a _deviance_, no exemplo, a obtenção do intervalo pela verossimilhança relativa também requer resolver um sistema não-linear utilizando algum método numérico para encontrar as raízes da equação $\mathrm{LR}(\theta) \ge r$.
+
+Considere dados gerados do modelo exponencial com os comando abaixo.
+
+```{r}
+set.seed(123) ; y <- rexp(20, rate=1)
+```
+
+Vamos implementar as funções de verossimilhança, log-verossimilhança, _deviance_ e _deviance_ aproximada para termos uma visualização gráfica da relação entre as diferentes estratégias para construir o intervalo de confiança.
+
+```{r, echo = T}
+grid.theta <- seq(0.68,2,l=100)
+
+# Verosssimilhança
+Lik <- function(theta,y){
+  Lt <- prod(dexp(y,rate=theta,log=FALSE))
+  return(Lt)
+}
+
+L.theta <- sapply(grid.theta, Lik, y=y)
+LR.theta <- L.theta/Lik(theta=1/mean(y),y=y)
+
+# log-verossimilhança
+ll <- function(theta,y){
+  llt <- sum(dexp(y,rate=theta,log=TRUE))
+  return(llt)
+}
+
+ll.theta <- sapply(grid.theta, ll, y=y)
+
+# Deviance
+dev.theta <- 2*(ll(1/mean(y),y=y)-ll.theta)
+
+# Deviance aproximada
+dev.aprox <- function(theta,theta.hat,y){
+  dev <- (theta - theta.hat)^2*(length(y)/(theta.hat^2))
+  return(dev)
+}
+
+devA.theta <- sapply(grid.theta, dev.aprox, theta.hat = 1/mean(y), y=y)
+```
+
+Figura \@ref(fig:Exemplo2) apresenta os gráficos com os pontos de corte indicados de forma equivalente em todas as funções.
+
+```{r Exemplo2, echo = FALSE, fig.width = 8, fig.height = 4, fig.cap = 'Verossimilhança relativa (esquerda) e função deviance exata e aproximada (direita) - Distribuição exponencial.'}
+par(mfrow=c(1,2))
+plot(LR.theta ~ grid.theta,type="l",ylab=expression(LR(theta)),xlab=expression(theta))
+abline(h=0.146)
+
+plot(dev.theta ~ grid.theta,type="l",ylab=expression(D(theta)),xlab=expression(theta))
+lines(devA.theta ~ grid.theta,type="l",col="red",lty=1);abline(h=3.84)
+legend("top",legend=c("Deviance"," Aproximação Quadrática"),col=c("black","red"), lty=c(1,1), bty="n")
+```
+
+A estimativa de máxima verossimilhança para a amostra simulada.
+
+```{r}
+theta.est <- round(1/mean(y), dig=2)
+theta.est
+```
+
+Como é possível ver na Figura \@ref(fig:Exemplo2) a função _deviance_ é razoavelmente aproximada por uma forma quadrática mas esta aproximação vai depender do valor do parâmetro e do tamanho da amostra. Para obter os limites inferior e superior do intervalo de confiança pela aproximação quadrática temos:
+\[ \hat{\theta}_L = \hat{\theta} - z_{\frac{\alpha}{2}} \sqrt{\hat{\theta}^2/n} \quad \text{e} \quad \hat{\theta}_U = \hat{\theta} + z_{\frac{\alpha}{2}} \sqrt{\hat{\theta}^2/n} \]
+
+Para a amostra simulada utilizada para gerar os gráficos temos os seguintes valores:
+```{r}
+Ic_min <- theta.est - 1.96*sqrt( (theta.est^2)/20  )
+Ic_max <- theta.est + 1.96*sqrt( (theta.est^2)/20  )
+c(Ic_min, Ic_max)
+```
+
+Usando a função _deviance_ precisamos resolver uma equação não-linear. 
+Novamente temos diversas opções para resolver tal equação em **R**. Poderíamos usar os métodos gradiente descendente ou Newton-Raphson que implementamos anteriormente. 
+Porém, é mais fácil usar as funções do pacote `rootSolve` [@rootSolve:2009]. 
+
+O primeiro passo é escrever a função _deviance_,
+
+```{r}
+ICdevExp <- function(theta, theta.hat, y, nivel = 0.95){
+  n <- length(y)
+  dv <- 2*n*( log( theta.hat/theta) + mean(y)*(theta- theta.hat))
+  return(dv - qchisq(nivel,df=1))
+}
+```
+
+Uma vez com a função escrita podemos encontrar suas raízes usando a função `uniroot.all()`.
+
+```{r}
+require(rootSolve)
+uniroot.all(ICdevExp, interval = c(0,10), theta.hat = 1/mean(y), y = y)
+```
+
+A Figura \@ref(fig:Exemplo2) mostra o intervalo aproximado pela forma quadrática com um deslocamento para a esquerda quando comparado com o intervalo baseado na função _deviance_. É importante ter bastante cuidado na interpretação destes intervalos. De acordo com a interpretação frequentista de probabilidade, se realizarmos o mesmo experimento um grande número de vezes e em cada um destes experimentos calcularmos o respectivo intervalo de confiança esperamos que $(1-\alpha)$ 100\% dos intervalos construídos contenham o verdadeiro valor do parâmetro. 
+Vamos ilustrar esta interpretação através de um estudo de simulação. Para isto, vamos gerar 100 amostras do modelo exponencial com $\theta = 1$, sendo cada amostra de tamanho $n = 70$. Para cada amostra vamos obter o intervalo de confiança baseado na função _deviance_ e vamos verificar o percentual de intervalos que contêm o verdadeiro valor do parâmetro.
+
+```{r}
+THETA <- 1
+set.seed(12)
+ic <- matrix(NA, ncol=2, nrow=100)
+for(i in 1:100){
+  y <- rexp(70, rate=THETA)
+  est <- 1/mean(y)
+  ic[i,] <- uniroot.all(ICdevExp, int=c(0,5), theta.hat=est, y=y)
+}
+mean(apply(ic, 1, function(x) (x[1] < THETA & x[2] > THETA)))
+```
+
+No código acima simulamos a cada passo do laço `for()` uma nova realização da variável aleatória $Y$, com esta realização calculamos a estimativa de máxima verossimilhança e o seu respectivo intervalo de confiança baseado na _deviance_ e guardamos o resultado em um objeto chamado $ic$. De acordo com a interpretação frequentista dos $100$ intervalos de confiança que calculamos esperamos que $95$ deles contenham o verdadeiro valor do parâmetro neste caso $\theta = 1$. O gráfico apresentado na Figura \@ref(fig:icExp) ilustra os resultados. Neste caso,  conforme esperado, temos exatamente que $5$ dos intervalos não contem o valor verdadeiro do parâmetro. É claro que por se tratar de um exemplo de simulação variações podem ocorrer. 
+
+
+```{r icExp, echo = FALSE, fig.width = 8, fig.height = 6, fig.cap = 'Ilustração da interpretação frequentista de intervalo de confiança.'}
+plot(c(0.4,1.8)~c(1,100),type="n",ylab=expression(theta),xlab="Ensaio")
+abline(h=1)
+for(i in 1:100){
+arrows(c(i),ic[i,1],c(i),ic
+       [i,2],code=3,angle=90,length=0.03,
+       col=ifelse(ic[i,1] > 1 | ic[i,2] < 1, "darkred","lightgray"))
+# ,      lty=ifelse(ic[i,1] > 1 | ic[i,2] < 1, 1, 2))
+}
+```
+
+A taxa de cobertura de um intervalo é a proporção de vezes em que os intervalos contêm o verdadeiro valor do parâmetro sobre o total de ensaios simulados. Neste caso obtivemos exatamente $95/100$, ou seja, a taxa de cobertura é de $95$\% igual ao nível nominal especificado. A taxa de cobertura é uma forma muito utilizada para avaliar e comparar métodos de construção de intervalos de confiança. Em modelos mais complexos principalmente os que envolvem efeitos aleatórios, os componentes de variância são de difícil estimação e os seus intervalos de confiança principalmente os construídos baseados em aproximação quadrática da log-verossimilhança apresentam taxa de cobertura abaixo do nível nominal especificado.
+
+Para ilustração desta ideia vamos refazer nosso estudo de simulação, porém desta vez vamos usar o intervalo de confiança baseado na aproximação quadrática da _deviance_ que é de fácil obtenção. 
+
+```{r}
+THETA <- 1
+set.seed(12)
+ic <- matrix(NA, ncol=2, nrow=100)
+for(i in 1:100){
+  y <- rexp(70, rate=THETA)
+  est <- 1/mean(y)
+  erro <- 1.96*sqrt( (est^2)/70)
+  ic[i,] <- c(est - erro, est + erro)
+}
+mean(apply(ic, 1, function(x) (x[1] < THETA & x[2] > THETA)))
+```
+
+Vamos mostrar os intervalos obtidos e verificar quais contêm o verdadeiro valor do parâmetro. Os resultados não apresentados na Figura \@ref(fig:icASS).
+
+```{r icASS, echo = FALSE, fig.width = 8, fig.height = 6, fig.cap = 'Ilustração da interpretação frequentista de intervalo de confiança.'}
+plot(c(0.4,1.8)~c(1,100),type="n",ylab=expression(theta),xlab="Ensaio")
+abline(h=1)
+for(i in 1:100){
+arrows(c(i),ic[i,1],c(i),ic
+       [i,2],code=3,angle=90,length=0.03,
+       col=ifelse(ic[i,1] > 1 | ic[i,2] < 1, "darkred","lightgray"))
+# ,      lty=ifelse(ic[i,1] > 1 | ic[i,2] < 1, 1, 2))
+}
+```
+
+Neste caso, temos que apenas $4$ dos $100$ intervalos de confiança obtidas continham o verdadeiro valor do parâmetro, o que leva a uma taxa de cobertura de $96\%$ ligeiramente acima do nível especificado. Este foi apenas um simples exemplo e convidamos o leitor interessado a fazer uma comparação mais profunda da taxa de cobertura destes intervalos para diferentes tamanhos de amostras e valores do parâmetro $\theta$.
+
+Para encerrar este exemplo vamos redefinir a função para obtenção do intervalo de confiança a partir da função _deviance_. Com isto pretendemos chamar a atenção para cuidados em não efetuar cálculos desnecessários nos códigos. Na função original
+`n <- length(y)` e `mean(y)` são avaliados a cada chamada da função. Entretanto, para uma determinada amostra, estas quantidades são constantes. Em procedimentos numéricos a função é avaliada muitas vezes e portanto estas constantes são recalculadas desnecessariamente a cada avaliação. É melhor então definir a função já recebendo estas constantes que são estatísticas suficientes que resumem a amostra. 
+Usamos ainda o fato que $\hat{\theta} = 1/\overline{y}$.
+
+```{r, redVero2}
+ICdevExp <- function(theta, amostra, nivel=0.95){
+  ## amostra é um vetor com elementos n e mean(y), nesta ordem
+  n <- amostra[1]
+  med <- amostra[2]
+  dv <- 2*n*(-log(med*theta) + med*theta - 1)
+  return(dv - qchisq(nivel, df=1))
+}
+am <- c(length(y), mean(y))
+uniroot.all(ICdevExp, interval=c(0,10), amostra=am)
+```
+
+
+## Testes de hipótese
+
+Em situações práticas podemos estar interessados em testar se o parâmetro de um dado modelo é igual, maior ou menor que algum valor de interesse. Conforme descrito no Capítulo 2, um teste de hipótese é qualquer afirmação acerca da distribuição de probabilidade de uma ou mais variáveis aleatórias. Considere a situação onde observamos uma amostra aleatória de tamanho $n$ de uma população com distribuição Bernoulli de parâmetro $\theta$. Suponha que o interesse é testar sob a hipótese nula $H_0 : \theta = \theta_0$ contra uma hipótese alternativa $H_1 : \theta \neq \theta_0$. Vimos na Seção 2.3 três formas de construir testes de hipótese que podem ser usadas para concluir sobre as hipóteses levantadas. Como exemplo didático, vamos obter as três estatísticas de teste para o caso onde $Y_i \sim B(\theta)$. 
+
+Como as amostras são independentes a função de verossimilhança deste modelo é dada por,
+$$
+\mathrm{L}(\theta) = \prod_{i=1}^n \theta^{y_i}(1-\theta)^{(1-y_i)} = \theta^{\sum_{i=1}^n y_i} (1-\theta)^{(n - \sum_{i=1}^n y_i)}.
+$$
+
+A função de log-verossimilhança,
+$$
+\mathrm{l}(\theta) = \sum_{i = 1}^n y_i \ln(\theta) + (n - \sum_{i=1}^n y_i) \ln(1-\theta).
+$$
+
+A função escore é obtida derivando a log-verossimilhança em $\theta$,
+$$
+\mathrm{U}(\theta) = \frac{\sum_{i=1}^n y_i}{\theta} - \frac{n - \sum_{i=1}^n y_i}{(1-\theta)} = \frac{\sum_{i=1}^n y_i - n \theta}{\theta(1-\theta)},
+$$
+
+que sendo resolvida fornece a estimativa de máxima verossimilhança
+
+$$
+\hat{\theta} = \frac{\sum_{i=1}^n y_i }{n} = \overline{y}.
+$$
+Além disso, temos que a informação observada é dada por
+$$
+\mathrm{I_O}(\theta) = +\frac{\sum_{i=1}^n y_i}{\theta^2} + \frac{(n-\sum_{i=1}^n y_i)}{(1-\theta)^2}.
+$$
+Para obter a informação esperada avaliamos a esperança da informação observada
+
+$$
+\mathrm{I_E}(\theta) = \mathrm{E}(\mathrm{I_O}(\theta)) = \frac{n}{\theta(1-\theta)}.
+$$
+
+Vamos começar pelo teste de razão de verossimilhança. A estatística do teste de razão de verossimilhança neste caso toma a seguinte forma:
+
+$$
+\lambda(\mathbf{y}) = \frac{\mathrm{L}(\theta_0 | \mathbf{y})}{\mathrm{L}(\hat{\theta}| \mathbf{y})},
+$$
+que é a verossimilhança relativa.  Note que $-2 \log \lambda(\mathbf{y})$ é exatamente a função _deviance_ usada para construir intervalos de confiança. Então,
+
+$$
+-2\lambda(\mathbf{y}) = -2\left \{ \sum_{i=1}^n y_i \ln \left ( \frac{\theta_0}{\hat{\theta} } \right )  + (n - \sum_{i=1}^n y_i)\ln \left ( \frac{1-\theta_0}{1-\hat{\theta}} \right )  \right \}.
+$$
+
+A hipótese nula $H_0 : \theta = \theta_0$ será rejeitada se, e somente se, $-2 \log \lambda(\mathbf{y}) \ge \chi_{1,\alpha}^2$. A probabilidade de Erro do Tipo I será aproximadamente $\alpha$.
+
+O segundo método para construção de testes de hipóteses é o método de Wald. 
+Se $\hat{\theta}$ é o estimador de máxima verossimilhança a estatística do teste de Wald é dada por
+\[
+  T_w = \frac{\hat{\theta} - \theta_0}{\sqrt{ \mathrm{V}(\hat{\theta})}} \sim N(0,1).
+\]
+Sabemos que $\mathrm{V}(\hat{\theta}) = \mathrm{I_E}^{-1}(\hat{\theta})$, então $\mathrm{V}(\hat{\theta}) = \frac{\hat{\theta}(1 - \hat{\theta})}{n}$. Logo o teste de Wald no caso Bernoulli resume-se a
+\[
+  T_w = \frac{\hat{\theta} - \theta_0}{ \sqrt{\frac{\hat{\theta}(1 - \hat{\theta})}{n} }} \sim N(0,1).
+\]
+Dado a distribuição assintótica do teste para encontrar a região de rejeição basta encontrar o quantil da distribuição gaussiana padrão correspondente ao nível de confiança desejado. 
+
+A terceira opção é a estatística de teste \textit{escore} que é dada por,
+\[
+  T_E = \frac{\mathrm{U}(\theta_0)}{\sqrt{\mathrm{I_E}(\theta_0)}} .
+\]
+Substituindo as quantidades previamente encontradas temos para o caso Bernoulli,
+\[
+  T_E =  \frac{\sum_{i=1}^n y_i - n \theta}{\theta(1-\theta)} \sqrt{\frac{\theta(1-\theta)}{n}} =  \frac{\sum_{i=1}^n y_i - n \theta}{\sqrt{n\theta(1-\theta)}} \sim N(0,1) .
+\]
+
+A Figura \@ref(fig:TH2) ilustra a construção dos testes de hipóteses 
+e os relaciona à função de verossimilhança do modelo. O teste da razão de verossimilhança compara valores no eixo vertical, ou seja, compatibilidades com os dados.
+O teste escore avalia o quanto a curvatura da função no ponto especificado pelo teste
+se afasta de zero, o valor no máximo. O teste de Wald avalia a distância entre o valor especificado no teste e o EMV, padronizando esta distância pela curvatura da função ao redor de seu máximo.
+
+```{r, TH2, echo = FALSE, fig.width = 6.5, fig.height = 5, fig.cap = 'Diferentes formas de construir teste de hipótese baseado em verossimilhança - Distribuição Bernoulli'}
+
+# Simulando a amostra
+set.seed(123)
+x <- rbinom(100, size = 1, prob = 0.3)
+
+# Log-verossimilhança
+vero <- function(theta, y){
+  ll <- sum(dbinom(y, prob = theta, size = 1, log=TRUE))
+  return(ll)
+}
+
+# Avaliando a log-verossimilhança no grid
+grid.theta <- seq(0.15, 0.45, l = 100)
+ll.theta <- apply(as.matrix(grid.theta), 1, vero, y = x)
+# Avaliando a log-verossimilhança no maximo
+xh0 <- mean(x)
+yh0 <- sum(dbinom(x, prob=xh0, size = 1, log=TRUE))
+
+f.ell <- function(t, x0=0, y0=0, A=1, B=1){
+  x <- x0+A*cos(t)
+  y <- y0+B*sin(t)
+  return(cbind(x,y))
+}
+aux <- f.ell(seq(0,2*pi,l=100))
+
+# Reta tangente em H1
+xh1 <- 0.4
+yh1 <- sum(dbinom(x, prob = xh1, size = 1, log=TRUE))
+plot(ll.theta ~ grid.theta, type="l",
+     xlab=expression(theta), ylab=expression(l (theta)))
+segments(xh0, -70, xh0, yh0, lty=2)
+segments(xh1, -70, xh1, yh1, lty=2)
+arrows(xh0, yh0, 0, yh0, lty=2, length=0.1)
+arrows(xh1, yh1, 0, yh1, lty=2, length=0.1)
+vx <- var(x)
+sh1 <- sum(x)/xh1 - (length(x) - sum(x))/(1-xh1)
+curve(yh1+sh1*(x-xh1), xh1-0.15, xh1+0.15, col=2, lty=1, add=TRUE)
+arrows(xh1+0.015, yh0, xh1+0.015, yh1, code=3, angle=90, length=0.1)
+arrows(xh1+0.015, yh0, xh1+0.015, yh1, code=3, angle=45, length=0.1)
+text(xh1+0.015, c(yh0,yh1), label=c(expression(l (hat(theta))), expression(l (theta[0]))), pos=4, offset=1)
+arrows(xh0, -65, xh1, -65, code=3, angle=90, length=0.1)
+arrows(xh0, -65, xh1, -65, code=3, angle=45, length=0.1)
+text(c(xh0,xh1), -65, label=c(expression(hat(theta)),expression(theta[0])), pos=c(2,4))
+ar <- diff(par()$usr[1:2])/diff(par()$usr[3:4])
+A <- 0.07*diff(par()$usr[1:2])
+B <- 0.1*diff(par()$usr[3:4])
+f <- (pi+atan(0.75*ar*sh1))
+aux <- f.ell(seq(pi, f, l=10), x0=xh1, y0=yh1, A=A, B=B)
+lines(aux)
+aux <- f.ell(seq(pi, f, l=4), x0=xh1, y0=yh1, A=A, B=B)
+arrows(aux[1,1], aux[1,2], aux[2,1], aux[2,2], code=1, angle=45, length=0.1)
+arrows(aux[3,1], aux[3,2], aux[4,1], aux[4,2], code=2, angle=45, length=0.1)
+text(c(aux[c(1,4),1]), c(aux[c(1,4),2]),
+     label=c(expression(U(hat(theta))),expression(U(theta[0]))), pos=c(1,4))
+```
+
+Para exemplificar a execução do teste de hipóteses vamos utilizar um conjunto de dados simulados com $n = 100$ amostras aleatórias de uma Bernoulli com $\theta = 0.3$. 
+Vamos supor que o interesse seja testar sob $H_0: \theta = 0.4$ contra $H_1 : \theta \neq 0.4$. As funções abaixo montam a estrutura do teste de hipótese de acordo com cada abordagem.
+
+
+```{lemma, TRV}
+**Função genérica para aplicar o teste de razão de verossimilhanças.**
+```
+
+```{r}
+trv <- function(Est, H0, alpha, ...) {
+  critico <- qchisq(1-alpha, df=1)
+  est.calc <- Est(H0, ...)
+  print(ifelse(est.calc < critico, "Aceita H0", "Rejeita H0"))
+  return(c(est.calc,critico))
+}
+```
+
+```{lemma, Wald}
+**Função genérica para aplicar o teste Wald.**
+```
+
+```{r}
+wald <- function(H0, EMV, V.EMV, alpha){
+  critico <- qnorm(1-alpha/2)
+  Tw <- (EMV - H0)/sqrt(V.EMV)
+  print(ifelse(abs(Tw) < critico, "Aceita H0", "Rejeita H0"))
+  return(c(Tw,critico))
+}
+```
+
+```{lemma, Wald}
+**Função genérica para aplicar o teste escore.**
+```
+
+```{r}
+escore <- function(H0, U, Ie, alpha, ...){
+  critico <- qnorm(1-alpha/2)
+  Te <- U(H0,...)/sqrt(Ie(H0,...))
+  print(ifelse(abs(Te) < critico, "Aceita H0", "Rejeita H0"))
+  return(c(Te,critico))
+}
+```
+
+A seguir usamos as funções para efetuar os testes baseado em uma amostra
+simulada do modelo Bernoulli.
+
+```{r}
+set.seed(123)
+dados <- rbinom(100, prob = 0.3, size = 1)
+
+## Estatistica do TRV caso Bernoulli
+Est <- function(H0, y){
+  theta.hat <- mean(y)
+  n <- length(y)
+  lv <- -2*(sum(y)*log(H0/theta.hat) + (n - sum(y))*log( (1-H0)/(1-theta.hat) ) )
+  return(lv)
+}
+
+## Procedendo com o TRV theta0 = 0.4
+trv(Est = Est, H0 = 0.4, alpha = 0.05, y = dados)
+
+## Teste de Wald
+V.EMV <- mean(dados)*(1-mean(dados))/length(dados)
+wald(H0 = 0.4, EMV = mean(dados), V.EMV = V.EMV, alpha = 0.05)
+```
+
+O teste escore é ligeiramente mais complicado uma vez que é necessário 
+programar a função escore e a informação esperada.
+
+```{lemma, Wald}
+**Função escore - Distribuição Bernoulli.**
+```
+
+```{r}
+U <- function(theta, y) {
+  esco <- (sum(y)/theta) -  ((n-sum(y))/(1-theta))
+  return(esco)
+}
+```
+
+```{lemma, Wald}
+**Informação esperada - Distribuição Bernoulli.**
+```
+
+```{r}
+Ie <- function(theta, y) {
+  n <- length(y)
+  IE <- n/(theta*(1-theta))
+  return(IE)
+}
+```
+
+```{r}
+escore(H0 = 0.4, U = U, Ie = Ie, alpha = 0.05, y = dados)
+```
+
+Neste caso os três testes levam a mesma conclusão. Em geral, o teste escore é o 
+que requer mais cálculos, uma vez que exige a obtenção da função escore e da informação esperada, o que em geral é feito analiticamente. Por outro lado, tem uma clara vantagem sobre os demais porque não exige a avaliação da função de log-verossimilhança e nem mesmo a obtenção da estimativa de máxima verossimilhança. O teste de Wald é o mais utilizado pelo menos de forma inicial uma vez que sua construção é simples. O teste da razão de verossimilhança é também muito utilizado, tanto para testar valores para um determinado parâmetro quanto para a comparação de modelos aninhados. Na situação em que usamos métodos numéricos para maximização da função de log-verossimilhança um subproduto é a informação observada que pode ser usada diretamente na estatística de teste de Wald. Além disso, quando comparamos modelos aninhados a diferença entre os valores da log-verossimilhança dos modelos, permite a construção do teste da razão de verossimilhança de forma bastante direta, porém requer duas otimizações, uma para cada modelo, enquanto que o de Wald apenas uma.
+
+## Reparametrização
+
+Em diversas aplicações o interesse principal pode ser sobre alguma função de um parâmetro do modelo. Por exemplo em uma distribuição exponencial de parâmetro $\theta$ o interesse pode estar na probabilidade de obter um valor maior que $k$ expressa por $\psi = \exp\{-\theta k\}$, o que pode ser visto como uma reparametrização. Além disto, por vezes pode ser mais simples estimar em uma certa parametrização do que em outra. Por exemplo, no caso de parâmetros de variância em geral é mais estável numericamente estimar a sua raiz ou o log da raiz. Note também que reparametrizações mudam as regiões de busca em algoritmos de maximização. 
+
+Por exemplo, para parâmetros de variância digamos $\sigma^2$ tem como seu intervalo de busca o $\Re^+$, enquanto que se ao invés de estimar $\sigma^2$ estimarmos $\phi = \log \sqrt{\sigma^2}$ o intervalo de busca será toda a reta real, o que em geral é mais conveniente quando trabalha-se com algoritmos de maximização numérica. 
+
+Como exemplo ilustrativo deste problema, seja $Y_i : i = 1, \ldots,n$ variáveis aleatórias independentes com função densidade de probabilidade dada por:
+
+$$
+\mathrm{f}(y; \theta) = 2 \theta y \exp^{\{ -\theta y^2\}} \quad: \quad y \ge 0.
+$$
+
+Considere que seja de interesse a reparametrização $\theta = \frac{1}{\mu}$. 
+Vamos primeiro fazer todo o processo de inferência considerando que queremos estimar o parâmetro $\theta$. Na sequencia realizamos todo o processo considerando o parâmetro $\mu$. Para finalizar mostramos como passar de uma reparametrização para outra, ou seja, 
+como obter as estimativas tanto pontuais quanto intervalares para $\mu$ a partir das estimativas de $\theta$.
+
+Começamos escrevendo a função de verossimilhança,
+$$
+\mathrm{L}(\theta) = \prod_{i=1} ^n 2 \theta y_i \exp\{-\theta y_i^2\} = ( 2 \theta)^n \prod_{i=1}^n y_i \exp\left[-\theta \sum_{i=1} ^n y_i^2\right], 
+$$
+logo a função de log-verossimilhança,
+$$
+\mathrm{l}(\theta) = n \log 2 + n \log \theta + \sum_{i=1}^n \log y_i - \theta \sum_{i=1} ^n y_i ^2.
+$$
+Derivando em relação a $\theta$ chegamos a função escore,
+$$
+\mathrm{U}(\theta) = \frac{n}{\theta} - \sum_{i=1}^n y_i^2.
+$$
+Igualando a zero encontramos a estimativa de máxima verossimilhança,
+$$
+\hat{\theta} = \frac{n}{\sum_{i=1}^n y_i ^2} .
+$$
+Para a construção do intervalo de confiança usando a aproximação quadrática precisamos da segunda derivada, da qual derivamos a informação observada e/ou esperada, neste caso temos,
+$$
+\mathrm{I_O}(\theta) = - \frac{\partial^2 \mathrm{l}(\theta)}{\partial \theta^2} = \frac{n}{\theta^2}.
+$$
+Para obter a informação esperada basta obter a esperança da informação observada,
+$$
+\mathrm{I_E}(\theta) = \mathrm{E}(\mathrm{I_O}(\theta)) = \mathrm{E} \left( \frac{n}{\theta^2} \right) = \frac{n}{\theta^2}.
+$$
+
+Neste caso em particular $\mathrm{I_O}(\theta) = \mathrm{I_E}(\theta)$ pois não dependem de $\mathbf{y}$, porém em geral isso não é válido. Com as expressões anteriores podemos estimar o parâmetro $\theta$ e encontrar um intervalo de confiança aproximado usando a aproximação quadrática. Para obter intervalos de confiança baseado na função _deviance_ precisamos resolver a seguinte equação não-linear,
+$$
+\mathrm{D}(\theta) = 2 \left[ n \log \left( \frac{\hat{\theta}}{\theta} \right) + (\theta - \hat{\theta})\sum_{i=1} ^n y_i^2 \right] \le c^*  .
+$$
+
+Isto pode ser resolvido usando algum método numérico conforme já discutido. 
+Por agora, vamos simplesmente usar a função `uniroot.all()`, que implementa o método de Brent para uma função qualquer. Com isso, temos todo o processo de inferência completo, 
+podemos estimar pontualmente, obter intervalo de confiança aproximado ou baseado na _deviance_. Testes de hipóteses também podem ser obtidos facilmente.
+
+Mas não estamos interessados em $\theta$, mas sim em $\mu$. Podemos então reescrever a verossimilhança como função de $\mu$.
+$$
+\mathrm{L}(\mu) = \prod_{i=1} ^n 2 \mu^{-1} y_i \exp\left[-\frac{y_i^2}{\mu}\right] = (2 \mu^{-1})^n \exp\left[-\frac{1}{\mu}\sum_{i=1}^n y_i^2\right] \prod_{i=1}^{n} y_i.
+$$
+
+A log-verossimilhança é dada por,
+$$
+\mathrm{l}(\mu) = n \log 2 - n \log \mu - \mu^{-1} \sum_{i=1}^n y_i^2 + \sum_{i=1}^n \log y_i.
+$$
+Derivando em $\mu$ obtemos a função escore,
+$$
+\mathrm{U}(\mu) = -\frac{n}{\mu} + \mu^{-2} \sum_{i=1}^n y_i^2 .
+$$
+Igualando a zero chegamos a estimativa de máxima verossimilhança,
+$$
+\hat{\mu} = \frac{\sum_{i=1}^n y_i^2}{n} .
+$$
+Para a informação observada tem-se
+
+\begin{align*}
+\mathrm{I_O}(\mu) &= -\frac{\partial^2 \mathrm{l}(\mu)}{\partial \mu^2} = - \frac{\partial}{\partial \mu} \left[-\frac{n}{\mu} + \mu^{-2} \sum_{i=1}^n y_i^2 \right] \\
+	&= - n \mu^{-2} + 2 \mu^{-3} \sum_{i=1}^n y_i^2 .
+\end{align*}
+
+Para obter a informação esperada precisamos tomar a esperança de $\mathrm{I_O}(\mu)$,
+$$
+\mathrm{I_E}(\mu) = \mathrm{E}( \mathrm{I_O}(\mu)) = \mathrm{E} \left( - n \mu^{-2} + 2 \mu^{-3} \sum_{i=1}^n y_i^2 \right).
+$$
+
+Neste passo é necessário calcular a $\mathrm{E}(Y_i^2)$ que é a solução da integral $\mathrm{E}(Y_i^2) = \int_{0}^{\infty} Y_i^2 2 \mu^{-1} Y_i \exp\left[-\frac{Y_i^2}{\mu}\right] dY_i = \mu$ que neste caso é possível de ser obtida analiticamente. Substituindo na equação acima temos,
+$$
+\mathrm{I_E}(\mu) = \mathrm{E}[ - n \mu^{-2} + 2 \mu^{-3} n \mu] = n \mu^{-2} .
+$$
+
+Neste caso, a informação observada é diferente da esperada e isto afeta a construção do intervalo de confiança baseado na aproximação quadrática, uma vez que muda a estimativa de variância do estimador de máxima verossimilhança. As duas formas são equivalentes assintoticamente, porém na situação real temos apenas uma amostra finita. Na maioria das situações em modelagem estatística quando métodos numéricos são utilizados não temos a opção de escolher entre a informação observada e esperada, quando a segunda derivada é obtida numericamente estamos diretamente usando a informação observada. Podemos dizer que usar a informação observada é acreditar plenamente na amostra observada, enquanto que usar a informação esperada estamos emprestando mais informação do modelo. Pensamos na informação observada como uma medida de curvatura local, por outro lado a informação esperada é uma medida de curvatura global.
+
+A construção de intervalos de confiança baseados diretamente na função _deviance_ é feita resolvendo a seguinte equação não linear,
+$$
+\mathrm{D}(\mu) = 2 \left[ n \log \left(\frac{\mu}{\hat{\mu}}\right) + ( \mu^{-1} - \hat{\mu}^{-1}) \sum_{i=1}^n y_i^2 \right] .
+$$
+
+Para exemplificar considere que a seguinte amostra foi observada $y_i = 0.19 ; 1.68 ; 2.81 ; 0.59; 1.18$. Vamos fazer um gráfico da verossimilhança em cada parametrização. Começamos escrevendo as funções em `R`. 
+
+```{r}
+# Verossimilhança para theta
+L.theta <- function(theta, y){
+   n <- length(y)
+   return((2 * theta)^n * prod(y) * exp(-theta*sum(y^2)))
+}
+
+# Verossimilhança para mu 
+L.mu <- function(mu, y){
+   n <- length(y)
+   return((2*mu^-1)^n * prod(y) * exp( -(1/mu)*sum(y^2)))
+}
+```
+
+Vamos entrar com os dados no `R` em forma de vetor e calcular as estimativas de máxima verossimilhança para $\theta$ e $\mu$.
+ 
+```{r}
+dados <- c(0.19,1.68,2.81,0.59,1.18)
+theta.est <- length(dados)/sum(dados^2)
+mu.est <- sum(dados^2)/length(dados)
+c(theta.est, mu.est)
+```
+
+Entretanto, na prática não é conveniente nem necessário reescrever a função de verossimilhança para cada reparametrização de interesse. Pela propriedade de invariância pode-se obter a função de verossimilhança de $\mu$ partindo de $\theta$ e vice-versa. Os gráficos da função de verossimilhança e log-verossimilhança nas duas parametrizações são apresentados na Figura \@ref(fig:repa).
+
+```{r, repa, echo = FALSE, fig.width = 6, fig.height = 6, fig.cap = 'Verossimilhança e log-verossimilhança para theta e mu.'}
+LLMAX <- L.theta(theta.est, y=dados)
+LLMIN <- L.theta(0.045, y=dados)
+require(rootSolve)
+grid.theta <- seq(0.045,0.9,l=100)
+grid.mu <- seq(1/0.90, 1/0.045,l=100)
+
+ll.mu <- apply(as.matrix(grid.mu), 1, L.mu,y=dados)
+ll.theta <- apply(as.matrix(grid.theta),1,L.theta, y=dados)
+
+par(mfrow = c(2,2), mar=c(2.6, 2.8, 1.2, 0.5), mgp = c(1.6, 0.6, 0))
+plot(ll.theta ~ grid.theta, type="l", ylab=expression(L(theta)), xlab=expression(theta))
+segments(theta.est, LLMIN, theta.est, LLMAX)
+plot(ll.mu ~ grid.mu,type="l", ylab=expression(L(mu)), xlab=expression(mu))
+segments(mu.est, LLMIN, mu.est, LLMAX)
+
+plot(log(ll.theta) ~ grid.theta, type="l", ylab=expression(l(theta)), xlab=expression(theta))
+segments(theta.est, log(LLMIN), theta.est, log(LLMAX))
+plot(log(ll.mu) ~ grid.mu,type="l", ylab=expression(l(mu)), xlab=expression(mu))
+segments(mu.est, log(LLMIN), mu.est, log(LLMAX))
+```
+
+Para a construção dos intervalos de confiança baseados na _deviance_ em cada parametrização basta resolver as respectivas equações não lineares. Além disso, podemos obter os intervalos de confiança aproximados usando a informação observada e/ou esperada, dependendo da situação. A Figura \@ref(fig:devExemplo4), apresenta as funções _deviance_ exatas e aproximadas em cada parametrização. Para isto, precisamos criar cada uma das funções, para depois poder avalia-las.
+
+```{lemma, dev}
+**Funções _deviance_ exata e aproximada para os parâmetros $\theta$ e $\mu$.**
+```
+
+```{r}
+dev.theta <- function(theta, theta.hat, y, desloca=0){
+  saida <- 2*(length(y)*log(theta.hat/theta) - 
+			(theta.hat - theta)*sum(y^2))
+  return(saida - desloca)
+}
+
+dev.mu <- function(mu, mu.hat, y, desloca=0){
+  saida <- 2*(length(y)*log(mu/mu.hat) + 
+              ((1/mu)-mu.hat^-1)*sum(y^2))
+  return(saida - desloca)
+}
+
+dev.app.theta <- function(theta, theta.hat, y){
+  return((theta - theta.hat)^2 * (length(y)/theta.hat^2))
+}
+
+dev.app.mu.obs <- function(mu, mu.hat, y){
+  Io <- -((length(y)/mu.hat^2) - (2*sum(y^2)/mu.hat^3))
+  return((mu - mu.hat)^2 * Io)
+}
+
+dev.app.mu.esp <- function(mu, mu.hat, y){
+  Ie <- length(y)/(mu.hat^2)
+  return((mu - mu.hat)^2 *Ie)
+}
+```
+
+Como é possível ver na Figura \@ref(fig:devExemplo4) a função _deviance_ apresenta um comportamento bastante assimétrico o que torna a aproximação quadrática ruim. Neste caso, o pequeno tamanho da amostra prejudica a aproximação quadrática. 
+
+De acordo com as propriedades assintóticas do estimador de máxima verossimilhança, 
+sabemos que $\hat{\theta} \sim N(\theta, \mathrm{I^{-1}_E}(\theta))$ e que podemos substituir $\mathrm{I_E}(\theta)$ por $\mathrm{I_E}(\hat{\theta})$, $\mathrm{I_O}(\theta)$ ou $\mathrm{I_O}(\hat{\theta})$. 
+Como visto anteriormente neste exemplo a informação esperada e a observada coincidem para $\theta$. Então o intervalo de Wald fica dado por:
+$$
+\hat{\theta}_L = \hat{\theta} - z_{\frac{\alpha}{2}} \sqrt{ \hat{\theta}^2/n} 
+\quad \text{e} \quad 
+\hat{\theta}_U = \hat{\theta} + z_{\frac{\alpha}{2}} \sqrt{ \hat{\theta}^2/n} .
+$$
+  
+O mesmo argumento assintótico é usado para construir o intervalo para $\mu$, porém aqui a informação esperada difere da observada. Temos que a informação esperada é dada por $\mathrm{I_E}(\hat{\mu}) = \frac{n}{\hat{\mu}^2}$ enquanto que a informação observada é dada por $\mathrm{I_O}(\hat{\mu}) = -\frac{n}{\hat{\mu}^2} + \frac{2 \sum_{i=1}^N y_i^2}{\hat{\mu}^3}$, e o intervalo é construído exatamente igual ao anterior. 
+
+Para os intervalos baseados diretamente na função _deviance_ precisamos resolver as respectivas equações não lineares. Isto pode ser resolvido numericamente usando a função `uniroot.all()`. Vamos obter os intervalos de confiança e fazer uma comparação qualitativa em ambas as parametrizações. Para isto criamos uma função genérica que recebe a estimativa de máxima verossimilhança, a informação esperada ou observada e o nível de confiança do intervalo e retorna os seus limites inferior e superior.
+
+```{lemma, wald}
+**Função genérica para construir intervalo de confiança de Wald.**
+```
+
+```{r}
+ic.assintotico <- function(EMV, Io, alpha){
+  return(EMV + c(-1, 1) * qnorm(1-alpha/2)*sqrt(Io^(-1)))
+}
+```
+
+Usando a função criada obtemos os intervalos assintóticos para $\theta$ e $\mu$.
+
+```{r}
+n <- length(dados)
+ic.theta <- ic.assintotico(EMV = theta.est, 
+            Io = (n / theta.est^2), alpha=0.05)
+ic.mu.obs <- ic.assintotico(EMV = mu.est, 
+	     Io = -n/mu.est^2 + (2*sum(dados^2))/(mu.est^3), alpha=0.05)
+ic.mu.esp <- ic.assintotico(EMV = mu.est, Io = n/mu.est^2, alpha=0.05)
+```
+
+Vamos também criar uma função genérica à qual tem como seu argumento principal 
+a função _deviance_ do modelo.
+
+```{lemma, dev}
+**Função genérica para construir intervalo de confiança baseado na _deviance_.**
+```
+
+```{r}
+ic.deviance <- function(dev,intervalo,...){
+  ic <- uniroot.all(dev, interval=intervalo, ...)
+  return(ic)
+}
+```
+
+Usamos a função criada para obter os intervalos de confiança,
+
+```{r}
+ic.dev.theta <- ic.deviance(dev=dev.theta, intervalo=c(0,10), 
+	    theta.hat=theta.est, y=dados, desloca=qchisq(0.95, df=1))
+
+ic.dev.mu <- ic.deviance(dev=dev.mu, intervalo=c(0,100), 
+	    mu.hat=mu.est, y=dados, desloca=qchisq(0.95, df=1))
+
+```
+
+A seguir comparamos os intervalos obtidos e notamos que a discrepância entre intervalos pela deviance exata e aproximada é maior para $\mu$. Isto é explicado pelo fato da verossimilhança de $\mu$ ser mais assimétrica do que a de $\theta$. Este comportamento pode ser visualizado na Figura \@ref(fig:devExemplo4). Em geral recomenda-se que a codificação da função de verossimilhança seja sempre feita na parametrização que fornece a função mais próxima de um comportamento quadrático e isto é especialmente relevante se intervalos aproximados (assintóticos) vão ser utilizados.
+
+```{r}
+rbind(ic.theta, ic.dev.theta)
+rbind(ic.dev.mu, ic.mu.obs,ic.mu.esp)
+```
+ 
+```{r, devExemplo4, echo = FALSE, fig.width = 8, fig.height = 4, fig.cap = 'Deviances exatas e aproximadas para cada parametrização. Linhas verticais indicam os respectivos intervalos de confiança.'}
+d.theta <- apply(as.matrix(grid.theta),1,dev.theta, theta.hat = theta.est, y=dados)
+d.theta.app <- apply(as.matrix(grid.theta),1,dev.app.theta, theta.hat = theta.est, y=dados)
+
+d.mu <- apply(as.matrix(grid.mu),1,dev.mu, mu.hat = mu.est, y=dados)
+d.mu.obs <- apply(as.matrix(grid.mu),1,dev.app.mu.obs, mu.hat = mu.est, y=dados)
+d.mu.esp <- apply(as.matrix(grid.mu),1,dev.app.mu.esp, mu.hat = mu.est, y=dados)
+
+par(mfrow=c(1,2))
+plot(d.theta ~grid.theta,type="l",ylab=expression(D(theta)),xlab=expression(theta))
+lines(d.theta.app ~grid.theta, col="red", lty=1)
+abline(h=qchisq(0.95,df=1), lty=3)
+segments(ic.dev.theta, c(0,0), ic.dev.theta, dev.theta(ic.dev.theta, theta.hat = theta.est, y=dados), lty=2)
+segments(ic.theta, c(0,0), ic.theta, dev.app.theta(ic.theta, theta.hat = theta.est, y=dados), col=2, lty=2)
+legend("topleft",legend=c("Deviance","Aprox. Quadrática"),col=c("black","red"),lty=1)
+
+plot(d.mu ~grid.mu,type="l",ylab=expression(D(mu)),xlab=expression(mu))
+lines(d.mu.obs ~ grid.mu, col=2, lty=2)
+lines(d.mu.esp ~ grid.mu, col=4, lty=4)
+abline(h=qchisq(0.95,df=1), lty=3)
+segments(ic.dev.mu, c(0,0), ic.dev.mu, dev.mu(ic.dev.mu, mu.hat = mu.est, y=dados), lty=2)
+segments(ic.mu.obs, c(0,0), ic.mu.obs, dev.app.mu.obs(ic.mu.obs, mu.hat = mu.est, y=dados), col=2, lty=2)
+segments(ic.mu.esp, c(0,0), ic.mu.esp, dev.app.mu.esp(ic.mu.esp, mu.hat = mu.est, y=dados), col=4, lty=4)
+legend("topleft",legend=c("Deviance","Aprox. Quadrática - Observada","Aprox. Quadrática - Esperada"), col=c(1,2,4),lty=c(1,2,4))
+```
+
+Em situações práticas não é necessário percorrer todo o caminho feito neste exemplo, que desenvolvemos aqui de forma completa para ilustrar e reforçar conceitos, já que, reparametrização é muito comum quando ajusta-se modelos mais complexos. 
+
+Considere que temos apenas as estimativas pontuais e intervalares de $\theta$ e desejamos obter as estimativas pontual e intervalar para $\mu$. Temos que $ \theta = 1/\mu$, logo $\mu = 1/\theta$ por invariância $\hat{\mu} = 1/\hat{\theta}$. Os intervalos obtidos diretamente baseado na função _deviance_ também são invariantes então basta aplicar a transformação inversa igual feito para a estimativa pontual. Quando usamos a aproximação quadrática os intervalos não são invariantes, é neste ponto que usamos o Teorema \@ref(thm:delta). No exemplo, obtemos o intervalo aproximado para $\theta$ usando por exemplo a informação esperada e desejamos o intervalo para $\mu$. Usando o Teorema \@ref(thm:delta) sabemos que $\mu = \mathrm{g}(\theta)$ e conhecemos a $\mathrm{V}(\hat{\theta}) = \hat{\theta}^2 /n$, partindo disto precisamos encontrar a variância para $\hat{\mu}$, o Teorema \@ref(thm:delta) diz que $\mathrm{V}(\hat{\mu}) = g'(\hat{\theta})^2 I_E(\hat{\theta})^{-1}$, onde $ \mathrm{g}^{\prime}(\cdot)$ representa a primeira derivada da função $\mathrm{g}(\cdot)$. Sendo assim,
+
+$$
+\hat{\mu} = \frac{1}{\hat{\theta}} = \mathrm{g}(\hat{\theta}) \to \mathrm{g}^{\prime}(\hat{\theta}) = -\frac{1}{\hat{\theta}^2}.
+$$
+Logo, temos que
+
+\begin{align*}
+\mathrm{V}(\hat{\mu}) &= \left( - \frac{1}{\hat{\theta}^2} \right)^2 \frac{ \hat{\theta}^2}{n} \\
+               &= \frac{1}{\hat{\theta}^4} \frac{\hat{\theta}^2}{n} = \frac{1}{\hat{\theta}^2 n} \\
+               &= \frac{1}{0.400^2 \cdot 10} = 0.625
+\end{align*}
+
+Fazendo as contas no `R`,
+
+```{r}
+V.mu <- 1/(theta.est^2 * n)
+ic.mu.theta <- c(1/theta.est - qnorm(0.975)*sqrt(V.mu),
+		1/theta.est + qnorm(0.975)*sqrt(V.mu))
+```
+
+Comparando com o intervalo obtido anteriormente,
+
+```{r}
+cbind(ic.mu.theta, ic.mu.esp)
+```
+
+Os intervalos são idênticos porém com um esforço de obtenção muito menor do que redefinir a verossimilhança. O Teorema \@ref(thm:delta) as vezes é chamado de **método delta** para obter variância de estimadores. Estes resultados dos estimadores de máxima verossimilhança são muito utilizados quando estamos programando modelos mais complexos, principalmente modelos com efeitos aleatórios, onde diversos parâmetros de variância/precisão serão estimados. 
+
+De forma geral, estes tipos de estimadores vão apresentar na parametrização original, uma distribuição amostral bastante assimétrica, além de problemas de representação numérica, tornando o uso de algoritmos numéricos difícil. Reparametrizações em termos de raízes e logaritmo são muito utilizadas para estabilizar os algoritmos numéricos e tornar a distribuição amostral dos estimadores mais próxima da gaussiana, o que também ajuda para a construção de intervalos baseados na aproximação quadrática. No caso de intervalos baseados na função _deviance_ (exata), pela invariância a transformação de uma parametrização para outra é feita diretamente aplicando-se a transformação nos limites do intervalo. Para o caso da aproximação quadrática, a volta para a parametrização original pode ser feita pelo método delta. Desta forma é possível manter as interpretações desejadas em termos dos parâmetros de interesse do modelo e estimar na parametrização mais adequada computacionalmente.
+ 
+Vimos neste exemplo também, que mesmo em situações simples os intervalos baseados na função _deviance_ são de difícil obtenção e requerem algoritmos numéricos para sua obtenção. Porém de forma geral são mais realistas, no sentido de representar melhor a incerteza associada a estimação do parâmetro e possuírem propriedades ótimas.
