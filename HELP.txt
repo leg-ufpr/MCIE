@@ -1,0 +1,9 @@
+## Códigos para ajudar
+
+## Citar código
+\@ref(lem:veroAR1a)
+
+## Bloco que define código para citação
+```{lemma, veroAR1a}
+**Função de log-verossimilhança (aproximada) para o modelo AR1 com média 0 e variância 1.**
+  ```
