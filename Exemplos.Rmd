@@ -3,13 +3,13 @@
 ## Estimação pontual
 
 ```{example, label="ex1"}
-**Distribuição Poisson** - 
+**Distribuição Poisson** 
 ```  
 
 Neste exemplo vamos considerar um problema para o qual o estimador de máxima verossimilhança pode ser obtido analiticamente, porém vamos explorar diversas formas de obtê-lo também numéricamente utilizando métodos numéricos disponíveis em **R**. 
 Vamos começar mostrando quatro representações da função de verossimilhança. 
 Para facilitar a notação vamos omitir a dependência da função de verossimilhança em $\mathbf{y}$, ou seja, $\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) = \mathrm{L}(\boldsymbol{\theta})$, seguindo de forma análoga para a 
-log-verossimilhança e funções obtidas apartir destas.
+log-verossimilhança e funções obtidas a partir destas.
 
 O modelo que vamos considerar é o modelo Poisson. Sendo assim, seja $Y_i \sim P(\theta)$ com $i = 1, \ldots, n$, variáveis aleatórias independentes e denote $\overline{y} = \sum_{i=1}^n y_i/n$. A função de verossimilhança é o produto das $n$ distribuições de Poisson com parâmetro $\theta$ que neste caso é assumido comum a todas as variáveis aleatórias e desconhecido. A função de verossimilhança é dada pela expressão a seguir, notando-se que, observada uma determinada amostra, o termo no denominador é uma constante.
 
@@ -24,7 +24,7 @@ $$
 \mathrm{LR}(\theta) = \exp\{-n(\theta-\hat{\theta})\} (\theta/\hat{\theta})^{n \overline{y}}.
 $$
   
-A verossimilhança relativa assume sempre valores no intervalo unitário o que facilita a construção e visualização de gráficos. Note ainda que nesta representação o termo constante no denominador é cancelado. Uma vez que o termo constante envolve o cálculo de fatoriais o fato de cancelar é conveniente computationalmente, porque o cálculo de fatoriais é altamente suceptível a problemas numéricos.
+A verossimilhança relativa assume sempre valores no intervalo unitário o que facilita a construção e visualização de gráficos. Note ainda que nesta representação o termo constante no denominador é cancelado. Uma vez que o termo constante envolve o cálculo de fatoriais o fato de cancelar é conveniente computacionalmente, porque o cálculo de fatoriais é altamente suceptível a problemas numéricos.
 
 Outra possibilidade é usar a função de log-verossimilhança $\mathrm{l}(\theta) = \log \mathrm{L}(\theta)$ que normalmente é preferida para se trabalhar analítica e computacionalmente. Para o exemplo da distribuição de Poisson, a expressão é como se segue
 com o último termo constante para uma determinada amostra.
@@ -46,14 +46,14 @@ O primeiro passo é encontrar a verossimilhança e a log-verossimilhança.
 
 \begin{align*}
 \mathrm{L}(\theta) &= \prod_{i=1}^n \frac{ \exp\{-\theta\} \theta^{y_i}}{y_i !} = \frac{ \exp\{-n \theta\} 
-  \theta^{\sum_{i=1}^n y_i}}{\prod_{i=1}^n y_i !} \\
-\mathrm{l}(\theta) &= - n \theta + (\sum_{i=1}^n y_i) \log (\theta) - \sum_{i=1}^n \log y_i ! \\
+  \theta^{\sum_{i=1}^n y_i}}{\prod_{i=1}^n y_i !}. \\
+\mathrm{l}(\theta) &= - n \theta + (\sum_{i=1}^n y_i) \log (\theta) - \sum_{i=1}^n \log y_i!. \\
 \end{align*}
 
 Para encontrar o ponto de máximo da log-verossimilhança vamos usar a estratégia padrão de cálculo diferencial que consiste em encontrar a primeira derivada e a sua raiz. Usando a nossa terminologia vamos obter a função escore e encontrar o ponto onde ela cruza o eixo das abscissas.
 
 \begin{align*}
-\mathrm{U}(\theta) &= - n + \frac{\sum_{i=1}^n y_i}{\theta}  \\
+\mathrm{U}(\theta) &= - n + \frac{\sum_{i=1}^n y_i}{\theta}.  \\
 \end{align*}
 
 Resolvendo a equação, temos
@@ -401,7 +401,7 @@ Para encontrar o intervalo de confiança vamos começar pela função _deviance_
 \begin{eqnarray}
   \mathrm{D}(\theta) &=& 2 [ \mathrm{l}(\hat{\theta}) - \mathrm{l}(\theta)]  \nonumber \\
             &=& 2 [ n \log \hat{\theta} - \hat{\theta} n \overline{y} - ( n \log \theta - \theta n \overline{y}) ] \nonumber \\
-            &=& 2n [ \log \left(\hat{\theta}/\theta \right) + \overline{y} ( \theta - \hat{\theta}) ] \leq c^*
+            &=& 2n [ \log \left(\hat{\theta}/\theta \right) + \overline{y} ( \theta - \hat{\theta}) ] \leq c^*.
 (\#eq:devexp)            
 \end{eqnarray}
 
@@ -515,7 +515,7 @@ theta.est
 ```
 
 Como é possível ver na Figura \@ref(fig:Exemplo2) a função _deviance_ é razoavelmente aproximada por uma forma quadrática mas esta aproximação vai depender do valor do parâmetro e do tamanho da amostra. Para obter os limites inferior e superior do intervalo de confiança pela aproximação quadrática temos:
-\[ \hat{\theta}_L = \hat{\theta} - z_{\frac{\alpha}{2}} \sqrt{\hat{\theta}^2/n} \quad \text{e} \quad \hat{\theta}_U = \hat{\theta} + z_{\frac{\alpha}{2}} \sqrt{\hat{\theta}^2/n} \]
+\[ \hat{\theta}_L = \hat{\theta} - z_{\frac{\alpha}{2}} \sqrt{\hat{\theta}^2/n} \quad \text{e} \quad \hat{\theta}_U = \hat{\theta} + z_{\frac{\alpha}{2}} \sqrt{\hat{\theta}^2/n}. \]
 
 Para a amostra simulada utilizada para gerar os gráficos temos os seguintes valores:
 ```{r}
@@ -769,7 +769,7 @@ trv <- function(Est, H0, alpha, ...) {
 }
 ```
 
-```{lemma, Wald}
+```{lemma, WaldGEn}
 **Função genérica para aplicar o teste Wald.**
 ```
 
@@ -782,7 +782,7 @@ wald <- function(H0, EMV, V.EMV, alpha){
 }
 ```
 
-```{lemma, Wald}
+```{lemma, Wald2}
 **Função genérica para aplicar o teste escore.**
 ```
 
@@ -821,7 +821,7 @@ wald(H0 = 0.4, EMV = mean(dados), V.EMV = V.EMV, alpha = 0.05)
 O teste escore é ligeiramente mais complicado uma vez que é necessário 
 programar a função escore e a informação esperada.
 
-```{lemma, Wald}
+```{lemma, Wald4}
 **Função escore - Distribuição Bernoulli.**
 ```
 
@@ -832,7 +832,7 @@ U <- function(theta, y) {
 }
 ```
 
-```{lemma, Wald}
+```{lemma, Wald3}
 **Informação esperada - Distribuição Bernoulli.**
 ```
 
@@ -860,7 +860,7 @@ Por exemplo, para parâmetros de variância digamos $\sigma^2$ tem como seu inte
 Como exemplo ilustrativo deste problema, seja $Y_i : i = 1, \ldots,n$ variáveis aleatórias independentes com função densidade de probabilidade dada por:
 
 $$
-\mathrm{f}(y; \theta) = 2 \theta y \exp^{\{ -\theta y^2\}} \quad: \quad y \ge 0.
+\mathrm{f}(y; \theta) = 2 \theta y \exp^{\{ -\theta y^2\}} \quad: \quad y > 0.
 $$
 
 Considere que seja de interesse a reparametrização $\theta = \frac{1}{\mu}$. 
@@ -892,7 +892,7 @@ $$
 \mathrm{I_E}(\theta) = \mathrm{E}(\mathrm{I_O}(\theta)) = \mathrm{E} \left( \frac{n}{\theta^2} \right) = \frac{n}{\theta^2}.
 $$
 
-Neste caso em particular $\mathrm{I_O}(\theta) = \mathrm{I_E}(\theta)$ pois não dependem de $\mathbf{y}$, porém em geral isso não é válido. Com as expressões anteriores podemos estimar o parâmetro $\theta$ e encontrar um intervalo de confiança aproximado usando a aproximação quadrática. Para obter intervalos de confiança baseado na função _deviance_ precisamos resolver a seguinte equação não-linear,
+Neste caso em particular $\mathrm{I_O}(\theta) = \mathrm{I_E}(\theta)$ pois não dependem de $Y$, porém em geral isso não é válido. Com as expressões anteriores podemos estimar o parâmetro $\theta$ e encontrar um intervalo de confiança aproximado usando a aproximação quadrática. Para obter intervalos de confiança baseado na função _deviance_ precisamos resolver a seguinte equação não-linear,
 $$
 \mathrm{D}(\theta) = 2 \left[ n \log \left( \frac{\hat{\theta}}{\theta} \right) + (\theta - \hat{\theta})\sum_{i=1} ^n y_i^2 \right] \le c^*  .
 $$
@@ -993,7 +993,7 @@ segments(mu.est, log(LLMIN), mu.est, log(LLMAX))
 
 Para a construção dos intervalos de confiança baseados na _deviance_ em cada parametrização basta resolver as respectivas equações não lineares. Além disso, podemos obter os intervalos de confiança aproximados usando a informação observada e/ou esperada, dependendo da situação. A Figura \@ref(fig:devExemplo4), apresenta as funções _deviance_ exatas e aproximadas em cada parametrização. Para isto, precisamos criar cada uma das funções, para depois poder avalia-las.
 
-```{lemma, dev}
+```{lemma, dev2}
 **Funções _deviance_ exata e aproximada para os parâmetros $\theta$ e $\mu$.**
 ```
 
@@ -1121,7 +1121,8 @@ legend("topleft",legend=c("Deviance","Aprox. Quadrática - Observada","Aprox. Qu
 
 Em situações práticas não é necessário percorrer todo o caminho feito neste exemplo, que desenvolvemos aqui de forma completa para ilustrar e reforçar conceitos, já que, reparametrização é muito comum quando ajusta-se modelos mais complexos. 
 
-Considere que temos apenas as estimativas pontuais e intervalares de $\theta$ e desejamos obter as estimativas pontual e intervalar para $\mu$. Temos que $ \theta = 1/\mu$, logo $\mu = 1/\theta$ por invariância $\hat{\mu} = 1/\hat{\theta}$. Os intervalos obtidos diretamente baseado na função _deviance_ também são invariantes então basta aplicar a transformação inversa igual feito para a estimativa pontual. Quando usamos a aproximação quadrática os intervalos não são invariantes, é neste ponto que usamos o Teorema \@ref(thm:delta). No exemplo, obtemos o intervalo aproximado para $\theta$ usando por exemplo a informação esperada e desejamos o intervalo para $\mu$. Usando o Teorema \@ref(thm:delta) sabemos que $\mu = \mathrm{g}(\theta)$ e conhecemos a $\mathrm{V}(\hat{\theta}) = \hat{\theta}^2 /n$, partindo disto precisamos encontrar a variância para $\hat{\mu}$, o Teorema \@ref(thm:delta) diz que $\mathrm{V}(\hat{\mu}) = g'(\hat{\theta})^2 I_E(\hat{\theta})^{-1}$, onde $ \mathrm{g}^{\prime}(\cdot)$ representa a primeira derivada da função $\mathrm{g}(\cdot)$. Sendo assim,
+Considere que temos apenas as estimativas pontuais e intervalares de $\theta$ e desejamos obter as estimativas pontual e intervalar para $\mu$. Temos que $\theta = 1/\mu$, logo $\mu = 1/\theta$ por invariância $\hat{\mu} = 1/\hat{\theta}$. Os intervalos obtidos diretamente baseado na função _deviance_ também são invariantes então basta aplicar a transformação inversa igual feito para a estimativa pontual. Quando usamos a aproximação quadrática os intervalos não são invariantes, é neste ponto que usamos o Teorema \@ref(thm:delta). No exemplo, obtemos o intervalo aproximado para $\theta$ usando por exemplo a informação esperada e desejamos o intervalo para $\mu$. Usando o Teorema \@ref(thm:delta) sabemos que 
+$\mu = \mathrm{g}(\theta)$ e conhecemos a $\mathrm{V}(\hat{\theta}) = \hat{\theta}^2 /n$, partindo disto precisamos encontrar a variância para $\hat{\mu}$, o Teorema \@ref(thm:delta) diz que $\mathrm{V}(\hat{\mu}) = g^{\prime}(\hat{\theta})^2 I_E(\hat{\theta})^{-1}$, onde $\mathrm{g}^{\prime}(\cdot)$ representa a primeira derivada da função $\mathrm{g}(\cdot)$. Sendo assim,
 
 $$
 \hat{\mu} = \frac{1}{\hat{\theta}} = \mathrm{g}(\hat{\theta}) \to \mathrm{g}^{\prime}(\hat{\theta}) = -\frac{1}{\hat{\theta}^2}.
@@ -1153,3 +1154,6 @@ Os intervalos são idênticos porém com um esforço de obtenção muito menor d
 De forma geral, estes tipos de estimadores vão apresentar na parametrização original, uma distribuição amostral bastante assimétrica, além de problemas de representação numérica, tornando o uso de algoritmos numéricos difícil. Reparametrizações em termos de raízes e logaritmo são muito utilizadas para estabilizar os algoritmos numéricos e tornar a distribuição amostral dos estimadores mais próxima da gaussiana, o que também ajuda para a construção de intervalos baseados na aproximação quadrática. No caso de intervalos baseados na função _deviance_ (exata), pela invariância a transformação de uma parametrização para outra é feita diretamente aplicando-se a transformação nos limites do intervalo. Para o caso da aproximação quadrática, a volta para a parametrização original pode ser feita pelo método delta. Desta forma é possível manter as interpretações desejadas em termos dos parâmetros de interesse do modelo e estimar na parametrização mais adequada computacionalmente.
  
 Vimos neste exemplo também, que mesmo em situações simples os intervalos baseados na função _deviance_ são de difícil obtenção e requerem algoritmos numéricos para sua obtenção. Porém de forma geral são mais realistas, no sentido de representar melhor a incerteza associada a estimação do parâmetro e possuírem propriedades ótimas.
+
+Até aqui discutimos em detalhes a obtenção de estimativas pontuais, intervalares e testes de hipóteses. 
+Porém, em todos os exemplos tinhamos apenas um parâmetro para ser estimado. No próximo capítulos vamos discutir exemplos com dois parâmetros e como as ideias generalizam para um número arbitrário de parâmetros.

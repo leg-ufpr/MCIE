@@ -1,0 +1,998 @@
+# Exemplos adicionais
+
+## Modelo autoregressivo de ordem 1
+
+Nos exemplos do Capítulo 4 consideramos observações independentes e a verossimilhança é
+portanto dada pelo produto das densidades. Vamos considerar agora um modelo simples, porém
+com observações não independentes. Tomamos o caso de um modelo AR1 (autoregressivo de ordem 1) para dados gaussianos que é um modelo básico em séries temporais. Um texto de
+referência na área é @Toloi:2004. Vamos considerar uma versão simplificada deste modelo
+assumindo que o processo possui média zero e variância unitária. Desta forma, o modelo é
+definido por:
+
+\begin{align}
+y_{t+1} &= \rho y_t + e_{t+1}  \\
+\nonumber e_t &\sim N(0, \sigma^2=1) \\
+\nonumber \mbox{com } & |\rho| < 1.
+\end{align}
+
+Decorre deste modelo que
+\begin{align*}
+[Y_t|Y_{t-1}] &\sim N(\rho \, y_{t-1}, 1)  \;\; ; \;\; t = 2, \ldots, n \;, \\
+[Y_1] &\sim N(0, 1/(1-\rho^2)).
+\end{align*}
+
+Uma simulação da série fixando os valores necessários é feita com os comandos a seguir.
+Definimos o valor do parâmetro $\rho = 0,7$ e o número de observações $n = 100$.
+A série simulada é mostrada na Figura \@ref(fig:simar1).
+
+```{r simar1, echo = TRUE, fig.width = 8, fig.height = 5, fig.cap = 'Valores da série simulada - Modelo AR1.'}
+set.seed(1242)
+rho <- 0.7 ; n <- 100
+y <- numeric(n) ## cria vetor com elementos nulos
+y[1] <- rnorm(1, m=0, sd=sqrt(1/(1-rho^2)))
+for(i in 2:n)
+  y[i] <- rho * y[i-1] + rnorm(1)
+plot(y, type="l")
+```
+
+A expressão da função de verossimilhança é equivalente à distribuição conjunta para as $n$
+observações, uma distribuição gaussiana multivariada neste caso. Vamos explorar aqui
+algumas formas alternativas de escrever esta função.
+
+Podemos escrever a distribuição conjunta com a expressão da distribuição multivariada
+gaussiana de $[Y_1, \ldots, Y_n]$ induzida pelo modelo ou pelo produto das
+distribuições condicionais univariadas. No caso do modelo AR1 as distribuições univariadas
+dependem apenas da observação anterior e temos então que a expressão da verossimilhança é:
+
+\begin{align}
+\mathrm{L}(\rho) &\equiv [Y_1, Y_2, \ldots, Y_n] = [Y_1] [Y_2|Y_1] \ldots [Y_t|Y_{t-1}] = [Y_1] \prod_{t=2}^n [Y_t|Y_{t-1}].
+(\#eq:ar1)
+\end{align}
+
+Uma verosimilhança aproximada é obtida ignorando-se a contribuição da primeira observação,
+ou seja pela distribuição condicional à primeira observação,
+
+\begin{equation}
+\mathrm{L_A}(\rho)  =  \prod_{t=2}^n [Y_t|Y_{t-1}].
+(\#eq:ar1A)
+\end{equation}
+
+Neste caso é possível encontrar o estimador do parâmetro em forma fechada com $\mathrm{L_A}(\rho)$ mas métodos numéricos são necessários para maximizar $\mathrm{L}(\rho)$. 
+
+Entretanto, no que segue vamos sempre utilizar métodos numéricos uma vez que o foco
+aqui não é discutir este modelo em particular mas sim ilustrar implementações que possam
+ser adaptadas para modelos que possuam estrutura similar.
+
+Começamos definindo no código \@ref(lem:veroAR1a) a função de verossimilhança aproximada.
+Por conveniência definimos também uma versão vetorizada da função o que pode ser feito facilmente usando a função `Vectorize()`. Vetorizar a função é útil para processar diversos valores do parâmetro de uma só vez como, por exemplo, quando fazemos gráficos da função.
+
+```{lemma, veroAR1a}
+**Função de log-verossimilhança (aproximada) para o modelo AR1 com média 0 e variância 1.**
+```
+
+```{r}
+llAR1.a <- function(par, sigma=1, dados) {
+    n <- length(dados)
+    ll <- sum(dnorm(dados[2:n], mean=par*dados[1:(n-1)], 
+                    sd=sigma, log=TRUE))
+    return(ll)
+}
+llAR1.a.V <- Vectorize(llAR1.a, "par")
+```
+
+Com o comando a seguir obtém-se, por algorítimos numéricos, a estimativa 
+do parâmetro $\rho$ que maximiza a função de verossimilhança aproximada.  
+
+```{r}
+unlist(rho.est.a <- optimize(llAR1.a, int=c(0, 1), dados=y, maximum=TRUE))
+(rho.a <- rho.est.a$maximum)
+```
+
+No código \@ref(lem:veroAR1comp} a seguir definimos a verossimilhança completa que 
+inclui a distribuição da primeira observação que neste caso é convenientemente especificada como, 
+\[ 
+[Y_1] \sim N(0, 1/(1-\rho^2)) .
+\]
+
+```{lemma, veroAR1comp}
+**Função de log-verossimilhança (completa) para o modelo AR1 com média 0 e variância 1.**
+```
+
+```{r}
+llAR1 <- function(par, sigma = 1, dados){
+  n <- length(dados)
+  ll <- dnorm(dados[1], mean=0, sd=sigma*sqrt(1/(1-par^2)), log=TRUE) +
+    sum(dnorm(dados[2:n],mean=par*dados[1:(n-1)],sd=sigma,log=TRUE)) 
+}
+llAR1.V <- Vectorize(llAR1, "par")
+```
+
+Com esta função obtemos uma estimativa que, neste caso, é próxima à obtida com a verossimilhança aproximada.
+
+```{r}
+unlist(rho.est <- optimize(llAR1, c(0,1), dados=y, maximum=TRUE))
+(rho.emv <- rho.est$maximum)
+```
+
+A seguir vamos traçar os gráficos das funções de verossimilhança. Inicialmente vamos definir uma função deviance genérica no sentido de que pode ser calculada dada uma verossimilhança. 
+
+```{lemma, devgenAR1}
+**Função _deviance_ genérica.**
+```
+
+```{r}
+devfun <- function(par, llfun, est, ...) 
+     2*(llfun(est, ...) - llfun(par, ...))
+```
+
+Os gráficos das funções de verossimilhança e deviance aproximada e completa para os
+dados simulados são apresentados na Figura \@ref(fig:veroar1). 
+Para a primeira consideramos valores em todo o espaço paramétrico enquanto que para segunda tomamos apenas valores ao redor da estimativa de máxima verossimilhança (completa). O intervalo de confiança foi definido aqui pela faixa de valores para $\rho$ cuja verossimilhança seja de ao menos
+10\% da verosimilhança maximizada ($r=0,10$). Para isto encontramos o valor de corte correspondente na função deviance $cD = -2 \log(r) = 4,605$ e usamos a função ``uniroot.all()`` do pacote ``rootSolve`` para encontrar os limites do intervalo.
+
+```{r}
+require(rootSolve)
+ICdev <- function(par, devfun, cD, ...) devfun(par, ...) - cD 
+(IC.rel10 <- uniroot.all(ICdev, c(0,1), devfun=devfun, cD=-2*log(0.1), 
+                         llfun=llAR1.V, est=rho.emv, dados=y))
+```
+
+```{r veroar1, echo = FALSE, fig.width = 8, fig.height = 5, fig.cap = 'Função de verossimilhança (esquerda) e _deviance_ (direita) aproximada (vermelha) e completa (preta) com estimativas pontual e intervalar do parâmetro rho para os dados simulados do modelo AR1.'}
+par(mfrow=c(1,2))
+curve(llAR1.a.V(x, dados=y), 0, 1, xlab=expression(rho), ylab=expression(l(rho)), col=2)  
+curve(llAR1.V(x, dados=y), 0, 1, add=T)  
+segments(rho.a, llAR1.a(0, dados=y), rho.a, rho.est.a$objective, lty=3, col=2)
+segments(rho.emv, llAR1(0, dados=y), rho.emv, rho.est$objective, lty=3)
+curve(devfun(x, est=rho.a, llfun=llAR1.a.V, dados=y), 0.56, 0.88, xlab=expression(rho), ylab=expression(D(rho)), col=2)  
+curve(devfun(x, est=rho.emv, llfun=llAR1.V, dados=y), 0.56, 0.88, add=T)  
+arrows(rho.emv, 1, rho.emv,0, length=0.12) 
+text(rho.emv, 1, substitute(hat(rho) == a,  list(a=round(rho.emv, dig=3))), pos=3)
+segments(IC.rel10, c(0,0), IC.rel10, devfun(IC.rel10, llfun=llAR1.V, est=rho.emv, dados=y), lty=2) 
+IC.rel10r <- round(IC.rel10, dig=3) 
+text(IC.rel10[1], 4.5, substitute(group("(", list(a, b), ")")["10%"], list(a=IC.rel10r[1], b=IC.rel10r[2])), pos=4)
+```
+
+Em implementações que visam eficiência a função `llAR1()` pode ser reescrita evitando o uso de `dnorm()` e utilizando as expressões das densidades escritas em função de estatísticas suficientes. Isto reduz o tempo computacional em procedimentos iterativos e/ou que avaliam a função muitas vezes.
+
+Passamos agora a outra forma de escrever a verossimilhança utilizando a expressão da densidade conjunta (multivariada). 
+
+\begin{equation}
+[Y_1, \ldots,  Y_N] \sim N(0, \Sigma),
+(\#eq:AR1mv)
+\end{equation}
+em que os elementos de $\Sigma$ são $\Sigma_{ij} = \rho^{|i-j|}(1/(1-\rho^2))$.
+Os elementos da matriz são portanto função da distância $|i-j|$ entre as observações. 
+No comando a seguir ilustramos como montar esta matriz calculando as distâncias entre pares de pontos e depois calculando os valores para $\rho=0,70$.
+
+```{r}
+n <- length(y)
+{S <- diag(n) ; S <- abs(row(S)-col(S))}
+S <- 0.7^S * (1/(1-0.7^2))
+```
+
+A expressão da log-verossimilhança é obtida pela densidade da distribuição gaussiana multivariada, sendo então:
+
+\begin{equation}
+\mathrm{l}(\boldsymbol{\theta}) = \mathrm{l}(\sigma, \rho) =
+-\frac{n}{2}\log(2\pi) - \frac{1}{2}\log(|\Sigma|) - \exp\{\frac{1}{2}y\prime \Sigma^{-1}y\}.
+(\#eq:ar1mv2)
+\end{equation}
+
+Os três comandos a seguir mostram diferentes formas de avaliar esta densidade que produzem os mesmos resultados porém com tempos de execução distintos. Para ilustrar comparamos os tempos de execução de 100 avaliações destas funções. Os valores dos tempos não são relevantes e podem variar de um computador para outro. O relevante aqui é a comparação dos tempos, por exemplo tomando suas razões.
+
+```{r}
+system.time(replicate(100, mvtnorm::dmvnorm(y,rep(0,n),S,log=T)))
+
+system.time(replicate(100, (-n/2) * log(2*pi) - 
+    determinant(S,log=T)$mod/2 - 0.5*mahalanobis(y,center=0,cov=S)))
+
+system.time(replicate(100, {Schol <- chol(S);
+             (-n/2) * log(2*pi) - sum(log(diag(Schol))) - 
+             0.5*crossprod(backsolve(Schol, y, transpose=T))}))
+```
+
+O custo computacional é determinado pelas operações que envolvem a matriz de covariância. A primeira estratégia utiliza a implementação do pacote `mvtnorm`. A segunda estratégia é a mais lenta pois acaba fazendo contas redundantes no cálculo do determinante e da forma quadrática $y^{\prime}\Sigma^{-1} y$. A terceira estratégia é a mais eficiente pois tem o custo associado ao cálculo da decomposição de Choleski de $\Sigma$ que, uma vez calculado, é usado para calcular de forma computacionalmente barata tanto o determinante quanto a forma quadrática. Estas diferenças podem ser muito relevantes em modelos que possuem alguma estrutura de covariância quando avalia-se a função de log-verossimilhança muitas vezes, como algoritmos de maximização ou de inferência por simulação. As diferenças serão maiores com o aumento do número de observações.
+
+Para o caso considerado aqui, ganhos adicionais de tempo computacional ainda podem ser obtidos. Em certos casos, resultados analíticos podem ser usados ao escrever as funções. No modelo AR1 considerado aqui a matriz $\Sigma$ tem inversa de forma conhecida e o código pode ser escrito de forma mais eficiente evitando a inversão da matriz ou a solução de sistemas lineares. Os elementos de $\Sigma^{-1}$ são:
+
+\[  \left\{ \begin{array}{ll}
+ \Sigma^{-1}_{i,i} = 1         &  \mbox{ para } i=1 \mbox{ e } i=n \\
+ \Sigma^{-1}_{i,i} = 1+\rho^2  &  \mbox{ para } 1 < i < n \\
+ \Sigma^{-1}_{i,j} = -\rho     &  \mbox{ para } |i-j| = 1 \\
+ \Sigma^{-1}_{i,j} = 0         &  \mbox{ para } |i-j| > 1
+\end{array} \right.
+\]
+
+A matriz para os dados simulados poderia ser montada da forma como mostrado a seguir onde exibimos as cinco primeiras linhas e colunas. 
+
+```{r}
+iS <- diag(1+0.7^2, n)
+diag(iS)[1] <- diag(iS)[n] <- 1
+iS[abs(row(iS)-col(iS))==1] <- -0.7
+iS[1:5, 1:5]
+```
+
+Desta forma o código pode ser escrito de forma ainda mais eficiente evitando inversão de matriz (ou a solução de sistemas lineares) no cálculo da forma quadrática. Além disto, o determinante de $\Sigma$ possui expressão conhecida ${\rm det}(\Sigma) = 1/(1-\rho^2)$.
+Com estes resultados o cálculo da verossimilhança pode ser substancialmente acelerado em comparação com os códigos anteriores, conforme mostra o código a seguir.
+
+```{r, echo = FALSE, results= 'hide'}
+#conferindo: comparando varias formas!!
+llAR1(0.7, dados=y)
+
+mvtnorm::dmvnorm(y, rep(0,n), S, log=T)
+
+-(n/2) * log(2*pi) - 0.5*c(determinant(S, log=T)$mod) - 
+                     0.5*mahalanobis(y, center=0, cov=S)
+
+Schol <- chol(S)
+(-n/2) * log(2*pi) - sum(log(diag(Schol))) - 
+        0.5*drop(crossprod(backsolve(Schol, y, transpose=T)))
+
+-(n/2) * log(2*pi) +
+     0.5*c(determinant(iS, log=T)$mod) - 
+     0.5*mahalanobis(y, center=0, cov=iS, inverted=TRUE)
+
+iSchol <- chol(iS)
+(-n/2) * log(2*pi) + sum(log(diag(iSchol))) - 
+        0.5*drop(crossprod(iSchol %*% y))
+
+0.5*(-n*log(2*pi) + log(1-0.7^2) - 
+        drop(crossprod(y, iS %*% y)))
+
+0.5*(-n*log(2*pi) + log(1-0.7^2) -
+     mahalanobis(y, center=0, cov=iS, inverted=TRUE))
+```
+
+
+```{r}
+system.time(replicate(100, {iSchol <- chol(iS)
+(-n/2) * log(2*pi) + sum(log(diag(iSchol))) - 
+        0.5*drop(crossprod(iSchol %*% y))}))
+
+system.time(replicate(100, 0.5*(-n*log(2*pi) + log(1-0.7^2) -
+     mahalanobis(y, center=0, cov=iS, inverted=TRUE))))
+
+system.time(replicate(100, 0.5*(-n*log(2*pi) + log(1-0.7^2) - 
+                                  drop(crossprod(y, iS %*% y)))))
+```
+
+Finalmente vamos comparar com o tempo para o cálculo utilizando a forma fatorada da verossimilhança, ou seja, com o produto de distribuições univariadas. 
+
+```{r}
+system.time(replicate(100, llAR1(0.7, dados=y)))
+```
+
+E ainda há outras melhorias possíveis! A matriz inversa $\Sigma^{-1}$ é esparsa (muitos elementos iguais a zero) e algorítmos e funções específicas como os do pacote ``Matrix`` podem ser utilizados não só para eficiência mas também para reduzir o uso de memória para armazenar tais matrizes. Deixamos tal implementação como sugestão ao leitor.
+
+No código \@ref(lem:veroAR1mv) implementamos a função de verossimilhança que é depois maximizada para obter a estimativa do parâmetro $\rho$.
+
+
+```{lemma, veroAR1mv}
+**Função de verossimilhança escrita como densidade multivariada para modelo AR1.**
+```
+
+```{r}
+llAR1mv <- function(par, sigma = 1, dados){
+    n <- length(dados)
+    iS <- diag(1+par^2, n)
+    diag(iS)[1] <- diag(iS)[n] <- 1
+    iS[abs(row(iS)-col(iS))==1] <- -par
+    return(0.5*(-n*log(2*pi) - 2*n*log(sigma) + log(1-par^2) - 
+                drop(crossprod(dados, iS %*% dados))/sigma^2))
+}
+```
+
+```{r}
+unlist(optimize(llAR1mv, c(0,1), dados=y, maximum=TRUE))
+```
+
+Vamos agora não mais fixar o valor para a variância $\sigma^2$ e considerá-la um parâmetro também a ser estimado. Neste caso os elementos da matrix de covariância em \@ref(lem:veroAR1mv) são $\Sigma_{ij} = \rho^{|i-j|}(\sigma^2/(1-\rho^2))$. A função de log-verossimilhança $l(\boldsymbol{\theta}) = l(\sigma, \rho)$ fica como a seguir. 
+A implementação supõe que o primeiro argumento da função é um vetor de comprimento dois com os valores para  $\sigma$ e $\rho$ , nesta ordem.
+
+```{lemma, veroAR1mv2}
+**Função de log-verossimilhança l(sigma, rho) para o modelo AR1.**
+```
+
+```{r}
+llAR1mv2 <- function(par, dados, repar=FALSE){
+  ## par: vetor com valores de (sigma, rho), nesta ordem
+  n <- length(dados) 
+  if(repar){
+    sigma <- exp(par[1])
+    rho <- (exp(2*par[2])-1)/(exp(2*par[2])+1)
+  } 
+  else{ sigma <- par[1]; rho <- par[2]}
+  iS <- diag(1+rho^2, n)
+  diag(iS)[1] <- diag(iS)[n] <- 1
+  iS[abs(row(iS)-col(iS))==1] <- -rho
+  return(0.5*(-n*log(2*pi) - 2*n*log(sigma) + log(1-rho^2) - 
+              drop(crossprod(dados, iS %*% dados))/sigma^2))
+}
+```
+
+Nesta parametrização do modelo AR1 temos que o espaço paramétrico é restrito $\sigma > 0$ e $|\rho| < 1$. Uma possível reparametrização para qual o espaço paramétrico é o $\Re^2$ é adotar $\tau = \log(\sigma)$ e a transformação Z de Fisher $\varphi = \frac{1}{2} \log\left(\frac{1+\rho}{1-\rho}\right)$. Esta opção é implementada pelo argumento `repar` na função de verossimilhança definida em \@ref(lem:veroAR1mv2). Desta forma as três chamadas a seguir produzem o mesmo valor.
+
+```{r, echo=T,eval=F}
+# Original
+llAR1mv(0.7, dados=y)
+
+# Com sigma = 1
+## devem retornar os mesmos valores:
+llAR1mv2(c(1, 0.7), dados=y)
+
+# Reparametrizada
+llAR1mv2(c(log(1), 0.5 * log((1+0.7)/(1-0.7))), dados=y, repar=TRUE)
+```
+
+O código para obter as estimativas dos parâmetros por maximização numérica para os casos sem e com reparametrização é dado a seguir. No primeiro caso é necessário utilizar o método `L-BFGS-B` para poder delimitar o espaço paramétrico com os argumentos `lower` e `upper`. No segundo caso isto não é necessário uma vez que o espaço paramétrico para o modelo reparametrizado é irrestrito. Pelo princípio da invariância tem-se que os valores maximizados das verossimilhanças são iguais. Eventuais diferenças, se houverem devem ser pequenas e devidas a erros numéricos. Mostramos ainda como os valores das estimativas no segundo caso, quando transformados de volta, produzem os mesmos valores.
+
+```{r}
+opar <- optim(c(1, 0.7), fn=llAR1mv2, dados=y, method="L-BFGS-B", 
+              lower=c(0, -1), upper = c(Inf, 1),
+              control=list(fnscale=-1), hessian=TRUE)
+unlist(opar[1:2]) 
+
+rpar <- optim(c(log(1), 0.5* log((1+0.7)/(1-0.7))), fn=llAR1mv2, 
+         dados=y, repar=TRUE, control=list(fnscale=-1), hessian=TRUE)
+unlist(rpar[1:2])
+c(exp(rpar[[1]][1]), (exp(2*rpar[[1]][2])-1)/(exp(2*rpar[[1]][2])+1))
+```
+
+A Figura \@ref(fig:devAR1) mostra as superfícies de verossimilhança para ambas parametrizações. Neste caso, a parametrização original produziu contornos mais próximos de um comportamento quadrático. Outro fato relevante revelado na figura é a quase ortogonalidade entre os parâmetros que pode ser observada em ambos os casos. 
+Isto pode ser verificado numericamente na matriz de covariância dos estimadores obtida pela inversa da matriz de informação observada. Temos aqui que os elementos fora da diagonal possuem valores pequenos em comparação com os da diagonal, ou seja a matriz é proxima de uma matriz diagonal.
+
+```{r, echo=F,results = 'hide'}
+Nseq <- 201
+s.s <- seq(0.77, 1.22, len=Nseq)
+r.s <- seq(0.5, 0.93, len=Nseq)
+t.s <- expand.grid(s.s, r.s)
+vero1 <- apply(as.matrix(t.s), 1, llAR1mv2, dados=y)
+dev1 <- -2 * (vero1 - opar$value)
+
+s.s2 <- seq(log(0.77), log(1.22), len=Nseq)
+r.s2 <- seq(0.5*log((1+0.5)/(1-0.5)), 0.5*log((1+0.93)/(1-0.93)), len=Nseq)
+t.s2 <- expand.grid(s.s2, r.s2)
+                    
+vero2 <- apply(as.matrix(t.s2), 1, llAR1mv2, dados=y, repar=TRUE)
+dev2 <- -2 * (vero2 - rpar$value)
+```
+
+```{r devAR1, echo = FALSE, fig.width = 8, fig.height = 5, fig.cap = 'Superfícies de deviance para o modelo AR1 para parâmetros originais (esquerda) e reparametrizado (direita).'}
+par(mfrow = c(1, 2), mar=c(2.6, 2.6, 1.2, 0.5), mgp = c(1.6, 0.6, 0))
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(s.s, r.s, matrix(dev1,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,
+        xlab=expression(sigma), ylab=expression(rho))
+points(t(opar[[1]]), pch=20, col=2)
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(s.s2, r.s2, matrix(dev2,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,
+        xlab=expression(tau),ylab=expression(varphi))
+points(t(rpar[[1]]), pch=20, col=2)
+``` 
+
+```{r}
+-solve(opar$hessian)
+-solve(rpar$hessian)
+```
+
+Vamos focar agora na inferência sobre o parâmetro $\rho$ neste modelo de dois parâmetros, ou seja, o parâmetro $\sigma^2$ é considerado _nuisance_. No modelo definido em \@ref(eq:AR1mv) a matriz de covariâncias pode ser reescrita como $\Sigma = \sigma^2 R_{\rho}$ destacando que a matriz de correlação $R_{\rho}$ tem seus termos dependendo apenas do parâmetro $\rho$. A função de verrosimilhança fica equivalente a 
+\begin{equation}
+\mathrm{l}(\boldsymbol{\theta}) = \mathrm{l}(\sigma, \rho) =
+-\frac{n}{2}\log(2\pi) - \frac{n}{2}\log(\sigma^2) - \frac{1}{2}|R_{\rho}| - \exp\{\frac{1}{2\sigma^2}y^{\prime} R_{\rho}^{-1}y\}.
+(\#eq:veroAR1s)
+\end{equation}
+
+Tomando-se a derivada em relação à $\sigma^2$ e igualando à zero obtém-se o estimador deste parâmetro em relação à $\rho$, 
+\[ \hat{\sigma}_{\rho}^2 = \frac{y^{\prime} R_{\rho}^{-1}y}{n} .\]
+
+A verossimilhança concentrada ou _perfilhada_ de $\rho$ é então obtida substituindo-se $\sigma^2$ por $\hat{\sigma}_{\rho}^2$ em \@ref(eq:veroAR1s) e temos então:
+\[\mathrm{pl}(\rho) = -\frac{n}{2}\left(\log(2\pi) + \log(\sigma^2) + 1\right) - \frac{1}{2} \log(|R_{\rho}|) . \]
+Esta função é implementada em \@ref(lem:pveroAR1) e retorna dois valores: o da verossilhança $\mathrm{l}(\rho, \sigma^2_{\rho})$ e de $\sigma^2_{\rho}$, a estimativa de $\sigma^2_{\rho}$ ao valor de $\rho$.
+
+A implementação da função de verossimilhança perfilhada é simples. Tomamos a verossilhança que tem apenas $\rho$ como parâmetro e adicionamos a opção para que se $\sigma$ não for fornecido seja calculado para o valor corrente de $\rho$. Se o valor de $\sigma$ for fornecido é tomado como constante e a verossimilhança condicional à este valor é calculada.
+
+
+```{lemma, pveroAR1}
+**Função para o cálculo da verossimilhança perfilhada e condicional para o modelo AR1.**
+```
+```{r}
+llAR1.rho <- function(rho, sigma, dados){
+    n <- length(dados)
+    iS <- diag(1+rho^2, n)
+    diag(iS)[1] <- diag(iS)[n] <- 1
+    iS[abs(row(iS)-col(iS))==1] <- -rho
+    if(missing(sigma))
+        sigma2 <- drop(crossprod(dados, iS %*% dados)/n)
+    else sigma2 <- sigma^2
+    return(0.5*(-n*log(2*pi) - n*log(sigma2) + log(1-rho^2) - 
+                drop(crossprod(dados, iS %*% dados))/sigma2))
+}
+```
+
+
+```{r, echo=F,eval=F}
+## vero perfilhada (testes)
+llAR1.rho(0.7, dados=y)
+llAR1.rho(opar[[1]][2], dados=y)
+unlist(opar[1:2])
+llAR1.rho(0.7, sigma=opar[[1]][1], dados=y)
+llAR1.rho(opar[[1]][2], sigma=opar[[1]][1], dados=y)
+unlist(opar[1:2])
+```
+
+O gráfico da _deviance_ perfilhada é visualizado à direita na Figura \@ref(fig:perfAR1). Também é traçada a verossimilhança condicional na qual o valor de $\sigma^2$ é fixado em sua estimativa de máxima verossimilhança 
+\[\hat{\sigma}^2 =  \hat{\sigma}_{\hat{\rho}}^2 = \frac{y^{\prime} \hat{R}_{\hat{\rho}}^{-1}y}{n} .\]
+
+As funções diferem considerando uma maior região do espaço paramétrico conforme mostrado no gráfico do centro. Entretanto, na região do espaço paramétrico relevante para inferências no entorno do ponto de máximo as funções são quase indistinguíveis. Isto é mais um reflexo da quase ortogonalidade entre os parâmetros ao redor do máximo da função. No gráfico da deviance mostrada à esquerda e linhas indicam os cortes para obtenção das perfilhadas e condicionais. 
+
+
+```{r perfAR1, echo = FALSE, fig.width = 9, fig.height = 3, fig.cap = 'Superfície de deviance (esquerda) com indicações dos cortes para obtenção das perfilhadas e condicionais. Deviances perfilhadas e condicionais para o parâmetro rho do modelo AR1.'}
+par(mfrow=c(1,3),mar=c(2.6, 2.6, 1.5, 0.8),mgp=c(1.5, 0.6, 0))
+## verossimilhanças condicionais e perfilhadas
+sigma.rho <- function(rho, dados){ 
+    n <- length(dados)
+    iS <- diag(1+rho^2, n)
+    diag(iS)[1] <- diag(iS)[n] <- 1
+    iS[abs(row(iS)-col(iS))==1] <- -rho
+    return(sqrt(drop(crossprod(dados, iS %*% dados))/n))
+}
+#sigma.rho(0.7, dados=y)
+#sigma.rho(opar[[1]][2], dados=y)
+
+vero.perf.s <- sapply(r.s, llAR1.rho, dados=y)
+dev.perf.s <- -2 * (vero.perf.s - opar$value)
+sigma.perf.s <- sapply(r.s, sigma.rho, dados=y)
+
+vero.cond.s <- sapply(r.s, llAR1.rho, sigma=opar[[1]][1], dados=y)
+dev.cond.s <- -2 * (vero.cond.s - opar$value)
+##
+r.seq <- seq(0.01, 0.99, length=Nseq)
+vero.perf.seq <- sapply(r.seq, llAR1.rho, dados=y)
+dev.perf.seq <- -2 * (vero.perf.seq - opar$value)
+sigma.perf.seq <- sapply(r.seq, sigma.rho, dados=y)
+
+vero.cond.seq <- sapply(r.seq, llAR1.rho, sigma=opar[[1]][1], dados=y)
+dev.cond.seq <- -2 * (vero.cond.seq - opar$value)
+##
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(s.s, r.s, matrix(dev1,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,
+        xlab=expression(sigma),ylab=expression(rho))
+points(t(opar[[1]]), pch=20, col=2)
+abline(v=opar[[1]][1], h=opar[[1]][2], lty=3, col=2, lwd=1.5)
+lines(sigma.perf.s, r.s, lty=2, lwd=1.7)    
+
+plot(r.seq, dev.perf.seq, type="l", xlab=expression(rho),
+     ylab=expression(pl(rho, hat(sigma)[rho])))
+lines(r.seq, dev.cond.seq, lty=2, col=2)
+legend(0.4, 70, c("Perfilhada","Condicional"), col=1:2, lty=1:2, cex=0.8)
+
+plot(r.s, dev.perf.s, type="l", xlab=expression(rho),
+     ylab=expression(pl(rho, hat(sigma)[rho])))
+lines(r.s, dev.cond.s, lty=2, col=2)
+legend(0.6, 10, c("Perfilhada","Condicional"), col=1:2, lty=1:2, cex=0.8)
+```
+
+Para finalizar consideramos o modelo AR1 mais geral, que inclui um termo para descrever a média do processo. Uma forma de escrever tal modelo é: 
+\begin{align}
+y_{t+1} &= \alpha + \rho y_t + e_{t+1}  \\
+(\#eq:ar1alpha)
+\nonumber e_{t+1} & \sim {\rm N}(0, \sigma^2)
+\end{align}
+A média do processo é dada por:
+\[ {\rm E}[y_t] = \mu = \frac{\alpha}{1-\rho},  \]
+e o modelo acima pode ser então reescrito na forma:
+\begin{equation}
+\label{eq:ar1mu} 
+y_{y+1} = (1-\rho) + \rho y_t + e_{t+1}. 
+(\#eq:ar1mu)
+\end{equation}
+Para a expressão da verossimilhança, simplesmente acrescenta-se o termo 
+de média a \@ref(eq:veroAR1mu) que fica:
+\begin{equation}
+l(\underline{\theta}) = l(\sigma, \rho) =
+-\frac{n}{2}\log(2\pi) - \frac{1}{2}\log(|\Sigma|) - \exp\{\frac{1}{2}(y-\mu)^{\prime} \Sigma^{-1})y-\mu)\}.
+(\#eq:veroAR1mu)
+\end{equation}
+
+O código retornando o negativo da função de verossimilhança é implementado em \@ref(lem:veroAR1mu) e a seguir são mostradas as estimativas para os dados aqui considerados.
+
+
+```{lemma, veroAR1mu}
+**Função de verossimilhança para o modelo AR1.**
+```
+
+```{r}
+llAR1mv3 <- function(par, dados){
+    ## par: vetor com valores de (mu, sigma, rho), nesta ordem
+    n <- length(dados) 
+    mu <- par[1]; sigma <- par[2]; rho <- par[3]
+    iS <- diag(1+rho^2, n)
+    diag(iS)[1] <- diag(iS)[n] <- 1
+    iS[abs(row(iS)-col(iS))==1] <- -rho
+    ymu <- dados - (1-rho)*mu
+    return(-0.5*(-n*log(2*pi) - 2*n*log(sigma) + log(1-rho^2) - 
+                 drop(crossprod(ymu, iS %*% ymu))/sigma^2))
+}
+```
+
+```{r}
+llAR1mv3(c(0,1,0.5), dados=y)
+par3 <- optim(c(0,1,0.5), llAR1mv3, hessian=TRUE, dados=y)
+unlist(par3[1:2])
+round(solve(par3$hessian), dig=4)
+```
+
+Existem pacotes e funções específicas para ajustar modelos de séries temporais no `R`, 
+descritos na _Time Series Task View_[http://cran.r-project.org/web/views/TimeSeries.html]
+As funções `ar()` e `arima()` estão entre as disponíveis e produzem resultados como mostrado a seguir, que diferem dos anteriores pois incluem a média na estimação o modelo com três parâmetros $(\mu, \sigma, \rho)$.
+
+```{r}
+(fit.ar <- ar(y, order.max=1, method="mle"))
+with(fit.ar, x.mean)
+(fit.arima <- arima(y, order=c(1,0,0), method="ML"))
+```
+
+Note que enquanto nosso código retorna as estimativas de $(\mu, \sigma, \rho)$ na parametrização definida em \@ref(eq:AR1mu) as funções `ar()` e `arima()` retornam estimativas de $(\alpha, \sigma^2, \rho)$ definida em \@ref(eq:ar1alpha).
+
+Aproveitamos esta última função para ilustrar a funcionalidade do pacote `bbmle` e da função genérica de ajuste de modelos `mle2()`. A função recebe o negativo da log-verossimilhança do modelo desejado, tal como em \@ref(lem:veroAR1mu) neste exemplo.
+Internamente a função `optim()` é utilizada por `default` na otimização e outras podem ser selecionadas. Entretando a função _envoltório_ `mle2()` prepara os resultados de forma que várias explorações do ajuste tais como intervalos de confiança e verossimilhanças perfilhadas podem ser facilmente obtidas, sem a necessidade de programações adicionais.
+
+
+```{lemma, veroAR1b}
+**Função de verossimilhança para o modelo AR1 modificada para uso com bbmle::mle2().**
+```
+
+```{r}
+llAR1.bb <- function(mu, sigma, rho, dados){
+    #print(round(c(mu,sigma,rho), 2))
+    n <- length(dados) 
+    iS <- diag(1+rho^2, n)
+    diag(iS)[1] <- diag(iS)[n] <- 1
+    iS[abs(row(iS)-col(iS))==1] <- -rho
+    ymu <- dados - (1-rho)*mu
+    return(-0.5*(-n*log(2*pi) - 2*n*log(sigma) + log(1-rho^2) - 
+                 drop(crossprod(ymu, iS %*% ymu))/sigma^2))
+}
+```
+
+O ajuste produz os mesmos resultados obtidos anteriormente por outros métodos.
+
+```{r, message = FALSE, warning= FALSE}
+require(bbmle)
+ar1bb <- mle2(llAR1.bb, start=list(mu=0, sigma=1, rho=0.5), 
+              data=list(dados=y), method = "BFGS")
+coef(ar1bb)
+logLik(ar1bb)
+```
+
+Gráficos das funções das deviances perfilhadas (expressos na escala de suas raízes quadradas),
+e respectivos intervalos de confiança são facilmente obtidos por funções auxiliares.
+
+```{r perfAR1bbmle, warning= FALSE, message = FALSE, echo = TRUE, fig.width = 9, fig.height = 3, fig.cap = 'Verossimilhança perfilhada.'}
+prof <- profile(ar1bb)
+par(mfrow = c(1, 3), mar=c(2.6, 2.6, 1.2, 0.5), mgp = c(1.6, 0.6, 0))
+plot(prof)
+confint(prof)
+```
+
+## Processo Pontual {#PP}
+
+Um **processo pontual** é um tipo de processo estocástico no qual
+cada realização consiste de um conjunto contável de posições $x_i$ registradas em
+uma região. Os pontos de ocorrência são chamados de **eventos**.
+As posições são registradas em tempos e/ou localizações no espaço, embora
+possam ser anotadas em outros domínios.
+Tipicamente o objetivo é verificar se há algum padrão que possa 
+ser associado à ocorrência dos pontos.
+Denotamos por $N(A)$ o número de eventos que ocorre em uma região,
+\[ N(A) = \#(x_i \in A).\]
+
+O processo é **estacionário** se, para qualquer inteiro $k$ 
+e regiões $A_i : i = 1, \dots, k$, a distribuição conjunta de 
+$N(A_1), \dots, N(A_k)$ é invariante a **translações**
+por uma quantidade arbitrária $x$.
+
+Um processo pontual pode ser caracterizado por sua 
+_função de intensidade_ $\lambda(x)$ que está associada à  
+probabilidade de ocorrência de eventos na região.
+As seguintes definições são análogas aos conceitos de média e (co)variância
+para processos com valores nos reais e caracterizam a ocorrência 
+e interação dos eventos em um processo pontual.
+Denote por $dx$ uma pequena região contendo o ponto $x$.
+
+```{definition}
+Função de intensidade (de primeira ordem) de um processo pontual é
+\[
+\lambda(x) = \lim_{|dx| \to 0}
+\left\{\frac{E[N(dx)]}{|dx|} \right\}.
+\]
+```
+
+```{definition}
+Função de intensidade de segunda ordem de um processo pontual é
+\[
+\lambda_2(x_i,x_j) = \lim_{\stackrel{\scriptstyle |dx_i|
+\to 0}{\scriptstyle |dx_j | \to 0}}
+\left\{\frac{E[N(x_i)N(dx_j)]}{|dx_i| |dx_i|}\right\}.
+\]
+```
+
+```{definition}
+Densidade de covariância de um processo pontual é
+\[
+\gamma(x_i, x_j) = \lambda_2(x_i, x_j) - \lambda(x_i)
+\lambda (x_j).
+\]
+```
+
+Se o processo pontual é estacionário (e isotrópico no caso de processos espaciais)
+segue que:  
+
+- $\lambda(x) = E[N(dx)]/|dx|  \equiv \lambda = E[N(A)]/|A|$, (constante, em todo $A$);
+- (ii) $\lambda_2(x_i,x_j) \equiv \lambda_2(\|x_i-x_j\|)$ \hspace{0.2in} (depende apenas da distância $s=\|x_i-x_j\|$);
+- (iii) $\gamma(x_i,x_j) \equiv \gamma(s) = \lambda_2(s) - \lambda^2$.
+
+Uma classe particular de processos pontuais são os **processos de Poisson**, 
+nos quais os eventos ocorrem de maneira independente uns dos outros, 
+ou seja, a ocorrência de um evento em uma localização não modifica a probabilidade 
+de ocorrência de eventos em sua vizinhança.
+
+
+```{definition}
+Processo de Poisson:
+Seja $\lambda(x)$ uma função não negativa, a intensidade de um processo pontual. 
+Então:
+  
+- O número de eventos, $N(A)$, em qualquer região $A$ segue uma distribuição Poisson com média
+\[ E[N(A)] = \int_A \lambda(x) dx. \]
+- Dado $N(A)=n$, as localizações dos $n$ eventos em $A$ formam uma amostra aleatória 
+independente da distribuição em $A$ com função de densidade de probabilidade proporcional a $\lambda(x)$.
+```
+
+Se sob as condições anteriores $\lambda(x)=\lambda$, para todo $x$, 
+o processo é dito ser um  **processo de Poisson homogêneo** (PPH)
+e corresponde a total aleatoriedade.
+Neste caso, $\lambda$ é interpretado como o número esperado de eventos 
+por unidade de tamanho da região, ou seja, o número esperado de eventos
+na região é $\lambda ||A||$ em que $||A||$ é a dimensão da região. 
+
+De forma mais geral se $\lambda(x)$ não é constante sobre a área, o processo é dito
+um **processo de Poisson não-homogêneo** (PPI)
+e o número esperado de eventos em uma região $A_i$ é
+$\int_{A_i} \lambda(x) d(x)$.
+
+Dentre as propriedades dos processos de Poisson estão:
+
+- Os números de eventos $N(A)$ e $N(B)$ tomados em duas regiões disjuntas são variáveis aleatórias independentes;
+- $Var(N(A))/E(N(A)) = 1$, em todo $A$;
+- Para o processo de Poisson homogêneo, a função de distribuição da distância $u$ 
+de um ponto arbitrário ao evento mais próximo é
+\[ F(u) = 1 - \exp(-\lambda \pi u^2): u>0 \]
+
+Em nosso exemplo vamos considerar apenas processos em uma dimensão, por exemplo em um intervalo de tempo,  
+que sejam Poisson homogêneo ou não-homogêneo. Para este último consideramos uma função de densidade 
+$\lambda(t)$ que seja apenas função do tempo. O objetivo é ilustrar como escrever a função de verossimilhança do processo e obter as estimativas.
+
+Inicialmente vamos definir funções para simular realizações dos processos.
+Para o processo de Poisson homogêneo uma simulação pode ser obtida com os seguintes passos:
+
+- (i) definir o região para simulação;
+- (ii) encontrar o número esperado de eventos na região $\lambda \Delta_t$;
+- (iii) simular o número $N$ de eventos de uma Poisson com média $\lambda \Delta_t$;
+- (iv) obter as localizações dos eventos simulando de uma distribuição uniforme sobre a região.
+
+Estes passos estão implementados no código \@ref(lem:simPPH1) e a chamada da função
+simula um processo com $\lambda=0,8$ no intervalo $(0,100)$ e portanto
+com o número esperado de pontos igual a 80.
+
+```{lemma, simPPH1}
+**Função para simular de um PPH em uma dimensão.**
+```
+
+```{r simPPH1cod, keep.source = FALSE}
+simPPH1 <- function(lambda, min, max){
+    Nexp <- lambda * (max - min)
+    N <- rpois(1, lambda=Nexp)
+    return(runif(N, min = min, max = max))
+}
+```
+
+```{r}
+set.seed(56)
+pp1 <- simPPH1(0.8, 0, 100)
+(n1 <- length(pp1))
+```
+
+Uma outra maneira de simular de um PPH implementada no código \@ref(lem:simPPH2) é usar o fato de que 
+o intervalo entre eventos possui distribuição exponencial.
+Desta forma, simula-se sequencialmente os tempos dos eventos e acumulam-se os valores
+até chegar ao limite do intervalo de tempo desejado.
+Esta forma pode parecer um pouco mais extensa mas
+a estratégia de simulações sequenciais é útil por
+ser mais facilmente expandida para outros tipos de processos.
+
+```{lemma, simPPH2}
+**Função para simular de um PPH em uma dimensão.**
+```
+
+```{r simPPH2cod, keep.source = FALSE}
+simPPH2 <- function(lambda, min, max){
+  x <- min
+  while(sum(x) <= max)
+  x <- c(x, rexp(1, rate=lambda))
+  x <- x[-c(1, length(x))]
+  return(cumsum(x))  
+}
+```
+
+```{r echo = FALSE, results = 'hide'}
+set.seed(56)
+pp2 <- simPPH2(0.8, 0, 100)
+(n2 <- length(pp2))
+```
+
+```{r simPPH, echo = FALSE, fig.width = 7, fig.height = 5, fig.cap = 'Simulações do PPH com as funções apresentadas (superiores) e densidades acumuladas.'}
+par(mar=c(2.8, 2.8, 1.7, 1),mgp = c(1.8, 0.7, 0))
+layout(matrix(c(1,1,2,2,3,4), nc=2, byrow=T), heights=c(0.2, 0.2, 0.6))
+plot(c(0,100), c(0, 1.2), type="n", xlab="eventos", ylab="")
+arrows(pp1, rep(1, n1), pp1, rep(0, n1), length=0.1)
+
+plot(c(0,100), c(0, 1.2), type="n", xlab="eventos", ylab="")
+arrows(pp2, rep(1, n2), pp2, rep(0, n2), length=0.1)
+
+plot(sort(pp1), xlab="t", ylab=expression(F(t)));segments(0,0,n1,100)
+plot(sort(pp2), xlab="t", ylab=expression(F(t)));segments(0,0,n2,100)
+```
+
+Passamos agora para um processo de Poisson não-homogêneo a
+considerar um caso simples com $x = t$ e a função de intensidade 
+$\lambda(t) = \exp(\beta_0 + \beta_1 t)$.
+Este poderia ser um caso no qual estaríamos interessados em avaliar se a taxa de eventos
+está aumentando com o passar do tempo.
+
+```{lemma, intensidadePPI}
+**Função de intensidade de um PPI simples.**
+```
+
+```{r intensidadePPIcod, keep.source = FALSE}
+lambda.x <- function(x, par, log=FALSE){
+    eta <- par[1] + par[2] * x
+    if(log) return(eta) else return(exp(eta))
+}    
+```
+
+Para simular de um PPI podemos usar e estratégia de simulação por rejeição
+que ilustramos  no código \@ref(lem:simPPI).
+Para isto simulamos de um processo mais simples (PPH) e submetemos
+cada evento simulado a uma regra adequada de aceitação/rejeição 
+de tal forma que os eventos aceitos constituem uma simulação do PPI desejado. 
+Os passos são: 
+
+- encontrar o valor ${\rm max}[\lambda(t)]$, o máximo de $\lambda(t)$ na região, 
+- simular de um PPH na região com $\lambda = {\rm max}[\lambda(t)]$,
+- aceitar cada evento simulado com probabilidade 
+$P[{\rm aceitar}] = \lambda(t_i)/{\rm max}[\lambda(t)]$.
+
+O último passo pode ser descrito como: simular uniformemente no retângulo
+definido pela região $\times$ ${\rm max}[\lambda(t)]$ e selecionar como eventos
+as abcissas dos pontos para os quais a ordenada é menor do que $\lambda(x)$.  
+No código, adotamos a solução mais geral de maximizar $\lambda(t)$ numericamente,
+embora para casos em que este valor pode ser encontrado analiticamente, o código pode ser simplificado.
+No exemplo temos 
+${\rm max}[\lambda(t)] = \lambda(100) = \exp\{-1 + 0,015 \cdot 100\}
+\approx$ `r round(exp(-1+0.015*100))`.
+
+```{lemma, simPPI}
+**Função para simular de um PPI simples.**
+```
+
+```{r simPPIcod, keep.source = FALSE}
+simPPI <- function(par, min, max){
+  nHPP <- round(optimize(lambda.x, c(min, max), par=par, 
+                maximum=TRUE)$objective * (max - min))
+  X <- runif(nHPP, min, max)
+  p.aceita <- lambda.x(X, par)*(max - min)/nHPP
+  ppI <- sort(X[runif(nHPP) <= p.aceita])
+  attributes(ppI) <- list(simulados=nHPP,aceitos=length(ppI),taxa=length(ppI)/nHPP)
+  return(ppI)
+}
+```
+
+A seguir geramos uma realização do processo com $\beta_0=-1$ e $\beta_0=0,015$ em um intervalo $(0, 100)$,
+portanto com um número esperado de pontos de `r round(integrate(lambda.x, 0, 100, par=c(-1, 0.015))$val)`.
+Na figura \@ref(fig:simPPI2) a simulação a esquerda mostra claramente o aumento da densidade de
+pontos com o passar do tempo, o gráfico da direita mostra claramente que o padrão
+é incompatível com um PPH.
+
+```{r}
+set.seed(5665)
+pp3 <- simPPI(c(-1, 0.015), 0, 100)
+unlist(attributes(pp3))
+(n3 <- length(pp3))
+```
+
+```{r simPPI2, echo = FALSE, fig.width = 9, fig.height = 3, fig.cap = 'Simulação de um PPI (esquerda)  e densidade acumuladas (direita).'}
+layout(t(c(1,2)), widths=c(0.75, 0.25))
+par(mar=c(5, 0.5, 5, 0.2),mgp = c(1.8, 0.7, 0))
+plot(c(0,100), c(0, 1.2), type="n", xlab="eventos", ylab="")
+arrows(pp3, rep(1, n3), pp3, rep(0, n3), length=0.1)
+par(mar=c(2.8, 2.8, 1.7, 1),mgp = c(1.8, 0.7, 0))
+plot(sort(pp3), xlab="t", ylab=expression(F(t)));segments(0,0,n3,100)
+```
+
+A função de verossimilhança de um processo pontual é obtida considerando as densidades das duas
+variáveis aleatórias observadas, o número de eventos $N$ e as localizações $\{t\}$.
+Portanto, para um conjuntos de valores de parâmetros de um modelo considerado, 
+o valor da verossimilhança é dada pela probabilidade de observar o número de eventos
+de fato obtido no conjunto de localizações observadas.
+Para um processo de Poisson $N \sim P[\int_A \lambda(t) dt]$ e 
+para cada ponto pode ser atribuído $P[\{t_i\}] = \lambda(t_i)/\int_A \lambda(t) dt$.
+\begin{align*}
+L(\theta) &= \frac{e^{-(\int_A \lambda(t) dt)} (\int_A \lambda(t) dt)^N}{N!} 
+             \prod_{i=1}^N \frac{\lambda(t_i)}{\int_A \lambda(t) dt} 
+             \propto e^{-(\int_A \lambda(t) dt)} \; \prod_{i=1}^N \lambda(t_i) \\
+l(\theta) &\propto \sum_{i=1}^N \log(\lambda(t_i)) - \int_A \lambda(t) dt  
+\end{align*} 
+
+Para o PPH o estimador de máxima verossimilhança é intuitivo, tem forma fechada e é
+dado pela taxa de eventos, ou seja, pelo número de pontos observados 
+dividido pela dimensão $||A||$ da região e a verossimilhança maximizada assume uma forma simples. 
+
+\begin{align*}
+\hat{\lambda}    &=       \frac{N(A)}{||A||} = \frac{\#(x_i \in A)}{||A||} \\
+l(\hat{\lambda}) &\propto N \log(\hat{\lambda}) - \hat{\lambda} ||A||  
+\end{align*} 
+
+Para os dados da primeira simulação de um HPP temos:
+
+```{r}
+(lambda1.est <- n1/(100-0))
+(lambda1.ll <- n1 * log(lambda1.est) - lambda1.est * (100-0))
+```
+
+Para um PPI  a obtenção do estimador de máxima verossimilhança
+vai depender da forma de $\lambda(x)$. 
+Para o modelo usado anteriormente  para simular de um PPI temos
+que
+\[
+ l(\beta_0, \beta_1) \propto \sum_{i=1}^N \log(\beta_0 + \beta_1 t_i ) - \int_A \beta_0 + \beta_1 t \; dt . 
+\]
+Embora em certos casos seja possível encontrar expressões fechadas para os estimadores,  
+vamos considerar o caso mais geral no qual utilizamos maximização numérica.
+A expressão da verossimilhança do PPI considerado aqui é definida no código \@ref(lem:likPPI). 
+Neste código $\lambda(x)$ é integrado numericamente, embora neste exemplo a expressão 
+analítica da integral é facilmente obtida.  
+Se ocorrerem instabilidades numéricas pode-se transformar os valores das localizações dos pontos
+para o intervalo $(0,1)$. Neste exemplo isto não foi necessário, mas em outros casos 
+não reportados aqui, com diferentes valores dos parâmetros foi fundamental para 
+obtenção das estimativas corretas.
+
+```{lemma, likPPI}
+**Função de log-verossimilhança para o PPI simples.**
+```
+
+```{r likPPIcod, keep.source = FALSE}
+nlikIPP <- function(par, PP, min, max){
+  intLx <- integrate(lambda.x, low=0, upp=100, par=par)$value	
+## Se necessário reescalonar usar:
+##  PP <- (PP - min)/(max-min)
+##  intLx <- integrate(lambda.x, low=0, upp=1, par=par)$value	
+  slxi <- sum(lambda.x(x=PP, par = par, log=T))
+  return(-(slxi - intLx))
+}
+```
+
+As estimativas para a simulação do PPI são obtidas a seguir.
+Caso seja usado o reescalonamento de coordenadas é necessário transformar os valores dos parâmetros adequadamente. O gráfico à esquerda da Figura \@ref(fig:veroPPI) mostra a superfície de verossimilhança para os dados simulados. Os contornos delimitam, de dentro para fora, regiões de confiança de 
+5, 10, 30, 50, 70, 90, 95 e 99\%. As linhas sólidas indicam o corte para obtenção das verossimilhanças perfilhadas e as pontilhadas das condicionadas no MLE, para cada parâmetro. 
+Os demais gráficos mostram as verossimilhanças individuais perfilhadas e condicionada no MLE, 
+ficando claro que a última subestima dramaticamente a variabilidade 
+por desconsiderar a não ortogonalidade.  
+
+```{r}
+(ppI.est <- optim(c(0,0.01), nlikIPP, PP = pp3, min=0, max=100)[1:2])
+```
+
+```{r echo = FALSE, results = 'hide'}
+devSurf <- Vectorize(function(b0, b1, ...) 
+             2*(nlikIPP(c(b0, b1), ...) - ppI.est[[2]]))
+b0s <- seq(-2.25, -0.45, l=100)
+b1s <- seq(0.006, 0.033, l=100)
+ll <- outer(b0s, b1s, devSurf, PP=pp3, min=0, max=100)
+##
+## perfil para beta_0
+pl.b0 <- function(b0, intb1, ...){
+  nll.b1 <- function(b1, b0, ...)
+     2*(nlikIPP(par=c(b0, b1), ...) - ppI.est[[2]])
+  as.vector(optimize(nll.b1, interval=intb1, b0=b0, ...)[1:2])
+}
+pl0 <- as.matrix(t(sapply(b0s, pl.b0, intb1=range(b1s) , PP = pp3, min=0, max=100)))
+##
+## perfil para beta_1
+pl.b1 <- function(b1, intb0, ...){
+  nll.b0 <- function(b0, b1, ...)
+     2*(nlikIPP(par=c(b0, b1), ...) - ppI.est[[2]])
+  as.vector(optimize(nll.b0, interval=intb0, b1=b1, ...)[1:2])
+}
+pl1 <- as.matrix(t(sapply(b1s, pl.b1, intb0=range(b0s), PP = pp3, min=0, max=100)))
+```
+
+```{r veroPPI, echo = FALSE, fig.width = 7.5, fig.height = 2.5, fig.cap = 'Superfície de deviance (esquerda), e perfil de deviances para os parâmetros $\\beta_0$ (centro) e $\\beta_1$ (direita)  para dados de um PPI.'}
+par(mfrow=c(1,3), mar=c(2.8, 2.8, 1.7, 1),mgp = c(1.8, 0.7, 0), cex.lab = 0.8, cex.main = 0.8, cex.axis = 0.8)
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(b0s,b1s, ll, levels=qchisq(LEVELS,df=2),
+        labels=LEVELS, xlab=expression(beta[0]),ylab=expression(beta[1]))
+points(t(ppI.est[[1]]), pch=20, col=2)
+#
+## adicionando no contorno:
+## perfilhada b0
+lines(b0s, pl0[,1], col=2)
+## condicional b0 no MLE de b1
+lines(b0s, rep(ppI.est[[1]][2], length(b0s)), col=2, lty=3)
+
+## perfilhada b1
+lines(pl1[,1], b1s, col=4)
+## condicional b1 no MLE de b0
+lines(rep(ppI.est[[1]][1], length(b1s)), b1s, col=4, lty=3)
+
+
+## Perfil de vero para beta_0
+plot(b0s, pl0[,2], ty="l", col=2, xlab=expression(beta[0]), ylab=expression(pl(beta[1])))
+lines(b0s, sapply(b0s, function(b0) -nlikIPP(c(b0, ppI.est[[1]][2]), PP = pp3, min=0, max=100)), 
+                  lty=1, col=2)
+## condiconal para beta0
+b0par <- cbind(b0s, ppI.est[[1]][2])
+b0cond <- -2*(ppI.est[[2]] - apply(b0par, 1, nlikIPP, PP=pp3, min=0, max=100)) 
+lines(b0s, b0cond, col=2, lty=3)
+legend("topright", c("Perfilhada","Condicional"), lty=c(1,3), col=2, cex=0.8)
+
+## Perfil de vero para beta_1
+plot(b1s, pl1[,2], ty="l", col=4, xlab=expression(beta[1]), ylab=expression(pl(beta[1])))
+lines(b1s, sapply(b1s, function(b1) -nlikIPP(c(ppI.est[[1]][1], b1), PP = pp3, min=0, max=100)), 
+                  lty=1, col=4)
+## condicional para beta1
+b1par <- cbind(ppI.est[[1]][1], b1s)
+b1cond <- -2*(ppI.est[[2]] - apply(b1par, 1, nlikIPP, PP=pp3, min=0, max=100)) 
+lines(b1s, b1cond, col=4, lty=3)
+legend("topright", c("Perfilhada","Condicional"), lty=c(1,3), col=4, cex=0.8)
+```
+
+Possíveis extensões incluem inferências usuais como intervalos de confiança e perfis de
+verossimilhança. Um resultado de particular interesse é testar se o padrão é homogêneo.
+Podemos comparar as verossimilhanças maximizadas do PPH e PPI para o mesmo conjunto de dados, 
+por exemplo, para fazer um teste da razão de verossimilhança a fim de determinar se o modelo 
+com taxa não constante é mais compatível com os dados.
+
+```{r}
+## PPH
+(lambda3.est <- n3/(100-0))
+(lambda3.ll <- n3 * log(lambda3.est) - lambda3.est * (100-0))
+-ppI.est$value   ## para PPI
+-2*(lambda3.ll - (-ppI.est$value))
+```
+
+Os modelos descritos aqui são básicos e podem ser estendidos de diversas formas.
+A função $\lambda(t)$ pode  ter uma forma mais complexa como, por exemplo, um polinômio 
+ou um _spline_ em $t$. A função intensidade pode ser função de uma outra variável 
+(temperatura, altitude, etc) que não a posição $t$. 
+Em problemas espaciais no plano as posições dos eventos são dadas pelas coordenadas
+e a função de intensidade pode ser de duas variáveis $\lambda(x,y)$ 
+e a integração é bidimensional. De forma mais genérica, a intensidade pode ser 
+função de múltiplas coordenadas e/ou variáveis auxiliares o que torna o problema 
+computacionalmente mais complexo por exigir integrações múltiplas.
+Uma extensão possível é especificar uma função de intensidade que seja aleatória,
+o que torna o procedimento de inferência bem mais desafiador.
+Diversos outros processos pontuais que não assumem independência entre eventos 
+são discutidos na literatura. Tais processos podem acomodar interações, tais 
+como atrações ou repulsões, entre eventos e estão além do escopo deste livro. 
+
+Como referência inicial para processos pontuais espaciais citamos @diggle:2003. 
+Há diversos pacotes no `R` (ver por exemplo (http://cran.r-project.org/view=Spatial))
+implementando métodos para processos pontuais e dentre eles citamos 
+o pacote `spatstat` @spatstat que além de funções para simular e analisar
+diversos tipos de processos pontuais possui uma extensa e detalhada documentação.

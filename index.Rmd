@@ -18,7 +18,7 @@ A ideia de verossimilhança como instrumento para avaliar a evidência contida n
 dados está no centro dos fundamentos da metodologia estatística.
 Embora formalizada nos trabalhos de Sir Ronald Aylmer Fisher nos anos 20, 
 apenas muitas décadas depois e principalmente com as possibilidades abertas pela 
-computação  estatística, esta pôde ser explorada, investigada, aplicada, modificada e 
+computação estatística, esta pôde ser explorada, investigada, aplicada, modificada e 
 expandida nas mais diferentes formas.
 
 A necessidade de computação em estatística está presente desde sua origem, 
@@ -85,5 +85,5 @@ disponibilizada em ambiente `Dokuwiki` em um servidor `Apache`.
 
 W.H.B, P.J.R. Jr e W.M.Z. 
 
-Curitiba, Outubro, 2019.
+Curitiba, Junho, 2020.
 

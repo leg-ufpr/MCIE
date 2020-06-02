@@ -1,4 +1,4 @@
-# Definições e propriedades
+# Verossimilhança
 
 Neste Capítulo apresentamos os três objetivos fundamentais da inferência estatística, estimação pontual, intervalar e teste de hipóteses através da função de verossimilhança.
 
@@ -184,7 +184,7 @@ que torna o intervalo fácil de ser obtido. Estendendo para o caso de multiparâ
 ${ \boldsymbol{\theta} \in \Theta : \mathrm{D}(\boldsymbol{\theta}) \leq c^*}$. 
 Portanto, as duas formas de interpretar o intervalo de confiança discutidas no caso uniparamétrico podem ser estendidas para o caso multiparamétrico, sem problemas. 
 Novamente a questão que surge é a definição de um valor para $c^*$. 
-Pela abordagem frequentista é desejável que o intervalo tenha uma interpretação em termos de probabilidades ou frequência e isto é atingido através das propriedades assintóticas dos estimadores de máxima verossimilhança que serão apresentadas adiante, mas antes vamos materializar apresentar o terceiro objetivo da inferência estatística, ou seja, testes de hipóteses.
+Pela abordagem frequentista é desejável que o intervalo tenha uma interpretação em termos de probabilidades ou frequência e isto é atingido através das propriedades assintóticas dos estimadores de máxima verossimilhança que serão apresentadas adiante, mas antes vamos apresentar o terceiro objetivo da inferência estatística, ou seja, testes de hipóteses.
 
 ## Testes de hipóteses
 
@@ -202,7 +202,7 @@ Na definição acima, $\chi$ denota o espaço amostral associado à amostra $y_1
 $$ A_0 = \{ ( y_1, \ldots, y_n \in \chi; d(y_1, \ldots, y_n) = a_0 \}$$
 e
 $$ A_1 = \{ ( y_1, \ldots, y_n \in \chi; d(y_1, \ldots, y_n) = a_1 \}$$
-onde $A_0 \cup A_1 = \chi$ e $A_0 \cap A_1 = \emptyset$. Como em $A_0$ temos os pontos amostrais que levam à não rejeição de $\mathrm{H_0}$, vamos chamar de $A_0$ de região de não rejeição e, por analogia, $A_1$ de região de rejeição de $H_0$, também chamada de região crítica.
+onde $A_0 \cup A_1 = \chi$ e $A_0 \cap A_1 = \emptyset$. Como em $A_0$ temos os pontos amostrais que levam à não rejeição de $\mathrm{H_0}$, vamos chamar $A_0$ de região de não rejeição e, por analogia, $A_1$ de região de rejeição de $H_0$, também chamada de região crítica.
 
 Um teste de hipótese pode resultar em um de dois tipos de erros. Tradicionalmente, esses dois tipos de erros recebem os nomes de erro Tipo I ($\alpha$) e erro Tipo II ($\beta$). 
 O erro tipo I ocorre quando rejeitamos $\mathrm{H_0}$ e esta é verdadeira. O erro Tipo II ocorre quando não rejeitamos $\mathrm{H_0}$ e esta é falsa. Em termos de probabilidade temos,
@@ -291,7 +291,7 @@ A estatística do teste da razão de verossimilhança para testar $\mathrm{H_0}:
 O teste da razão de verossimilhança (TRV) é qualquer teste que tenha uma região de rejeição da forma ${\mathbf{y} : \lambda(\mathbf{y}) \leq r}$ onde $r$ é qualquer número que satisfaça $0 \leq r \leq 1$.
 ```
 
-Para testar $\mathrm{H_0}: \theta = \theta_0$ versus $\mathrm{H_1}: \theta \neq \theta_0$, suponha $Y_1, \ldots, Y_n$ sejam iid $f(\mathbf{y}|\theta)$, $\hat{\theta}$ seja o EMV de $\theta$, e $f(\mathbf{y}|\theta)$ satisfaça as condições de regularidade. Desse modo, de acordo com $\mathrm{H_0}$, pelo Teorema \@ref(thm:ASS) à medida que $n \to \infty$
+Para testar $\mathrm{H_0}: \theta = \theta_0$ versus $\mathrm{H_1}: \theta \neq \theta_0$, suponha $Y_1, \ldots, Y_n$ sejam iid $f(\mathbf{y}|\theta)$, $\hat{\theta}$ seja o EMV de $\theta$ e $f(\mathbf{y}|\theta)$ satisfaça as condições de regularidade. Desse modo, de acordo com $\mathrm{H_0}$, pelo Teorema \@ref(thm:ASS) à medida que $n \to \infty$
 $$ -2 \log \lambda(\underline{y}) \to \chi^2_1. $$
 
 ### Teste de Wald
@@ -305,7 +305,9 @@ e rejeita $\mathrm{H_0}$ se, e somente se, $\mathrm{Z_n} < -z_{\alpha/2}$.
 ```
 
 
-Se $\mathrm{H_0}$ for verdadeira, então $\theta = \theta_0$ e $Z_n$ convergem em distribuição para $Z \sim N(0,1)$. Portanto, a probabilidade do Erro Tipo I, $\mathrm{P}_{\theta_0}(\mathrm{Z_n} < - z_{\alpha/2} \quad \text{ou} \quad \mathrm{Z_n} > z_{\alpha/2}) \to \mathrm{P}(Z < -z_{\alpha/2} \quad \text{ou} \quad Z > z_{\alpha/2}) = \alpha$, e este é, assintoticamente, um teste de tamanho $\alpha$. Em geral, um teste de Wald é um teste com base em uma estatística da forma,
+Se $\mathrm{H_0}$ for verdadeira, então $\theta = \theta_0$ e $Z_n$ convergem em distribuição para $Z \sim N(0,1)$. Portanto, a probabilidade do Erro Tipo I, 
+$$\mathrm{P}_{\theta_0}(\mathrm{Z_n} < - z_{\alpha/2} \quad \text{ou} \quad \mathrm{Z_n} > z_{\alpha/2}) \to \mathrm{P}(Z < -z_{\alpha/2} \quad \text{ou} \quad Z > z_{\alpha/2}) = \alpha,$$ 
+e este é, assintoticamente, um teste de tamanho $\alpha$. Em geral, um teste de Wald é um teste com base em uma estatística da forma,
 \[ \mathrm{Z_n} = \frac{\mathrm{W_n} -  \theta_0}{\mathrm{S_n} } \]
 onde $\theta_0$ é um valor hipotético do parâmetro $\theta$, $\mathrm{W_n}$ é um estimador de $\theta$ e $\mathrm{S_n}$ é o erro padrão de $\mathrm{W_n}$, uma estimativa do desvio padrão de $\mathrm{W_n}$. Se $\mathrm{W_n}$ for o EMV para $\theta$, então, $\sqrt{\mathrm{I_O}(\hat{\theta})}$ é o erro padrão de $\mathrm{W_n}$. 
 
@@ -379,7 +381,7 @@ Note que a variância do vetor $\mathrm{U}(\boldsymbol{\theta})$ é a matriz com
   \vdots        & \ddots  &  \mathrm{Cov}(\mathrm{U_i}, \mathrm{U_j}) & \vdots \\
   \vdots        & \mathrm{Cov}(\mathrm{U_j}, \mathrm{U_i}) & \ddots & \vdots \\
 \mathrm{Cov}(\mathrm{U_d},\mathrm{U_1}) & \ldots & \ldots & \mathrm{Cov}(\mathrm{U_d}, \mathrm{U_d}) 
-\end{array}\right]. \]
+\end{array}\right], \]
 onde $\mathrm{Cov}(\mathrm{U_i}, \mathrm{U_i}) = \mathrm{V}(\mathrm{U_i})$. Uma propriedade importante de $\mathrm{I}_O(\boldsymbol{\hat{\theta}})$ e $\mathrm{I}_E(\boldsymbol{\hat{\theta}})$ é que elas são matrizes definida positiva, as quais mensuram a curvatura observada/esperada da superfície de log-verossimilhança. Com estas definições, pode-se escrever a função _deviance_ aproximada para um vetor de parâmetros da seguinte forma:
 \[ \mathrm{D}(\boldsymbol{\theta}) \approx (\boldsymbol{\theta} - \boldsymbol{\hat{\theta}})^\top \mathrm{I_O}(\boldsymbol{\hat{\theta}})(\boldsymbol{\theta} - \boldsymbol{\hat{\theta}}) . \]
 Assim $\mathrm{D}(\boldsymbol{\theta})$ é não negativa uma vez que $\mathrm{I_O}(\boldsymbol{\hat{\theta}})$ é uma matriz positiva definida. 
@@ -414,13 +416,13 @@ De acordo com os teoremas apresentados, podemos chegar a algumas das principais 
 - Denote $\mathrm{J} = \mathrm{I_E}^{-1}(\boldsymbol{\theta})$, então $\mathrm{V}(\hat{\boldsymbol{\theta}}) = \mathrm{J}$, sendo que, $\mathrm{J}$ é uma matriz simétrica e definida positiva, com elementos $\mathrm{J_{ij}} = \mathrm{Cov}(\hat{\boldsymbol{\theta}}_i, \hat{\boldsymbol{\theta}}_j)$ então $\mathrm{J_{ii}}$ é a variância de $\hat{\boldsymbol{\theta}}_i$. 
 Denota-se $\mathrm{J_{ii}}^{\frac{1}{2}}$ o desvio padrão de $\hat{\boldsymbol{\theta}}_i$.
 - Podemos construir intervalos de $100(1-\alpha)\%$ de confiança para $\theta_i$ na forma $\hat{\theta}_i \pm z_{\frac{\alpha}{2}} \mathrm{J_{ii}}^{\frac{1}{2}}$. Intervalos desta forma serão denominados, intervalos de Wald ou baseados em aproximação quadrática da verossimilhança. Importante notar que estes intervalos coincidem com os obtidos baseado em aproximação por Série de Taylor de segunda ordem da função _deviance_.
-- Para regiões de confiança baseados na _deviance_ considera-se $[ \boldsymbol{\theta} \in \Theta : \mathrm{D}(\boldsymbol{\theta}) \leq c^*] $, para algum valor $c^*$ a ser especificado. Pode-se escolher $c^*$ baseado em justificativas assintóticas de que $\mathrm{D}(\boldsymbol{\theta}) \sim \chi^2_p$ é uma escolha razoável para $c^* = c_{\alpha}$ com $\mathrm{P}(\chi^2_d \ge c_{\alpha}) = \alpha$, por exemplo se $\alpha = 0.05$, então $c_{\alpha} = 3.84$. Isto gera uma região de $100(1 - \alpha)\%$ de confiança. Estes intervalos serão denominados de intervalos _deviance_.
+- Para regiões de confiança baseados na _deviance_ considera-se $\boldsymbol{\theta} \in \Theta : \mathrm{D}(\boldsymbol{\theta}) \leq c^* $, para algum valor $c^*$ a ser especificado. Pode-se escolher $c^*$ baseado em justificativas assintóticas de que $\mathrm{D}(\boldsymbol{\theta}) \sim \chi^2_p$ é uma escolha razoável para $c^* = c_{\alpha}$ com $\mathrm{P}(\chi^2_d \ge c_{\alpha}) = \alpha$, por exemplo se $\alpha = 0.05$, então $c_{\alpha} = 3.84$. Isto gera uma região de $100(1 - \alpha)\%$ de confiança. Estes intervalos serão denominados de intervalos _deviance_.
 
 De acordo com as propriedades apresentadas tem-se duas formas básicas de construir intervalos de confiança. A primeira mais simples é baseada na aproximação quadrática da log-verossimilhança e a segunda utilizando diretamente a função _deviance_ obtida com os dados. A segunda opção é em geral mais trabalhosa computacionalmente, uma vez que usualmente gera uma equação não linear que precisa ser resolvida numericamente. 
 A primeira opção é bastante direta, uma vez obtida a matriz de segundas derivadas basta invertê-la e tirar a raiz dos termos da diagonal para se obter o intervalo de confiança para cada parâmetro, marginalmente. Esta abordagem é muito simples mas apresenta limitações. Restrições naturais no espaço paramétrico como, por exemplo, 
 para parâmetros de variância e correlação não são respeitadas e podem resultar em limites absurdos, com limite(s) do intervalo fora do espaço paramétrico. Os intervalos serão sempre simétricos ao aproximar a verossimilhança por uma forma quadrática, o que normalmente não produz resultados adequados para parâmetros de variância e correlação. 
 Em modelos com efeitos aleatórios há um interesse natural nos parâmetros de variância, precisão e correlação. Testar a significância de tais efeitos utilizando as variâncias associadas às estimativas que indexam o modelo podem produzir resultados imprecisos. 
-Logo, esta abordagem é limitida em classes mais gerais de modelos estatísticos.
+Logo, esta abordagem é limitada em classes mais gerais de modelos estatísticos.
 
 A segunda opção resulta em uma região conjunta para o caso de dois ou mais parâmetros,
 enquanto que pela aproximação é possível obter um intervalo marginal para cada parâmetro, 
@@ -458,7 +460,7 @@ Seja $\boldsymbol{\theta} = (\boldsymbol{\phi}^\top, \boldsymbol{\lambda}^\top)^
 
 ```{definition, label="perfilhada"}
 **Verossimilhança perfilhada** - A verossimilhança perfilhada de $\boldsymbol{\phi}$ é definida por
-\[ \mathrm{L}(\boldsymbol{\phi}) = \mathrm{L}(\boldsymbol{\phi}, \hat{\boldsymbol{\lambda}}_{\phi}) \]
+$$\mathrm{L}(\boldsymbol{\phi}) = \mathrm{L}(\boldsymbol{\phi}, \hat{\boldsymbol{\lambda}}_{\phi}).$$
 
 ```
 
@@ -469,4 +471,5 @@ A seguir maximiza-se $\mathrm{l}(\boldsymbol{\phi})$. Assim, uma região ou inte
 \]
 onde $d$ é a dimensão de $\boldsymbol{\phi}$. Note que esta forma de construção não usa a aproximação em séries de Taylor e portanto pode resultar em intervalos assimétricos. Porém, é cara computacionalmente, uma vez que precisamos resolver numéricamente uma equação não-linear que para cada avaliação necessita de um algoritmo numérico de maximização.
 
-Neste Capítulo apresentamos uma série de definições e propriedades do procedimento de inferência baseado na função de verossimilhança. Os exemplos de ilustração foram o mais simples possível, porém mesmo nestes casos a necessidade do uso de métodos numéricos ficou bastante evidente. No próximo capítulo vamos discutir uma série de exemplos que em geral tem soluções analiticas, porém vamos resolvê-los também numéricamente para ilustrar as principais ideias e desafios relacionados a obtenção de estimadores pontuais, intervalares e testes de hipóteses.
+Neste Capítulo apresentamos uma série de definições e propriedades do procedimento de inferência baseado na função de verossimilhança. No próximo capítulo vamos ilustrar cada um destes aspectos por meio de exemplos
+pŕaticos e suas respectivas implementações computacinais.
