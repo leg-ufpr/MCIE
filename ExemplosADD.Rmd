@@ -634,8 +634,8 @@ Se o processo pontual é estacionário (e isotrópico no caso de processos espac
 segue que:  
 
 - $\lambda(x) = E[N(dx)]/|dx|  \equiv \lambda = E[N(A)]/|A|$, (constante, em todo $A$);
-- (ii) $\lambda_2(x_i,x_j) \equiv \lambda_2(\|x_i-x_j\|)$ \hspace{0.2in} (depende apenas da distância $s=\|x_i-x_j\|$);
-- (iii) $\gamma(x_i,x_j) \equiv \gamma(s) = \lambda_2(s) - \lambda^2$.
+- $\lambda_2(x_i,x_j) \equiv \lambda_2(\|x_i-x_j\|)$ \hspace{0.2in} (depende apenas da distância $s=\|x_i-x_j\|$);
+- $\gamma(x_i,x_j) \equiv \gamma(s) = \lambda_2(s) - \lambda^2$.
 
 Uma classe particular de processos pontuais são os **processos de Poisson**, 
 nos quais os eventos ocorrem de maneira independente uns dos outros, 
@@ -672,7 +672,7 @@ Dentre as propriedades dos processos de Poisson estão:
 - $Var(N(A))/E(N(A)) = 1$, em todo $A$;
 - Para o processo de Poisson homogêneo, a função de distribuição da distância $u$ 
 de um ponto arbitrário ao evento mais próximo é
-\[ F(u) = 1 - \exp(-\lambda \pi u^2): u>0 \]
+\[ F(u) = 1 - \exp(-\lambda \pi u^2): u>0. \]
 
 Em nosso exemplo vamos considerar apenas processos em uma dimensão, por exemplo em um intervalo de tempo,  
 que sejam Poisson homogêneo ou não-homogêneo. Para este último consideramos uma função de densidade 
@@ -681,10 +681,10 @@ $\lambda(t)$ que seja apenas função do tempo. O objetivo é ilustrar como escr
 Inicialmente vamos definir funções para simular realizações dos processos.
 Para o processo de Poisson homogêneo uma simulação pode ser obtida com os seguintes passos:
 
-- (i) definir o região para simulação;
-- (ii) encontrar o número esperado de eventos na região $\lambda \Delta_t$;
-- (iii) simular o número $N$ de eventos de uma Poisson com média $\lambda \Delta_t$;
-- (iv) obter as localizações dos eventos simulando de uma distribuição uniforme sobre a região.
+- Definir a região para simulação;
+- Encontrar o número esperado de eventos na região $\lambda \Delta_t$;
+- Simular o número $N$ de eventos de uma Poisson com média $\lambda \Delta_t$;
+- Obter as localizações dos eventos simulando de uma distribuição uniforme sobre a região.
 
 Estes passos estão implementados no código \@ref(lem:simPPH1) e a chamada da função
 simula um processo com $\lambda=0,8$ no intervalo $(0,100)$ e portanto
@@ -773,9 +773,9 @@ cada evento simulado a uma regra adequada de aceitação/rejeição
 de tal forma que os eventos aceitos constituem uma simulação do PPI desejado. 
 Os passos são: 
 
-- encontrar o valor ${\rm max}[\lambda(t)]$, o máximo de $\lambda(t)$ na região, 
-- simular de um PPH na região com $\lambda = {\rm max}[\lambda(t)]$,
-- aceitar cada evento simulado com probabilidade 
+- Encontrar o valor ${\rm max}[\lambda(t)]$, o máximo de $\lambda(t)$ na região; 
+- Simular de um PPH na região com $\lambda = {\rm max}[\lambda(t)]$;
+- Aceitar cada evento simulado com probabilidade 
 $P[{\rm aceitar}] = \lambda(t_i)/{\rm max}[\lambda(t)]$.
 
 O último passo pode ser descrito como: simular uniformemente no retângulo
@@ -836,7 +836,7 @@ para cada ponto pode ser atribuído $P[\{t_i\}] = \lambda(t_i)/\int_A \lambda(t)
 L(\theta) &= \frac{e^{-(\int_A \lambda(t) dt)} (\int_A \lambda(t) dt)^N}{N!} 
              \prod_{i=1}^N \frac{\lambda(t_i)}{\int_A \lambda(t) dt} 
              \propto e^{-(\int_A \lambda(t) dt)} \; \prod_{i=1}^N \lambda(t_i) \\
-l(\theta) &\propto \sum_{i=1}^N \log(\lambda(t_i)) - \int_A \lambda(t) dt  
+l(\theta) &\propto \sum_{i=1}^N \log(\lambda(t_i)) - \int_A \lambda(t) dt. 
 \end{align*} 
 
 Para o PPH o estimador de máxima verossimilhança é intuitivo, tem forma fechada e é
@@ -845,7 +845,7 @@ dividido pela dimensão $||A||$ da região e a verossimilhança maximizada assum
 
 \begin{align*}
 \hat{\lambda}    &=       \frac{N(A)}{||A||} = \frac{\#(x_i \in A)}{||A||} \\
-l(\hat{\lambda}) &\propto N \log(\hat{\lambda}) - \hat{\lambda} ||A||  
+l(\hat{\lambda}) &\propto N \log(\hat{\lambda}) - \hat{\lambda} ||A||.  
 \end{align*} 
 
 Para os dados da primeira simulação de um HPP temos:
