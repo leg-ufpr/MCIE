@@ -22,9 +22,10 @@ Para modelos discretos não há ambiguidade e o valor da função de verossimilh
 No caso de modelos contínuos a probabilidade de um particular conjunto de 
 valores ser observado é nula. Entretanto, na prática medidas contínuas são tomadas com algum grau de precisão em um intervalo, digamos,
 $y_{iI} \leq y_i \leq y_{iS}$ e a verossimilhança para um conjunto de observações é:
-\begin{equation}\label{eq:verogeral}
+\begin{equation}
 \mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) = \mathrm{P}_{\boldsymbol{\theta}}(y_{1I} \leq y_1 \leq y_{1S}, y_{2I} \leq y_2 \leq y_{2S}, 
 \ldots, y_{nI} \leq y_n \leq y_{nS}).
+(\#eq:verogeral)
 \end{equation}
 Esta definição é geral e requer a especificação da distribuição conjunta
 de $\mathrm{Y}$. Fazendo a suposição de observações independentes tem-se que:
@@ -47,8 +48,9 @@ Se o grau de precisão é alto, ou seja $\delta$ é pequeno em relação a varia
 \[ \mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \approx \left(\prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta}) \right) \delta^n  , \]
 e se $\delta$ não depende dos valores dos parâmetros temos a verossimilhança
 como produto das densidades individuais,  
-\begin{equation}\label{eq:veroiid}
-\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \approx \prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta})  ,
+\begin{equation}
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \approx \prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta}),
+ (\#eq:veroiid)
 \end{equation}
 e de forma mais geral para observações não independentes 
 com a densidade multivariada: 
@@ -435,7 +437,7 @@ Esta abordagem tem uma clara restrição que é não levar em consideração a i
 Temos um método simples via aproximação quadrática, porém que não funciona bem quando a superfície de log-verossimilhança é assimétrica. Por outro lado, o método baseado na função _deviance_ não apresenta esta restrição mas fornece regiões de confiança conjuntas, e não diretamente limites $\hat{\theta}_I$ e $\hat{\theta}_S$ para cada parâmetro. 
 Duas abordagens básicas para este problema podem ser consideradas: a primeira é fazer uma reparametrização do modelo nos parâmetros que apresentam forte assimetria ou são restritos, para torná-los irrestritos e aproximadamente simétricos, obter a variância baseada na aproximação quadrática nesta reparametrização e depois converter para a escala original. Quando este procedimento é satisfatório o custo computacional é baixo. Uma outra opção é construir uma nova verossimilhança que não dependa dos outros parâmetros, de forma que podemos atuar como no caso uniparamétrico. Estas duas alternativas serão discutidas na próxima seção.
 
-## Reparametrização e verossimilhança perfilhada
+## Reparametrização e verossimilhança perfilhada {#reparametrizacao}
 
 Considere o problema de obter a estimativa pontual e intervalar para um parâmetro de interesse $\phi = \mathrm{g}(\boldsymbol{\theta})$, onde $\mathrm{g}(\cdot)$ é uma função e, desde que $\mathrm{L}(\phi) = \mathrm{L}( \mathrm{g}(\boldsymbol{\theta}))$, a função de verossimilhança para $\phi$ é obtida da função de verossimilhança de $\boldsymbol{\theta}$ por uma transformação de escala. Consequentemente, como $\hat{\phi} = \mathrm{g}(\boldsymbol{\hat{\theta}})$, quando o intervalo de confiança digamos $\hat{\theta}_I$ e $\hat{\theta}_S$ for obtido diretamente pela função de verossimilhança, log-verossimilhança ou _deviance_, o intervalo para $\phi$ pode ser obtido simplesmente transformando os limites obtidos para $\theta$, no caso unidimensional. Esta propriedade é conhecida como **invariância** do estimador de máxima verossimilhança. Porém, quando o intervalo for obtido pela aproximação quadrática isso não é válido e um Teorema adicional é necessário para esta transformação.
 
