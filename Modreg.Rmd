@@ -6,7 +6,7 @@ estruturados, modelos de predição em séries financeiras, análises de compone
 de solos para agricultura de precisão, mapeamento de doenças, modelos ecológicos, 
 ambientais e climáticos são algumas das áreas de aplicações de tais modelos, 
 entre tantas outras.
-De todos os métodos estatísticos, os modelos de regressão talvez sejam o mais 
+De todos os métodos estatísticos, os modelos de regressão talvez sejam os mais 
 amplamente utilizados na prática. Nestes modelos procura-se explicar, ao menos 
 parcialmente, a variabilidade de uma variável considerada como resposta, 
 por outras variáveis chamadas de explicativas ou covariáveis.
@@ -18,13 +18,13 @@ regressão linear gaussiano, que, seja por sua aplicabilidade e/ou pela facilida
 analítica e computacional, foi e continua sendo largamente utilizado para descrever 
 a associação entre um conjunto de covariáveis e uma variável resposta. 
 Diversas transformações da resposta foram propostas para adaptar a suposição de normalidade. 
-Porém tais modelos não são satisfatórios para respostas discreta como no caso de dados binários, 
+Porém tais modelos não são satisfatórios para respostas discretas como no caso de dados binários, 
 contagens baixas e respostas restritas a certos intervalos como proporções 
-e índices com valores em intervalos limitados.
+e índices.
 
 A modelagem estatística por modelos de regressão recebeu um importante novo impulso desde o
 desenvolvimento dos modelos lineares generalizados no início da década de $70$ 
-cujo marco inicial é o trabalho de REF:NELDER que estendeu de uma forma mais geral
+cujo marco inicial é o trabalho de @Nelder1972 que estendeu de uma forma mais geral
 a classe de modelos de regressão, acomodando sob a mesma abordagem diversas 
 distribuições agrupadas na forma da família exponencial. 
 Variáveis resposta binárias e de contagens foram as que receberam mais atenção, 
@@ -39,66 +39,65 @@ aditivamente lineares, modelagem conjunta de média e dispersão, adição de va
 latentes no preditor são algumas das importantes extensões, às quais adicionam-se métodos 
 para inferência e algorítimos para computação. Neste capítulo vamos considerar alguns 
 modelos simples de regressão com ilustrações computacionais. No Capítulo seguinte 
-consideramos modelos com extensões com inclusão de efeitos aleatórios.
+consideramos uma extensão obtida pela inclusão de efeitos aleatórios.
 
-Considere $Y_1, Y_2, \ldots, Y_n$ variáveis aleatórias independentes e identicamente 
+Considere $Y_1, \ldots, Y_n$ variáveis aleatórias independentes e identicamente 
 distribuídas e $X$ é a matriz de delineamento do modelo conhecida. 
 Um modelo de regressão em notação matricial pode ser escrito da seguinte forma:
 \begin{align*}
-Y|X &\sim f(\underline{\mu}, \phi) \\
-\underline{\mu} &= g(X;\underline{\beta}).
+Y|X &\sim f(\boldsymbol{\mu}, \phi) \\
+\boldsymbol{\mu} &= g(X;\boldsymbol{\beta}).
 \end{align*}
 
-A distribuição de probabilidade  $f(\underline{\mu}, \phi)$ da variável resposta 
-é descrita por dois conjuntos de parâmetros, os de locação (média) e os de dispersão (precisão / variância). 
+A distribuição de probabilidade  $f(\boldsymbol{\mu}, \phi)$ da variável resposta 
+é descrita por dois conjuntos de parâmetros, os de locação (média) e os de 
+dispersão (precisão / variância). 
 Por simplicidade de apresentação supomos aqui que o parâmetro de dispersão é 
 comum a todas as observações e o que muda é apenas a média. 
 Esta restrição pode ser flexibilizada, supondo que o parâmetro de dispersão, 
 também possa ser descrito por alguma função das covariáveis que é possível 
 requerendo uma generalização da implementação computacional. 
 
-Nesta distribuição é muito importante estar atento ao espaço paramétrico de 
-$\underline{\mu}$ e $\phi$. O segundo em geral tem como seu espaço paramétrico 
-os reais positivos, já que, o parâmetro de dispersão tem que ser necessariamente positivo. 
+Nesta especificação é importante estar atento ao espaço paramétrico de 
+$\boldsymbol{\mu}$ e $\phi$. O segundo em geral tem como seu espaço paramétrico 
+os reais positivos, já que, o parâmetro de dispersão deve ser positivo. 
 Para a parte de média devemos ter mais cuidado, uma vez que a função $g(\cdot)$ 
 deve mapear o preditor linear ou não-linear, que pode assumir qualquer valor real, 
-para o espaço paramétrico de $\underline{\mu}$. 
-Por exemplo, se estamos trabalhando com dados de contagens onde o vetor $\underline{\mu}$ 
+para o espaço paramétrico de $\boldsymbol{\mu}$. 
+Por exemplo, se estamos trabalhando com dados de contagens onde o vetor $\boldsymbol{\mu}$ 
 representa o parâmetro da distribuição de Poisson. A função $g(\cdot)$ deve então 
 mapear dos reais para os reais positivos. Em outra situação, por exemplo com dados 
 restritos ao intervalo $(0,1)$, a função $g(\cdot)$ deve mapear dos reais para o 
 intervalo unitário e assim de forma análoga para outros espaço paramétricos.
 
 Note que para a declaração completa do modelo são necessárias duas suposições. 
-A primeira se refere a distribuição de probabilidade atribuída a variável resposta, neste caso $f(\underline{\mu}, \phi)$. A segunda é a definição de uma função $g(\cdot)$ fazendo com que o preditor linear ou não-linear, que pode apresentar qualquer valor nos reais, seja mapeado adequadamente para o espaço paramétrico da parte de média do modelo.
+A primeira se refere a distribuição de probabilidade atribuída a variável resposta, neste caso $f(\boldsymbol{\mu}, \phi)$. A segunda é a definição de uma função $g(\cdot)$ fazendo com que o preditor, que pode apresentar qualquer valor nos reais, seja mapeado adequadamente para o espaço paramétrico da parte de média do modelo.
 
-A função $g(\cdot)$ deve ser duplamente diferenciável. Uma restrição adicional comum é que seja estritamente monótona, porém em modelos não-lineares, isso nem sempre é necessário. Esta função tem como seus argumentos a matriz de delineamento $X$ conhecida e os parâmetros $\underline{\beta}$ desconhecidos a serem estimados. Sendo a função $g(\cdot)$ definida e mapeando os valores do preditor, seja ele linear ou não, para espaço paramétrico de $\underline{\mu}$, o modelo está composto e é passível de ter seus parâmetros estimados pela maximização da função de verossimilhança.
+A função $g(\cdot)$ deve ser duplamente diferenciável. Uma restrição adicional comum é que seja estritamente monótona, porém em modelos não-lineares, isso nem sempre é necessário. Esta função tem como seus argumentos a matriz de delineamento $X$ conhecida e os parâmetros $\boldsymbol{\beta}$ desconhecidos a serem estimados. Sendo a função $g(\cdot)$ definida e mapeando os valores do preditor, seja ele linear ou não, para espaço paramétrico de $\boldsymbol{\mu}$, o modelo está composto e é passível de ter seus parâmetros estimados pela maximização da função de verossimilhança.
 
 Um fato que pode passar desapercebido é com relação ao suporte da distribuição concordar ou não com os possíveis valores do fenômeno em estudo. Por exemplo, ao estudar o peso de animais é comum atribuir o modelo gaussiano, porém este modelo tem como suporte os reais, enquanto que o fenômeno varia apenas nos reais positivos. Nestes casos a usual justificativa prática é que a probabilidade atribuída a parte negativa é tão pequena que é desprezível na prática.
 
 Uma outra situação é quando trabalhamos com uma variável resposta restrita ao intervalo unitário.
-Podemos definir como função $g(\cdot)$ o inverso da função \textit{logit} e vamos estar mapeando a média do modelo ao intervalo unitário compatível com os dados. 
+Podemos definir como função $g(\cdot)$ o inverso da função _logit_ e vamos mapear a média do modelo ao intervalo unitário compatível com os dados. 
 Porém, na escolha da distribuição nem sempre isso é feito. 
 É comum por exemplo, encontrar aplicações de modelos não-lineares atribuindo 
-a distribuição gaussiana para $f(\underline{\mu},\phi)$  que tem suporte nos reais e em 
+a distribuição gaussiana para $f(\boldsymbol{\mu},\phi)$  que tem suporte nos reais e em 
 desacordo com os dados restritos a algum intervalo. 
 Apesar deste tipo de construção não ser incomum em aplicações, 
 é recomendado atribuir uma distribuição de probabilidade que 
 tenha suporte concordante com o campo de variação da variável resposta. 
-No caso de variável resposta restrita ao intervalo unitário, a distribuição beta ou simplex são opções razoáveis. Tal fato motiva um dos Exemplo na Seção XX.
+No caso de variável resposta restrita ao intervalo unitário, a distribuição beta ou simplex são opções razoáveis. Tal fato motiva um dos exemplos deste capítulo.
 Quando pensamos na concordância entre dados e modelos é mais natural atribuir ao fenômeno uma distribuição cujo suporte, concorde com o campo de variação do fenômeno.
 
 Dado a relevância de modelos de regressão em aplicações nas mais diversas áreas do conhecimento, 
 neste capítulo vamos mostrar como implementar a estimação de alguns modelos de regressão mais usuais 
 como regressão de Poisson, Simplex e não-linear gaussiano.
-Vamos explorar o algoritmo de Newton-Raphson no modelo de regressão Poisson, para o modelo Simplex, vamos explorar o conceito de verossimilhança concentrada e exemplificar como usar a função \textit{escore} obtida analiticamente dentro do algoritmo \textsl{BFGS} implementado na função \code{optim()}. No último modelo vamos tratar tudo numericamente apenas como uma implementação simplificada. 
+Vamos explorar o algoritmo de Newton-Raphson no modelo de regressão Poisson, para o modelo Simplex, vamos explorar o conceito de verossimilhança concentrada e exemplificar como usar a função escore obtida analiticamente dentro do algoritmo `BFGS` implementado na função `optim()`. No último modelo vamos tratar tudo numericamente apenas como uma implementação simplificada. 
 Como material adicional apresentamos um estudo de caso com um modelo de regressão para análise de um experimento com contagens subdispersas.
 
 ## Regressão Poisson {#PoisReg}
 
-Em situações onde a resposta é discreta na forma de contagens,
-escolha de distribuição para variável resposta recai, 
-ao menos inicialmente, sobre a distribuição de Poisson. 
+Em situações onde a resposta é discreta na forma de contagens a escolha da distribuição para a variável resposta recai, ao menos inicialmente, sobre a distribuição de Poisson. 
 Conforme mencionado anteriormente, um modelo de regressão qualquer é descrito por duas suposições: 
 a distribucional, que se refere a distribuição de probabilidade atribuída a variável resposta 
 e a uma função $g(\cdot)$, que liga o preditor à média desta distribuição.
@@ -107,41 +106,43 @@ No caso do modelo de regressão de Poisson  a distribuição tem a seguinte form
   \text{ e } y = 0,1,2 \ldots . \]
 
 No modelo Poisson o parâmetro indexador $\lambda$ corresponde à esperança de $Y$. 
-O modelo é um caso particular da família de MLG 
-em que temos apenas a componente de média, já que a variância é igual a média. 
-O parâmetro $\lambda$ deve ser maior que zero e portanto devemos escolher uma função $g(.)$ que mapeie dos reais aos reais positivos e a escolha usual para regressão Poisson é a exponencial. 
-No contexto de modelos lineares generalizados pode-se mostrar que
-a função de ligação canônica para modelo Poisson é a função logaritmo cuja a inversa é a exponencial, 
+O modelo é um caso particular da família de MLG em que temos apenas a componente de média, 
+já que a variância é igual a média. 
+O parâmetro $\lambda$ deve ser maior que zero e portanto devemos escolher uma função $g(\cdot)$ que mapeie dos reais aos reais positivos e a escolha usual para regressão Poisson é a função exponencial. 
+No contexto de modelos lineares generalizados pode-se mostrar que a função de 
+ligação canônica para o modelo Poisson é a função logaritmo cuja a inversa é a exponencial, 
 por isso sua popularidade. 
-Resumindo, supomos que $\underline{Y} \sim P(\underline{\lambda})$ e que $\underline{\lambda} = \exp\{X \underline{\beta}\}$ com a suposição adicional que o preditor é linear. 
+Resumindo, supomos que $\mathbf{Y} \sim P(\boldsymbol{\lambda})$ e que $\boldsymbol{\lambda} = \exp\{X \boldsymbol{\beta}\}$ com a suposição adicional que o preditor é linear. 
+Esta notação pode ser confusa para leitores familiarizados com distribuições multivariadas.
+A princípio parece que estamos atribuindo uma distribuição para o vetor aleatório $\mathbf{Y}$ e
+que portanto precisamos de uma distribuição multivariada. Na verdade estamos assumindo que os componentes do vetor $\mathbf{Y}$ são independentes e cada um de seus componentes é Poisson distribuído com o respectivo parâmetro $\lambda$. Porém, tal notação é conveniente para ilustrar as implementações computacionais.
 
-Expressões genéricas  para função de verossimilhança, escore e informação,
-assim como algoritmos para estimação dos parâmetros
-são disponíveis para toda classe de MLG.
+Expressões genéricas  para função de verossimilhança, escore e informação, 
+assim como algoritmos para estimação dos parâmetros são disponíveis para toda classe de MLG.
 Entretanto como nosso objetivo aqui é ilustrar as computações 
 vamos considerar o caso da Poisson individualmente.
 A função de log-verossimilhança escrita em formato matricial é dada por,
 \[  
-l(\underline{\beta}, \underline{y}) = 
-  - 1^\top g( X \underline{\beta}) + \underline{y}^\top X \underline{\beta} + 
-  1^\top \log(\underline{y} !).
+l(\boldsymbol{\beta}, \mathbf{y}) = 
+  - 1^\top g( X \boldsymbol{\beta}) + \mathbf{y}^\top X \boldsymbol{\beta} + 
+  1^\top \log(\mathbf{y} !).
 \]
-Derivando em relação ao vetor de parâmetros $\underline{\beta}$ temos a função escore.
+Derivando em relação ao vetor de parâmetros $\mathbf{\beta}$ temos a função escore.
 \[
-  U(\underline{\beta}) = \left( \underline{y} - \exp\{X \underline{\beta}\} \right)^\top X 
+  U(\boldsymbol{\beta}) = \left( \mathbf{y} - \exp\{X \boldsymbol{\beta}\} \right)^\top X 
 \]
-Derivando novamente obtemos a matriz de informação observada em que $diag(X \underline{\beta})$ denota
-uma matrix diagonal com elementos $\underline{\lambda} = X \underline{\beta}$:
+Derivando novamente obtemos a matriz de informação observada em que $\mathrm{diag}(X \boldsymbol{\beta})$ denota
+uma matrix diagonal com elementos $\boldsymbol{\lambda} = X \boldsymbol{\beta}$:
 \[
-I_o(\underline{\beta}) = - X^\top [diag(\exp\{X \underline{\beta}\})] X . 
+I_o(\boldsymbol{\beta}) = - X^\top [\mathrm{diag}(\exp\{X \boldsymbol{\beta}\})] X . 
 \]
 Com isso temos todos os elementos para montar o algoritmo de Newton-Raphson e
-encontrar as estimativas de máxima verossimilhança para o vetor $\underline{\beta}$. 
+encontrar as estimativas de máxima verossimilhança para o vetor $\boldsymbol{\beta}$. 
 
 Para exemplificar o processo vamos considerar dados simulados 
-supondo que $X \underline{\beta}$ tem a forma $\beta_0 + \beta_1 x_i$,  em que $x_i$ é uma covariável com valores conhecidos.
+supondo que $X \boldsymbol{\beta}$ tem a forma $\beta_0 + \beta_1 x_i$,  em que $x_i$ é uma covariável com valores conhecidos.
 Nas simulações a covariável assume $n=10, 50$ e $100$ valores igualmente espaçados entre 0 e 5.  
-Assim, o modelo tem apenas dois parâmetros $\underline{\beta} = (\beta_0, \beta_1)$. 
+Assim, o modelo tem apenas dois parâmetros $\boldsymbol{\beta} = (\beta_0, \beta_1)^{\top}$. 
 O código abaixo apresenta uma função para simular realizações deste modelo e  
 mostramos o comando para gerar o conjunto de dados com $n=10$. 
 
@@ -164,12 +165,10 @@ dump("dados10", file="PoisReg.R")
 ```
 
 A Figura \@ref(fig:modPoisson) apresenta a superfície de log-verossimilhança 
-em escala de \textit{deviance} exata e 
-pela aproximação quadrática, para diferentes tamanhos de amostras.
+em escala de _deviance_ exata e pela aproximação quadrática, para diferentes tamanhos de amostras.
 As linhas de contorno definem regiões de confiança que correspondem aos quantis
 99, 95, 90, 70, 50, 30, 10 e  5 \% de distribuição $\chi^2_{2}$.
-O ponto indica o valor verdadeiro do parâmetro. 
-Note-se que os gráficos não estão na mesma escala.
+O ponto indica o valor verdadeiro do parâmetro. Note-se que os gráficos não estão na mesma escala.
 
 ```{r echo = FALSE}
 ## Verossimilhança
@@ -297,11 +296,11 @@ Note que com o aumento do tamanho da amostra os contornos vão ficando menores, 
 sugerindo nesta ilustração a propriedade assintótica de consistência e não-viés.
 
 Seguindo com o processo de inferência podemos usar o algoritmo de Newton-Raphson para encontrar as estimativas de máxima verossimilhança de $\beta_0$ e $\beta_1$, para isto precisamos escrever duas funções, 
-a \code{escore()} e a \code{hessiana()} conforme código \@ref(lem:esc-hess-pois).
-Definimos a função hessiana de duas maneiras na liguagem \R. 
+a `escore()` e a `hessiana()` conforme código \@ref(lem:esc-hess-pois).
+Definimos a função hessiana de duas maneiras na liguagem `R`. 
 Na primeira programamos diretamente como na expressão. Na sequência 
 reescrevemos a função evitando usar a matriz completa de pesos
-já que apenas os elementos fora da diagonal são nulos e portanto desnecessários.
+já que os elementos fora da diagonal são nulos e portanto desnecessários.
 
 ```{lemma, esc-hess-pois}
 **Função escore e hessiana para a regressão de Poisson.**
@@ -373,7 +372,7 @@ beta10[2] + c(-1,1)*qnorm(0.975)*erro.padrao[2]
 ```
 
 Nossos resultados coincidem com as estimativas 
-retornadas pela função \code{glm()} do \R.
+retornadas pela função `glm()` do `R`.
 
 ```{r}
 beta10.glm <- glm(y ~ cov, family=poisson, data=dados10)
@@ -382,15 +381,12 @@ summary(beta10.glm)$coef
 confint(beta10.glm, type="quad")  
 ```
 
-Os intervalos acima podem ser inadequados 
-quando os parâmetros são não ortogonais por considerar
- isoladamente a curvatura em cada direção. 
-O grau de não ortogonalidade também é influenciado pela da ordem de magnitude das covariáveis
-e consequentemente dos parâmetros.
+Os intervalos acima podem ser inadequados quando os parâmetros são não ortogonais 
+por considerar isoladamente a curvatura em cada direção. O grau de não ortogonalidade 
+também é influenciado pela ordem de magnitude das covariáveis e consequentemente dos parâmetros.
 Uma primeira alternativa é a obtenção dos intervalos através de verossimilhança
 (ou deviance) perfilhada, que tipicamente  fornece intervalos mais largos e por vezes assimétricos. 
-Esta solução pode ser computacionalmente 
-mais cara ou mesmo proibitiva dependendo da quantidade de observações e parâmetros no modelo.
+Esta solução pode ser computacionalmente mais cara ou mesmo proibitiva dependendo da quantidade de observações e parâmetros no modelo.
 
 ```{r}
 confint(beta10.glm)
@@ -421,51 +417,37 @@ plot(b1, -2*(prof1-llMAX), type="l", xlab=expression(beta[1]), ylab=expression(p
 lines(b1, (b1-beta10[2])^2 * diag(Io)[2], col=2, type="l")
 ```
 
-Uma outra solução é utilizar covariáveis centradas para 
-obter verossimilhanças (aproximadamente) ortogonais.
-Além disto as covariáveis podem ainda ser escalonadas para
-que os coeficientes tenham ordem de grandeza comparáveis
-e a função tenha contornos ao menos aproximadamente circulares.
-Desta forma, os coeficientes são inicialmente estimados pontualmente 
-e por intervalo para variáveis transformadas.
-Posteriormente, as estimativas são transformadas para escala original
-pela equação que define a reparametrização.
+Uma outra solução é utilizar covariáveis centradas para obter verossimilhanças (aproximadamente) ortogonal.
+Além disto as covariáveis podem ainda ser escalonadas para que os coeficientes tenham ordem de grandeza comparáveis e a função tenha contornos ao menos aproximadamente circulares.
+Desta forma, os coeficientes são inicialmente estimados pontualmente e por intervalo para variáveis transformadas. Posteriormente, as estimativas são transformadas para escala original pela equação que define a reparametrização.
 
-Com isso, exemplificamos a construção dos cálculos computacionais
-do modelo de regressão de Poisson. 
-Procedemos a estimação por máxima verossimilhança, obtivemos o vetor \textit{escore} e a matriz \textit{hessiana} que possibilitaram o uso do algoritmo de Newton-Raphson. 
+Com isso, exemplificamos a construção dos cálculos computacionais do modelo de regressão de Poisson. 
+Procedemos a estimação por máxima verossimilhança, obtivemos o vetor escore e a matriz hessiana que possibilitaram o uso do algoritmo de Newton-Raphson. 
 Vimos também que a aproximação quadrática no caso do modelo Poisson é bastante acurada, 
-sendo que em nossos exemplos é
- visualmente difícil encontrar diferença entre ela e a exata mesmo para a amostra de tamanho 10. 
-Usando resultados assintóticos construímos intervalos de confiança de duas formas diferentes. 
-Além disso, com os resultados obtidos estamos aptos a proceder os testes de hipóteses, 
+sendo que em nossos exemplos é visualmente difícil encontrar diferença entre ela e a exata mesmo para a amostra de tamanho 10. Usando resultados assintóticos construímos intervalos de confiança de duas formas diferentes. Além disso, com os resultados obtidos estamos aptos a proceder os testes de hipóteses, 
 por exemplo, $H_0 :\beta_1 = 0$ contra $H_1 : \beta_1 \neq 0$. 
 Neste caso, poderíamos usar o tradicional teste de Wald, teste escore 
 ou mesmo o teste de razão de verossimilhança.
 
-
 ## Regressão Simplex {#reg-simplex}
 
-Em situações práticas podemos estar diante de 
-variáveis restritas ao intervalo $(0,1)$, como taxas, proporções e índices. 
-O exemplo que motiva essa sessão vem da área de ciências sociais na qual é comum a mensuração de variáveis latentes (não observáveis) que muitas vezes buscam medir qualidade, através de indicadores indiretos sobre o fenômeno latente. Um exemplo deste tipo de análise é o IDH - Índice de Desenvolvimento Humano, preconizado pela ONU - Organização das Nações Unidas, em todo o mundo. 
+Em situações práticas podemos estar diante de variáveis restritas ao intervalo $(0,1)$, como taxas, proporções e índices. O exemplo que motiva essa seção vem da área de ciências sociais na qual é comum a mensuração de variáveis latentes (não observáveis) que muitas vezes buscam medir qualidade, através de indicadores indiretos sobre o fenômeno latente. Um exemplo deste tipo de análise é o IDH - Índice de Desenvolvimento Humano, preconizado pela ONU - Organização das Nações Unidas, em todo o mundo. 
 
 Estes índices que tradicionalmente, por construção, resultam sempre em valores no intervalo unitário, buscam medir indiretamente o nível de desenvolvimento de um país. O índice pode ser adaptado 
 como o IDH-M (Índice de Desenvolvimento Humano - Municipal) para municípios, 
 estados ou qualquer aglomeração de indivíduos, como por exemplo, bairros de uma cidade. 
-A importância em ressaltar que a construção leva a um número no intervalo unitário, 
-é a de que o índice é expresso 
-como uma nota em uma escala comum,
+É importante ressaltar que a construção leva a um número no intervalo unitário, 
+assim o índice é expresso como uma nota em uma escala comum,
 permitindo a comparação entre países, estados, municípios ou bairros.
 
 Com foco em tais situações, selecionamos para este exemplo o Índice de Qualidade de Vida de Curitiba (IQVC). Este índice é composto por $19$ indicadores separados em $4$ áreas temáticas: Habitação, Saúde, Educação e Segurança. Estes indicadores buscam de forma indireta medir o nível de vida da população residente em cada um dos $75$ bairros da cidade. A metodologia para sua construção segue as premissas do IDH, e como tal resulta sempre em valores no intervalo unitário. Para sua construção é utilizada a base de microdados do Censo 2000, disponibilizada pelo IBGE (Instituto Brasileiro de Geografia e Estatística). Um interesse comum é relacionar o IQVC com a renda média do bairro medida em salários mínimos vigentes na época da pesquisa, neste caso ano de 2000. Os dados são disponibilizados pelo IPPUC/PR
-[www.ippuc.org.br] e uma versão resumida está disponível no arquivo \textit{simplex.txt}
-dos complementos \textit{online}.
+[www.ippuc.org.br] e uma versão resumida está disponível no arquivo **simplex.txt**
+dos complementos _online_.
 
 Para a construção do modelo de acordo com a abordagem que utilizamos neste material, 
-é necessário fazer duas suposições, como nos MLG's usuais, a primeira a respeito da distribuição de probabilidade atribuída a variável resposta e a segunda referente a função $g(\cdot)$ que vai mapear o preditor linear ou não ao espaço paramétrico induzido pela distribuição suposta. Para este exemplo vamos supor a distribuição como sendo Simplex e a função $g(\cdot)$ como a inversa da função \textit{logit}, comum em modelos lineares generalizados. A apresentação do modelo aqui baseia-se no trabalho de \cite{Miyashiro:2008}.
+é necessário fazer duas suposições, como nos MLG's usuais, a primeira a respeito da distribuição de probabilidade atribuída a variável resposta e a segunda referente a função $g(\cdot)$ que vai mapear o preditor linear ou não ao espaço paramétrico induzido pela distribuição suposta. Para este exemplo vamos supor a distribuição como sendo simplex e a função $g(\cdot)$ como a inversa da função _logit_, comum em modelos lineares generalizados. A apresentação do modelo baseia-se no trabalho de @Miyashiro:2008.
 
-A função densidade de probabilidade Simplex é indexada por dois tipos de parâmetros locação $\mu \in (0,1)$ e dispersão $\sigma^2 > 0$. Ambos podem ser decompostos em função de covariáveis observadas. Uma variável aleatória $Y$ que segue o modelo Simplex tem função densidade dada por
+A função densidade probabilidade simplex é indexada por dois tipos de parâmetros locação $\mu \in (0,1)$ e dispersão $\sigma^2 > 0$. Ambos podem ser decompostos em função de covariáveis observadas. Uma variável aleatória $Y$ que segue o modelo simplex tem função densidade dada por
 \begin{equation}
 (\#eq:simplex)
   f(y; \mu, \sigma^2) = [ 2 \pi \sigma^2 {y(1-y)}^3]^{-1/2} \exp \left\{ - d(y;\mu)/2\sigma^2 \right\}, \quad y \in (0,1),
@@ -475,16 +457,16 @@ em que
   d(y;\mu) = \frac{(y - \mu)^2}{y (1-y) \mu^2 (1- \mu)^2} .
 \end{equation*}
 
-Sejam $Y_1, Y_2, \ldots, Y_n$ variáveis aleatórias independentes, sendo cada $Y_i \sim S(\mu_i, \sigma^2)$, $i = 1,2, \ldots, n.$ O modelo de regressão Simplex é definido pela densidade \@ref(eq:simplex), sendo as médias $\mu_i$ dadas por
+Sejam $Y_1, \ldots, Y_n$ variáveis aleatórias independentes, sendo cada $Y_i \sim S(\mu_i, \sigma^2)$, $i = 1,2, \ldots, n.$ O modelo de regressão simplex é definido pela densidade \@ref(eq:simplex), sendo as médias $\mu_i$ dadas por
 \begin{equation*}
   \mu_i = g( x_i^\top \underline{\beta}) = g(\eta_i)
 \end{equation*}
-em que $g(\cdot)$ é uma função que transforma valores dos reais ao intervalo unitário, $\underline{\beta} = (\beta_1, \beta_2, \ldots, \beta_p)^\top$ é o vetor de parâmetros da regressão $(\underline{\beta} \in \Re^p)$, $x_i^\top = (x_{i1}, x_{i2}, \ldots, x_{ip})^\top$ são os valores conhecidos de $p$ covariáveis e $\eta_i$ neste caso é o preditor linear. Poderíamos, sem perda de generalidade definir o preditor como
+em que $g(\cdot)$ é uma função que transforma valores dos reais ao intervalo unitário, $\boldsymbol{\beta} = (\beta_1, \beta_2, \ldots, \beta_p)^\top$ é o vetor de parâmetros da regressão $(\boldsymbol{\beta} \in \Re^p)$, $x_i^\top = (x_{i1}, x_{i2}, \ldots, x_{ip})^\top$ são os valores conhecidos de $p$ covariáveis e $\eta_i$ neste caso é o preditor linear. Poderíamos, sem perda de generalidade definir o preditor como
 
 \begin{equation*}
-  h(\mu_i) = x_i^\top \underline{\beta}  = \eta
+  h(\mu_i) = x_i^\top \boldsymbol{\beta}  = \eta
 \end{equation*}
-onde agora $h(\cdot)$ é uma função de ligação que transforma do $(0,1)$ em $\Re$, dependendo da situação pode ser mais simples definir de uma forma ou de outra. No caso Simplex vamos definir a função $h(\cdot)$ como sendo a função $logit$ que facilita bastante a obtenção do vetor \textit{escore}. O objetivo deste exemplo é mostrar como usar os otimizadores numéricos implementados na função \code{optim()}, porém usando o vetor \textit{escore} obtido analiticamente.
+onde agora $h(\cdot)$ é uma função de ligação que transforma do $(0,1)$ em $\Re$, dependendo da situação pode ser mais simples definir de uma forma ou de outra. No caso simplex vamos definir a função $h(\cdot)$ como sendo a função $logit$ que facilita a obtenção do vetor escore. O objetivo deste exemplo é mostrar como usar os otimizadores numéricos implementados na função `optim()`, porém usando o vetor escore obtido analiticamente.
 
 Dada a função densidade de probabilidade, podemos facilmente obter a função de log-verossimilhança,
 \[
@@ -494,7 +476,7 @@ Dada a função densidade de probabilidade, podemos facilmente obter a função 
 Temos que $h(\mu_i) = x_i^\top \underline{\beta} = \eta_i$, então para obter o vetor escore precisamos derivar em relação a cada $\beta_p$.
 
 \begin{equation*}
-  \frac{\partial l(\underline{\beta}, \sigma^2)}{\partial \beta_p} = 
+  \frac{\partial l(\boldsymbol{\beta}, \sigma^2)}{\partial \beta_p} = 
   \sum_{i=1}^n \frac{\partial l_i(\mu_i, \sigma^2)}{\partial \mu_i} \frac{\partial \mu_i}{ \partial \eta_i} \frac{\partial \eta_i}{\partial \beta_i}.
 \end{equation*}
 
@@ -513,20 +495,20 @@ e o terceiro,
   \frac{\partial \eta_i}{\partial \beta_i} =  x_{ip} .
 \]
 
-Em notação matricial, a função escore para $\underline{\beta}$ é dada por
-\[ U_{\underline{\beta}}(\underline{\beta}, \sigma^2) = \sigma^{-2} X^\top T u, \]
+Em notação matricial, a função escore para $\boldsymbol{\beta}$ é dada por
+\[ U_{\boldsymbol{\beta}}(\boldsymbol{\beta}, \sigma^2) = \sigma^{-2} X^\top T u, \]
 onde $X$ é uma matriz $n \times p$, de delineamento do modelo, $T = diag\{ 1/g'(\mu_1), \ldots, 1/g'(\mu_i) \}$ e $u^\top = (u_1, \ldots, u_n)\top.$
 
-A função escore para $\sigma^2$ é facilmente obtida, derivando $l(\underline{\beta}, \sigma^2)$ em relação a $\sigma^2$,
+A função escore para $\sigma^2$ é facilmente obtida, derivando $l(\boldsymbol{\beta}, \sigma^2)$ em relação a $\sigma^2$,
 \begin{equation*}
-  U_{\sigma^2}(\underline{\beta}, \sigma^2) = -\frac{n}{2 \sigma^2} + \frac{1}{2 \sigma^4} \sum_{i=1}^n d(y_i; \mu_i).
+  U_{\sigma^2}(\boldsymbol{\beta}, \sigma^2) = -\frac{n}{2 \sigma^2} + \frac{1}{2 \sigma^4} \sum_{i=1}^n d(y_i; \mu_i).
 \end{equation*}
 
 Note que podemos obter $\hat{\sigma}^2$ analiticamente, sua equação é dada por
 \[  \hat{\sigma}^2 =  \frac{1}{n} \sum_{i=1}^n d(y_i, \hat{\mu}_i) . \]
 
-Com isso temos todos os elementos necessários para a implementação computacional do modelo de regressão Simplex. Não há uma implementação da densidade Simplex entre as funções
-básicas do \R. Começamos então definindo uma função para densidade da Simplex.
+Com isso temos todos os elementos necessários para a implementação computacional do modelo de regressão simplex. Não há uma implementação da densidade simplex entre as funções
+básicas do `R`. Começamos então definindo uma função para a densidade simplex.
 
 ```{r}
 dsimplex <- function(y, mu, sigma, log=TRUE){
@@ -538,15 +520,12 @@ dsimplex <- function(y, mu, sigma, log=TRUE){
 }
 ```
 
-Dada a aplicação teremos o vetor $\underline{\beta} = (\beta_0, \beta_1)$ e então o modelo de regressão Simplex em \R{} é apresentado no código abaixo. 
-Definimos a função de ligação \textit{logit} para $h(\cdot) = g^{-1}(\cdot)$ e sua inversa $g(\cdot)$.
-Note que como o parâmetro $\sigma^2$ tem solução analítica e depende apenas de $\mu_i$ não precisamos maximizar numericamente em relação a este parâmetro, estamos novamente usando uma log-verossimilhança concentrada. 
-Basta substituirmos seu estimador na expressão da 
+Dada a aplicação teremos o vetor $\boldsymbol{\beta} = (\beta_0, \beta_1)$ e então o modelo de regressão simplex em `R` é apresentado no código abaixo. 
+Definimos a função de ligação _logit_ para $h(\cdot) = g^{-1}(\cdot)$ e sua inversa $g(\cdot)$.
+Note que como o parâmetro $\sigma^2$ tem solução analítica e depende apenas de $\mu_i$ não precisamos maximizar numericamente em relação a este parâmetro, estamos novamente usando uma log-verossimilhança concentrada. Basta substituirmos seu estimador na expressão da 
 log-verossimilhança.
 Em nossas implementações este procedimento foi fundamental para conseguir 
 estabilidade nos resultados do algoritmo de maximização da verossimilhança. 
-Retornaremos a esta discussão e apresentamos justificativas
-na análise bayesiana destes dados na sessão \@ref(sec:bayesSimplex).
 
 ```{r}
 inv.logit <- function(x, lambda){ 1/(1+exp(-x)) }
@@ -581,7 +560,7 @@ escore <- function(b0, b1, formula, data){
 }
 ```
 
-Com isto, estamos aptos a passar a log-verossimilhança e o vetor escore para a optim e obter as estimativas de máxima verossimilhança para $\beta_0$ e $\beta_1$, com estas substituímos na expressão de $\hat{\sigma}^2$ e concluímos o processo de estimação. Antes disso, precisamos do conjunto de dados que será analisado. O arquivo chamado \texttt{simplex.txt} traz o conjunto para a análise. O código abaixo lê a base de dados e apresenta um pequeno resumo. A Figura \@ref(fig:histSimplex) apresenta uma análise exploratória gráfica, com um histograma e um diagrama de dispersão relacionando o IQVC com a renda média do bairro em salários mínimos que foi divido por $10$ para evitar problemas numéricos.
+Com isto, estamos aptos a passar a log-verossimilhança e o vetor escore para a `optim()` e obter as estimativas de máxima verossimilhança para $\beta_0$ e $\beta_1$, com estas substituímos na expressão de $\hat{\sigma}^2$ e concluímos o processo de estimação. Antes disso, precisamos do conjunto de dados que será analisado. O arquivo chamado **simplex.txt** traz o conjunto para a análise. O código abaixo lê a base de dados e apresenta um pequeno resumo. A Figura \@ref(fig:histSimplex) apresenta uma análise exploratória gráfica, com um histograma e um diagrama de dispersão relacionando o IQVC com a renda média do bairro em salários mínimos que foi divido por $10$ para evitar problemas numéricos.
 
 ```{r}
 dados <- read.table("simplex.txt",header=TRUE)
@@ -599,7 +578,8 @@ mod <- lm(y ~ MEDIA, data=dados)
 abline(mod)
 ```
 
-Para o ajuste do modelo Simplex, vamos novamente usar as facilidades do pacote \pkg{bbmle} que usa internamente a função \code{optim()}. O ajuste é dado no seguinte código. 
+Para o ajuste do modelo simplex, vamos novamente usar as facilidades do pacote `bbmle` 
+que usa internamente a função `optim()`. O ajuste é dado no seguinte código. 
 
 ```{r}
 require(bbmle)
@@ -608,11 +588,11 @@ simplex.logit.gr <- mle2(modelo.simplex, start=list(b0=0,b1=0),
                          data=list(formula=y~MEDIA, data=dados))
 ```
 
-A única diferença é no uso do argumento $gr$ onde é passada a função escore com exatamente os mesmos argumentos adicionais usados na função de log-verossimilhança. A função \code{optim()} tem quatro otimizadores básicos: \textit{Nelder-Mead}, \textit{gradiente conjugado}, \textit{BFGS} e \textit{simulating annealing}. 
-O uso de gradiente analítico só é possível nos algoritmos \textit{BFGS} e \textit{gradiente conjugado}.
+A única diferença é no uso do argumento `gr` onde é passada a função escore com exatamente os mesmos argumentos adicionais usados na função de log-verossimilhança. A função `optim()` tem quatro otimizadores básicos: `Nelder-Mead`, `gradiente conjugado`, `BFGS` e `simulating annealing`. 
+O uso de gradiente analítico só é possível nos algoritmos `BFGS` e `gradiente conjugado`.
 
-O resumo tradicional do modelo pela função \code{summary()}, traz os erros padrões que são usados para a construção de intervalos de confiança assintóticos, que podem ser obtidos diretamente pela função 
-\code{confint(..., method="quad")}.
+O resumo tradicional do modelo pela função `summary()`, traz os erros padrões que são usados para a construção de intervalos de confiança assintóticos, que podem ser obtidos diretamente pela função 
+`confint(..., method="quad")`.
 
 ```{r}
 summary(simplex.logit.gr)
@@ -622,7 +602,7 @@ confint(simplex.logit.gr, method="quad")
 Deixamos como exercício para o leitor obter o intervalo de confiança para $\sigma^2$ e os perfis de verossimilhança para $\beta_0$ e $\beta_1$. Para finalizar o exemplo, podemos visualizar o ajuste sobreposto aos dados. Para isto, vamos escrever uma função genérica para gerar os preditos.
 
 ```{lemma}
-**Função para calcular os valores preditos para um modelo de regressão Simplex.**
+**Função para calcular os valores preditos para um modelo de regressão simplex.**
 ```
 
 ```{r}
@@ -634,7 +614,7 @@ my.predict <- function(modelo, formula, newdata){
 }
 ```
 
-Usando a função \code{my.predict()} obtemos os valores preditos pelo modelo para rendas em 
+Usando a função `my.predict()` obtemos os valores preditos pelo modelo para rendas em 
 uma sequência de valores.
 
 ```{r}
@@ -642,8 +622,7 @@ preditos <- my.predict(simplex.logit.gr, formula=~MEDIA,
                        newdata= data.frame(MEDIA=seq(0,4,l=500)))
 ```
 
-Por fim, plotamos na Figura \@ref(fig:desSimplex) um diagrama de dispersão com as observações e a média predita pelo modelo 
-para a sequência de valores de renda.
+Por fim, plotamos na Figura \@ref(fig:desSimplex) um diagrama de dispersão com as observações e a média predita pelo modelo para a sequência de valores de renda.
 
 ```{r desSimplex, echo = FALSE, fig.width = 6, fig.height = 4.5, fig.cap = 'Diagrama de dispersão e modelo ajustado - IQVC 2000.'}
 plot(y ~ MEDIA, ylim=c(0,1), xlim=c(0,4), ylab="IQVC", xlab="Renda em S.M/10", data=dados, cex.lab = 0.8, cex.main = 0.8, cex.axis = 0.8)
@@ -681,15 +660,13 @@ Para ilustrar, considere o modelo $f_a(\cdot)$ de onde obtemos que
 \end{tabular}
 \end{center}
 Dessa maneira, a partir das estimativas pontuais sob qualquer modelo podemos 
-obter as de qualquer outro aplicando as equações de reparametrização. Este é um fato importante pois podemos ajustar ao dados apenas ao modelo que seja mais adequado para 
- estimação e inferência e também computacionalmente e a partir deste obter estimativas em outras parametrizações
- que podem ser desejáveis para interpretações práticas.
+obter as de qualquer outro aplicando as equações de reparametrização. Este é um fato importante pois podemos ajustar aos dados apenas o modelo que seja mais adequado para estimação e inferência e também computacionalmente e a partir deste obter estimativas em outras parametrizações que podem ser desejáveis para interpretações práticas.
 
-Para avaliar a inferência sob diferentes parametrizações, faremos o ajuste de cada uma delas à dados de incidência de ferrugem do pessegueiro, causada pelo fungo \textit{Tranzshcelia discolor}, em função do tempo em plantas da cultivar Chimarrita (figura \@ref(fig:incplot)). O pomar foi implantado em 2004 em Curitiba (25$^\circ$, 55' 10'' S, 49$^\circ$ 57' 26'' W, 945m), com espaçamento de 1m entre plantas de 2,5m entre linhas. Cada planta foi considerada como uma unidade experimental onde foram avaliadas o número de folhas com presença de ferrugem em relação ao total. Isso foi feito em 6 ramos marcados por planta durante 14 avaliações com intervalo de 10 à 16 dias entre avaliações. Para análise considerou-se a proporção observada de folhas atacadas.
+Para avaliar a inferência sob diferentes parametrizações, faremos o ajuste de cada uma delas à dados de incidência de ferrugem do pessegueiro, causada pelo fungo _Tranzshcelia discolor_, em função do tempo em plantas da cultivar Chimarrita (figura \@ref(fig:incplot)). O pomar foi implantado em 2004 em Curitiba (25$^\circ$, 55' 10'' S, 49$^\circ$ 57' 26'' W, 945m), com espaçamento de 1m entre plantas de 2,5m entre linhas. Cada planta foi considerada como uma unidade experimental onde foram avaliadas o número de folhas com presença de ferrugem em relação ao total. Isso foi feito em 6 ramos marcados por planta durante 14 avaliações com intervalo de 10 à 16 dias entre avaliações. Para análise considerou-se a proporção observada de folhas atacadas.
 
 Considerou-se o modelo gaussiano para as observações e a função de log-verossimilhança foi implementada de forma a receber qualquer modelo de regressão não linear (código \@ref(lem:logverologis)). 
 Esta suposição é usual na prática embora, neste contexto, uma resposta binomial poderia ser considerada.
-As funções em \R{} para os modelos foram criadas e a estimação foi feita pela \code{optim()}. Após a estimação foram obtidos os contornos de log-verossimilhança para os pares de parâmetros
+As funções em `R` para os modelos foram criadas e a estimação foi feita pela `optim()`. Após a estimação foram obtidos os contornos de log-verossimilhança para os pares de parâmetros
 mostrados na Figura \@ref(fig:llcontornos).
 
 ```{r importacao, echo = FALSE, results = 'hide'}
@@ -782,7 +759,7 @@ curve(f.a(x, th=pars[,1]), 0, 180, add=TRUE, lwd=1.4, cex.lab = 0.8, cex.main = 
       cex.axis = 0.8)
 ```
 
-Verifica-se que na parametrização $A$ os contornos de \texttt{deviance} são praticamente elípticos com eixos paralelos aos eixos cartesianos. Do ponto de vista de otimização, o procedimentos baseados em avaliação de gradiente tem melhor taxa de convergência quando à função objetivo apresenta simetria e ortogonalidade. Do ponto de vista de inferência estatística, por exemplo na obtenção de intervalos de confiança, 
+Verifica-se que na parametrização $A$ os contornos de _deviance_ são praticamente elípticos com eixos paralelos aos eixos cartesianos. Do ponto de vista de otimização, os procedimentos baseados em avaliação de gradiente tem melhor taxa de convergência quando à função objetivo apresenta simetria e ortogonalidade. Do ponto de vista de inferência estatística, por exemplo na obtenção de intervalos de confiança, 
 a ortogonalidade permite fazer inferência para um parâmetro sem a necessidade de 
 correções considerando a curvatura na direção dos demais parâmetros.
 
@@ -837,19 +814,20 @@ Contagens são variáveis aleatórias que assumem valores inteiros não negativo
 Em análise de dados de contagem o uso do modelo de regressão Poisson tem ocorrência predominante. Esse modelo tem sido uma escolha natural e imediata para essa classe de variável aleatória devido primeiramente à compatibilidade de suporte. Além disso, dados de contagem apresentam certa assimetria em relação à média e variabilidade que depende desse valor médio, duas características que são inerentes ao modelo de regressão Poisson. Entretanto, também inerente à esse modelo, está a forte suposição de equidispersão, ou seja, a da variância esperada ser igual à média esperada.
 
 Afastamentos dessa suposição são frequentemente observadas em análise de dados, principalmente a superdispersão. Superdispersão corresponde à variância ser maior que a média. Isso pode ser resultado de
-\begin{itemize}
-  \item ausência de covariáveis importantes, sejam ausentes por que não foram observadas ou ausentes porque não foram declaradas, como por exemplo a omissão da interação entre covariáveis;
-  \item excesso de zeros, que na verdade trata-se de uma mistura de distribuições em que parte dos zeros são gerados pelo processo Poisson e parte é gerado por um processo Bernoulli;
-  \item diferentes amplitudes de domínio, quando eventos são contados em intervalos de tempo ou espaço em que o tamanho desses intervalos é variável e não considerado na análise, geralmente como \textit{offset}.
-  \item efeito aleatório à nível de observações ou grupos de observações, quando existe no preditor teórico um componente estocástico, à nível de observações ou grupos de observação (blocos), \ldots .
-\end{itemize}
+
+- Ausência de covariáveis importantes, sejam ausentes por que não foram observadas ou ausentes porque não foram declaradas, como por exemplo a omissão da interação entre covariáveis;
+- Excesso de zeros, que na verdade trata-se de uma mistura de distribuições em que parte dos zeros são gerados pelo processo Poisson e parte é gerado por um processo Bernoulli;
+- Diferentes amplitudes de domínio, quando eventos são contados em intervalos de tempo ou espaço em que o tamanho desses intervalos é variável e não considerado na análise, geralmente como _offset_.
+- Efeito aleatório à nível de observações ou grupos de observações, quando existe no preditor teórico um componente estocástico, à nível de observações ou grupos de observação (blocos), $\ldots$.
+
+
 Note que em todas as situações acima foram introduzidos processos que geram mais variabilidade (mistura com Bernoulli, efeito aleatório) ou que não permitem explicar a variabilidade existente (desconhecimento dos domínios, falta de covariáveis ou termos no modelo) de uma variável aleatória Poisson.
 
 O contrário à superdispersão é a subdispersão, relatada com menor frequência na literatura. 
  Processos que reduzam a variabilidade da variável aleatória Poisson são pouco conhecidos. 
 Nenhum dos procedimentos descritos acima para superdispersão ou modelos de efeitos aleatórios como os discutidos no Capítulo \@ref(cap:ranef) são empregados para modelar subdispersão.
 
-Uma forma de relaxar a suposição de equidispersão é generalizar o processo Poisson. Para isso exploramos a relação que existe entre a distribuição Exponencial e a distribuição de Poisson. De maneira bem simplificada, suponha que temos eventos que ocorrem sob um domínio unidimensional de forma que o intervalo entre eventos tenha distribuição Exponencial. Se dividirmos o domínio em intervalos de igual tamanho, o número de eventos por intervalo terá distribuição de Poisson. Então, para generalizarmos a distribuição do número de eventos, basta atribuirmos outra distribuição para o intervalo entre eventos. Exatamente empregando esse raciocínio que \cite{winkelmann:1995} generalizou a distribuição Poisson empregando a distribuição Gama para o intervalo entre eventos. Entretanto, qualquer outra distribuição de suporte positivo poderia ser empregada. O notável e vantajoso da distribuição Gama é que a distribuição Exponencial é um caso particular dela. Ou seja, a distribuição Gama tem a seguinte função densidade de probabilidade
+Uma forma de relaxar a suposição de equidispersão é generalizar o processo Poisson. Para isso exploramos a relação que existe entre a distribuição Exponencial e a distribuição de Poisson. De maneira bem simplificada, suponha que temos eventos que ocorrem sob um domínio unidimensional de forma que o intervalo entre eventos tenha distribuição Exponencial. Se dividirmos o domínio em intervalos de igual tamanho, o número de eventos por intervalo terá distribuição de Poisson. Então, para generalizarmos a distribuição do número de eventos, basta atribuirmos outra distribuição para o intervalo entre eventos. Exatamente empregando esse raciocínio que @Winkelman1995 generalizou a distribuição Poisson empregando a distribuição Gama para o intervalo entre eventos. Entretanto, qualquer outra distribuição de suporte positivo poderia ser empregada. O notável e vantajoso da distribuição Gama é que a distribuição Exponencial é um caso particular dela. Ou seja, a distribuição Gama tem a seguinte função densidade de probabilidade
 \[  
 \text{Gama}(y; \alpha, \beta) = \frac{\beta^\alpha}{\Gamma(\alpha)}\exp\{-\beta x\}\,x^{\alpha-1},
 \]
@@ -966,7 +944,7 @@ lapply(tb, function(x){
 layout(1)
 ```
 
-\cite{winkelmann:1995} obteve que a função de probabilidades de uma variável aleatória de contagem ($N$) pode ser escrita como função da distribuição acumulada dos intervalos entre eventos ($T$). Assim, para intervalos Gama, a distribuição de probabilidades do número de eventos por intervalo unitário é dada por
+@Winkelman1995 obteve que a função de probabilidades de uma variável aleatória de contagem ($N$) pode ser escrita como função da distribuição acumulada dos intervalos entre eventos ($T$). Assim, para intervalos Gama, a distribuição de probabilidades do número de eventos por intervalo unitário é dada por
 
 \begin{equation}
 (\#eq:verocountgamma1)
@@ -982,7 +960,6 @@ Uma vez conhecida a função de probabilidade de uma variável aleatória, podem
     G(1, \alpha y_i, \alpha\exp(x_i^\top\gamma))-G(1, \alpha (y_i+1), \alpha\exp\{x_i^\top\gamma)\}
   \right).
 \end{equation}
-
 em que $y_i$ é o número de eventos observado na observação $i$, $x_i$ um vetor de covariáveis conhecidas, $\gamma$ é o vetor de parâmetros associado as covariáveis $x_i$. No modelo acima estamos descrevendo a média de $T$ por um modelo de regressão uma vez que $E(T|x_i) = \alpha/\beta = \exp(-x_i^\top\gamma)$ que manipulando resulta em $\beta = \alpha\exp(x_i^\top\gamma)$. A média de $N$ por sua vez pode ser obtida pela seguinte expressão
 
 \begin{equation}
@@ -990,10 +967,9 @@ em que $y_i$ é o número de eventos observado na observação $i$, $x_i$ um vet
   E(N|x_i) = \sum_{i=1}^{\infty} G(\alpha i, \alpha\exp(x_i^\top\gamma)).
 \end{equation}
 
-Os dados estão no complemento \textit{online} do texto.
+Os dados estão no complemento _online_ do texto.
 
-A subdispersão é uma característica facilmente observada no número de capulhos. Ao dispor a variância amostral como função das médias amostrais percebemos que todos os valores ficaram abaixo da linha 1:1 (Figura \@ref(fig:meansd)), portanto, uma evidência contra a suposição de equidispersão. Nessa situação, o emprego do modelo de regressão Poisson não é adequado e o modelo de regressão contagem-Gama, desenvolvido por 
-\cite{winkelmann:1995}, será aplicado. A função de log-verossimilhança do modelo está disponível no código \@ref(lem:logvero).
+A subdispersão é uma característica facilmente observada no número de capulhos. Ao dispor a variância amostral como função das médias amostrais percebemos que todos os valores ficaram abaixo da linha 1:1 (Figura \@ref(fig:meansd)), portanto, uma evidência contra a suposição de equidispersão. Nessa situação, o emprego do modelo de regressão Poisson não é adequado e o modelo de regressão contagem-Gama, desenvolvido por @Winkelman1995, será aplicado. A função de log-verossimilhança do modelo está disponível no código \@ref(lem:logveroGammaCount).
 
 ```{r dados, echo = FALSE, results = 'hide'}
 require(lattice) ; require(latticeExtra)
@@ -1025,11 +1001,11 @@ xyplot(v~m, aux, aspect="xy", type=c("p","g"), col=1,
   )
 ```
 
-```{lemma, logvero}
+```{lemma, logveroGammaCount}
 **Função de log-verossimilhança para o modelo de regressão contagem-Gama.**
 ```
 
-```{r logvero1}
+```{r logveroGammaCount1}
 ll <- function(theta, y, X){
   ## theta: vetor de parâmetros/estimativas
   ## y: vetor de dados observados
@@ -1041,8 +1017,7 @@ ll <- function(theta, y, X){
 }
 ```
 
-A análise exploratória dos dados indica que o valor médio do número de capulhos depende do estágio e do nível de desfolha de forma não aditiva. Assim, usamos um modelo de interação entre os fatores com polinômio de segundo grau para efeito do nível de desfolha. Dessa maneira, a matriz do modelo é construida por meio da função \code{model.matrix()}. Esse modelo considera a estimação de um vetor de 11 parâmetros: intercepto único, efeito linear e efeito quadrático de desfolha por nível de estágio. A estimação usando \code{optim()} exige valores iniciais 
-para iniciar o algoritmo. Um conjunto de bons valores iniciais são as estimativas dos parâmetros para o modelo de regressão de Poisson, que obtemos no \R{} com a função \code{glm()}.
+A análise exploratória dos dados indica que o valor médio do número de capulhos depende do estágio e do nível de desfolha de forma não aditiva. Assim, usamos um modelo de interação entre os fatores com polinômio de segundo grau para efeito do nível de desfolha. Dessa maneira, a matriz do modelo é construida por meio da função `model.matrix()`. Esse modelo considera a estimação de um vetor de 11 parâmetros: intercepto único, efeito linear e efeito quadrático de desfolha por nível de estágio. A estimação usando `optim()` exige valores iniciais para iniciar o algoritmo. Um conjunto de bons valores iniciais são as estimativas dos parâmetros para o modelo de regressão de Poisson, que obtemos no `R` com a função `glm()`.
 
 ```{r optim}
 X <- model.matrix(~est:(des+I(des^2)), data=cap)
@@ -1056,8 +1031,7 @@ op <- optim(c(alpha=1, coef(rp)), ll, y=cap$nc,
 dll <- c(diff.ll=2*abs(op$value-c(logLik(rp)))); dll 
 ```
 
-Ao comparar as verossimilhanças do modelo Poisson com o contagem-Gama estamos testanto a hipótese do parâmetro 
-$\alpha=1$. Vemos que essa hipótese foi rejeitada. De forma complementar ao teste de hipótese, podemos obter o perfil de log-verossimilhança para o parâmetro $\alpha$ e construir intervalos de confiança. Para isso escrevemos outra função de log-verossimilhança onde $\alpha$ é fixo e a estimação se dá apenas para os demais parâmentros do modelo (código \@ref(lem:logveroalpha)). Para fins de comparação, construimos intervalos de confiança baseados na aproximação quadrática da função de log-verossilhança para avaliar a qualidade da aproximação. Nos códigos abaixo tais procedimentos são ilustrados. A função \code{uniroot.all()} do pacote \pkg{rootSolve} é empregada para obter os intervalos de confiança baseados no perfil da deviance.
+Ao comparar as verossimilhanças do modelo Poisson com o contagem-Gama estamos testanto a hipótese do parâmetro $\alpha=1$. Vemos que essa hipótese foi rejeitada. De forma complementar ao teste de hipótese, podemos obter o perfil de log-verossimilhança para o parâmetro $\alpha$ e construir intervalos de confiança. Para isso escrevemos outra função de log-verossimilhança onde $\alpha$ é fixo e a estimação se dá apenas para os demais parâmetros do modelo (código \@ref(lem:logveroalpha)). Para fins de comparação, construimos intervalos de confiança baseados na aproximação quadrática da função de log-verossilhança para avaliar a qualidade da aproximação. Nos códigos abaixo tais procedimentos são ilustrados. A função `uniroot.all()` do pacote `rootSolve` é empregada para obter os intervalos de confiança baseados no perfil da deviance.
 
 ```{lemma, logveroalpha}
 **Função de perfil de log-verossimilhança para o parâmetro $\alpha$ do modelo de regressão contagem-Gama.**
