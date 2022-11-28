@@ -1,69 +1,25 @@
-# History files
+_book/
+_bookdown_files/
+renv/
+
+.Rproj.user
 .Rhistory
-.Rapp.history
-
-# Backup and log files
-*.bak
-*.log
-*~
-
-# Session Data files
 .RData
 
-# Example code in package build process
-*-Ex.R
+rsconnect
 
-# Output files from R CMD build
-/*.tar.gz
-
-# Output files from R CMD check
-/*.Rcheck/
-
-# RStudio files
-.Rproj.user/
-
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
-
-# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
-.httr-oauth
-
-# knitr and R markdown default cache directories
-/*_cache/
-/cache/
-
-# Temporary files created by R markdown
-*.utf8.md
-*.knit.md
-
-# Bookdown outputs
-_book/*
-_bookdown_files/*
-
-# Tex outputs and auxiliary files
-*.ilg
-*.ind
-*.lof
-*.lot
-*.aux
+*.bak
 *.log
-*.out
-*.nav
-*.toc
-*.tex.bak
-*.snm
-*.synctex.gz
-*.bbl
-*.blg
-*.brf
+*.db
+*.aux
 *.idx
-*~
-.#*
-#*
-*.dvi
-*.vrb
+*.toc
+*.out
+*.bbl
+*.bcf
+*.blg
+*.run.xml
 
-# Ignore files in slides directory
-slides/*.tex
-slides/figure/*
+MCIE.Rmd
+MCIE.pdf
+

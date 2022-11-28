@@ -1,0 +1,355 @@
+## Regressão Poisson {#PoisReg}
+
+Em situações onde a resposta é discreta na forma de contagens, escolha de
+distribuição para variável resposta recai, ao menos inicialmente, sobre a
+distribuição de Poisson.  Conforme mencionado anteriormente, um modelo de
+regressão qualquer é descrito por duas suposições: a distribucional, que se
+refere a distribuição de probabilidade atribuída a variável resposta e a uma
+função $g(\cdot)$, que liga o preditor à média desta distribuição.  No caso do
+modelo de regressão de Poisson a distribuição tem a seguinte forma,
+
+\[ 
+P(Y = y) = \frac{\exp\{- \lambda\} \lambda^y}{y!}, \quad \text{ em que } \quad \lambda \ge 0 \quad 
+  \text{ e } y = 0,1,2 \ldots .
+\]
+
+No modelo Poisson o parâmetro indexador $\lambda$ corresponde à esperança de
+$Y$.  O modelo é um caso particular da família de MLG em que temos apenas a
+componente de média, já que a variância é igual a média.  O parâmetro $\lambda$
+deve ser maior que zero e portanto devemos escolher uma função $g(.)$ que mapeie
+dos reais aos reais positivos e a escolha usual para regressão Poisson é a
+exponencial.  No contexto de modelos lineares generalizados pode-se mostrar que
+a função de ligação canônica para modelo Poisson é a função logaritmo cuja a
+inversa é a exponencial, por isso sua popularidade.  Resumindo, supomos que $\underline{Y} \sim P(\underline{\lambda})$ e que $\underline{\lambda} = \exp\{X \underline{\beta}\}$ com a suposição adicional que o preditor é linear. Com
+isso, chegamos ao modelo de regressão de Poisson.
+
+Expressões genéricas para função de verossimilhança, escore e informação, assim
+como algoritmos para estimação dos parâmetros são disponíveis para toda classe
+de MLG.  Entretanto como nosso objetivo aqui é ilustrar as computações vamos
+considerar o caso da Poisson individualmente.  A função de log-verossimilhança
+escrita em formato matricial é dada por,
+
+\[  
+l(\underline{\beta}, \underline{y}) = 
+  - 1^\top g( X \underline{\beta}) + \underline{y}^\top X \underline{\beta} + 
+  1^\top \log(\underline{y} !).
+\]
+
+Derivando em relação ao vetor de parâmetros $\underline{\beta}$ temos a função
+escore.
+
+\[
+  U(\underline{\beta}) = \left( \underline{y} - \exp\{X \underline{\beta}\} \right)^\top X 
+\]
+
+Derivando novamente obtemos a matriz de informação observada em que $diag(X
+\underline{\beta})$ denota uma matrix diagonal com elementos
+$\underline{\lambda} = X \underline{\beta}$:
+
+\[
+I_o(\underline{\beta}) = - X^\top [diag(\exp\{X \underline{\beta}\})] X . 
+\]
+
+Com isso temos todos os elementos para montar o algoritmo de Newton-Raphson e
+encontrar as estimativas de máxima verossimilhança para o vetor
+$\underline{\beta}$.
+
+Para exemplificar o processo vamos considerar dados simulados supondo que $X
+\underline{\beta}$ tem a forma $ \beta_0 + \beta_1 x_i $, em que $x_i$ é uma
+covariável com valores conhecidos.  Nas simulações a covariável assume $n=10,
+50$ e $100$ valores igualmente espaçados entre 0 e 5.  Assim, o modelo tem
+apenas dois parâmetros $\underline{\beta} = (\beta_0, \beta_1)$.
+O código abaixo apresenta uma função para simular realizações deste modelo e  
+mostramos o comando para gerar o conjunto de dados com $n=10$. 
+
+```{lemma}
+**Função para simular variáveis aleatórias de uma modelo de regressão de Poisson.**
+```
+
+```{r keep.source = FALSE}
+simula.poisson <- function(formula, beta){
+  X <- model.matrix(formula)
+  lambda <- exp(X %*% beta)
+  y <- rpois(nrow(X), lambda=lambda)
+  return(data.frame(y=y, X))}
+```
+
+```{r}
+set.seed(123)
+cov <- seq(0, 5, length=10)
+dados10 <- simula.poisson(~cov, c(2,0.5))
+```
+
+A Figura \@ref(fig:modPoisson) apresenta a superfície de log-verossimilhança em
+escala de \textit{deviance} exata e pela aproximação quadrática, para diferentes
+tamanhos de amostras.  As linhas de contorno definem regiões de confiança que
+correspondem aos quantis 99, 95, 90, 70, 50, 30, 10 e 5 \% de distribuição
+$\chi^2_{2}$.  O ponto indica o valor verdadeiro do parâmetro.  Note-se que os
+gráficos não estão na mesma escala.
+
+```{r echo = FALSE}
+## Verossimilhança
+ll.poisson <- function(par, formula, dados){
+  X <- model.matrix(as.formula(formula), data=dados)
+  lambda <- drop(exp(X %*% par))
+  ll <- sum(dpois(dados$y, lambda=lambda,log=TRUE))
+  return(-ll)
+}
+
+hessiano <- function(par, formula, dados){
+  X <- model.matrix(as.formula(formula), data=dados)
+  mat <- diag(length(dados$y))
+  diag(mat) <- - exp(X%*%par)
+  H <- crossprod(X,mat)%*%X
+  return(H)
+}
+
+dev.app <- function(par, par.hat, ...){
+  dpar <- par - par.hat
+  devpp <- -crossprod(dpar, hessiano(par=par.hat, ...))%*%dpar
+  return(devpp)}
+
+## Simulando os conjuntos de dados
+set.seed(123)
+#dados10 <- simula.poisson(b0=2,b1=0.5,n.simul=10)
+cov <- seq(0, 5, length=10)
+dados10 <- simula.poisson(~cov, c(2,0.5))
+set.seed(123)
+cov <- seq(0, 5, length=50)
+#dados50 <- simula.poisson(b0=2,b1=0.5,n.simul=50)
+dados50 <- simula.poisson(~cov, c(2,0.5))
+set.seed(123)
+#dados100 <- simula.poisson(b0=2,b1=0.5,n.simul=100)
+cov <- seq(0, 5, length=100)
+dados100 <- simula.poisson(~cov, c(2,0.5))
+#set.seed(123)
+##dados200 <- simula.poisson(b0=2,b1=0.5,n.simul=200)
+#cov <- seq(0, 5, length=200)
+#dados200 <- simula.poisson(~cov, c(2,0.5))
+
+## Ajustando
+par10  <- glm(y ~ cov,family=poisson,data=dados10)
+par50  <- glm(y ~ cov,family=poisson,data=dados50)
+par100 <- glm(y ~ cov,family=poisson,data=dados100)
+#par200 <- glm(y ~ cov,family=poisson,data=dados200)
+
+## Gride de parametros
+beta0.10 <- seq(1.7,2.7,l=50)
+beta1.10 <- seq(0.3,0.56,l=50)
+grid.par.10 <- as.matrix(expand.grid(beta0.10,beta1.10))
+
+## Avaliando a vero pra n = 10
+ll.10 <- apply(grid.par.10,1,ll.poisson,formula="~cov",dados=dados10)
+dev.p10 <- -2*(ll.poisson(par=coef(par10),formula="~cov",dados=dados10) - ll.10)
+dev.ap10 <- apply(grid.par.10, 1, dev.app, par.hat = coef(par10), formula="~cov", dados=dados10)
+
+## Avaliando a vero pra n = 50
+beta0.50 <- seq(1.65,2.2,l=50)
+beta1.50 <- seq(0.43,0.6,l=50)
+grid.par.50 <- as.matrix(expand.grid(beta0.50,beta1.50))
+ll.50 <- apply(grid.par.50,1,ll.poisson,formula="~cov",dados=dados50)
+dev.p50 <- -2*(ll.poisson(par=coef(par50),formula="~cov",dados=dados50) - ll.50)
+dev.ap50 <- apply(grid.par.50, 1, dev.app, par.hat = coef(par50), formula="~cov", dados=dados50)
+
+## Avaliando a vero pra n = 100
+beta0.100 <- seq(1.8,2.15,l=50)
+beta1.100 <- seq(0.45,0.55,l=50)
+grid.par.100 <- as.matrix(expand.grid(beta0.100,beta1.100))
+ll.100 <- apply(grid.par.100,1,ll.poisson,formula="~cov",dados=dados100)
+dev.p100 <- -2*(ll.poisson(par=coef(par100),formula="~cov",dados=dados100) - ll.100)
+dev.ap100 <- apply(grid.par.100, 1, dev.app, par.hat = coef(par100), formula="~cov", dados=dados100)
+
+## Avaliando a vero pra n = 200
+#beta0.200 <- seq(1.85,2.15,l=50)
+#beta1.200 <- seq(0.45,0.55,l=50)
+#grid.par.200 <- as.matrix(expand.grid(beta0.200,beta1.200))
+#ll.200 <- apply(grid.par.200,1,ll.poisson,formula="~cov",dados=dados200)
+#dev.p200 <- -2*(ll.poisson(par=coef(par200),formula="~cov",dados=dados200) - ll.200)
+#dev.ap200 <- apply(grid.par.200, 1, dev.app, par.hat = coef(par200), formula="~cov", dados=dados200)
+```
+
+
+
+```{r modPoisson, echo = FALSE, fig.width = 9, fig.height = 3, fig.align = "center", fig.cap = "Superfície de deviance para diferentes tamanhos de amostra - Regressão Poisson, detalhes no texto."}
+
+par(mfrow=c(1,3),mar=c(2.8, 2.8, 1.7, 1),mgp = c(1.8, 0.7, 0))
+LEVELS <- c(0.99,0.95,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.20,0.1,0.05)
+contour(beta0.10, beta1.10, matrix(dev.p10,50,50),
+        levels=qchisq(LEVELS,df=2),labels=LEVELS,
+        xlab=expression(beta[0]),ylab=expression(beta[1]),main="n=10")
+par(new=TRUE)
+contour(beta0.10,beta1.10,matrix(dev.ap10,50,50),
+        levels=qchisq(LEVELS,df=2),labels=LEVELS,
+        xlab=expression(beta[0]),ylab=expression(beta[1]),axes=FALSE,
+        lty=2,col="red",lwd=2)
+points(2,0.5,type="p",pch=19)
+## N = 50
+contour(beta0.50,beta1.50,matrix(dev.p50,50,50),
+        levels=qchisq(LEVELS,df=2),labels=LEVELS,
+        xlab=expression(beta[0]),ylab=expression(beta[1]),
+        main="n=50")
+par(new=TRUE)
+contour(beta0.50,beta1.50,matrix(dev.ap50,50,50),
+        levels=qchisq(LEVELS,df=2),labels=LEVELS,
+        xlab=expression(beta[0]),ylab=expression(beta[1]),axes=FALSE,
+        lty=2,col="red",lwd=2)
+points(2,0.5,type="p",pch=19)
+## N = 100
+contour(beta0.100,beta1.100,matrix(dev.p100,50,50),
+        levels=qchisq(LEVELS,df=2),labels=LEVELS,
+        xlab=expression(beta[0]),ylab=expression(beta[1]),
+        main="n=100")
+par(new=TRUE)
+contour(beta0.100,beta1.100,matrix(dev.ap100,50,50),
+        levels=qchisq(LEVELS,df=2),labels=LEVELS,
+        xlab=expression(beta[0]),ylab=expression(beta[1]),axes=FALSE,
+        lty=2,col="red",lwd=2)
+points(2,0.5,type="p",pch=19)
+## N = 200
+#contour(beta0.200,beta1.200,matrix(dev.p200,50,50),
+#        levels=qchisq(LEVELS,df=2),labels=LEVELS,
+#        xlab=expression(beta[0]),ylab=expression(beta[1]),
+#        main="n=200")
+#par(new=TRUE)
+#contour(beta0.200,beta1.200,matrix(dev.ap200,50,50),
+#        levels=qchisq(LEVELS,df=2),labels=LEVELS,
+#        xlab=expression(beta[0]),ylab=expression(beta[1]),axes=FALSE,
+#        lty=2,col="red",lwd=2)
+#points(2,0.5,type="p",pch=19)
+
+```
+
+Podemos perceber que a aproximação quadrática é excelente para os dois
+parâmetros, o que era esperado, já que, se tratam de parâmetros de média.
+Entretanto, mesmo esses parâmetros podem ter comportamento assimétrico em
+algumas situações, como por exemplo, na presença de dados censurados.  A relação
+entre os dois parâmetros também é clara nos gráficos mostrando que os parâmetros
+não são ortogonais.  Note que com o aumento do tamanho da amostra os contornos
+vão ficando menores, mais concentrados em torno do verdadeiro valor do
+parâmetro, sugerindo nesta ilustração a propriedade assintótica de consistência
+e não-viés.
+
+
+Seguindo com o processo de inferência podemos usar o algoritmo de Newton-Raphson
+para encontrar as estimativas de máxima verossimilhança de $\beta_0$ e
+$\beta_1$, para isto precisamos escrever duas funções, a `escore()` e a
+`hessiana()` conforme código \@ref(lem:esc-hess-pois).  Definimos a função
+hessiana de duas maneiras na liguagem `R`.  Na primeira programamos diretamente
+como na expressão. Na sequência reescrevemos a função evitando usar a matriz
+completa de pesos já que apenas os elementos fora da diagonal são nulos e
+portanto desnecessários.
+
+```{lemma esc-hess-pois}
+**Função escore e hessiana para a regressão de Poisson.**
+```
+
+```{r}
+## Função escore
+escore <- function(par, formula, dados){
+  mf <- model.frame(formula, dados)
+  X <- model.matrix(formula, data=mf)
+  esco <- crossprod(model.response(mf) - exp(X %*% par), X)
+  return(drop(esco))
+}
+
+## Hessiana ("naïve")
+hessiano <- function(par, formula, dados){
+  X <- model.matrix(formula, data=dados)
+  mat <- matrix(0, nrow(X), nrow(X))
+  diag(mat) <- -exp(X%*%par)
+  H <- t(X) %*% mat %*% X
+  return(H)
+}
+
+## Hessiana (equivalente a anterior)
+hessiano <- function(par, formula, dados){
+  X <- model.matrix(formula, data=dados)
+  H <- crossprod(X * -exp(drop(X%*%par)),  X)
+  return(H)
+}
+```
+
+Usando o algoritmo de Newton-Raphson já apresentado em \@ref(lem:NR), temos as estimativas 
+para o conjunto simulado com $n=10$. 
+
+```{r echo = FALSE}
+NewtonRaphson <- function(initial, escore, hessiano, tol=0.0001, 
+                          max.iter, n.dim,...){
+  solucao <- initial
+  for(i in 2:max.iter){
+    solucao <- initial-solve(hessiano(initial, ...), escore(initial, ...))
+    tolera <- abs(solucao - initial)
+    if(all(tolera < tol) == TRUE)break
+    initial <- solucao
+  }
+  return(initial)
+}
+```
+
+```{r}
+(beta10 <- NewtonRaphson(initial=c(0,0), escore=escore, 
+                         hessiano=hessiano, max.iter=1000, 
+                         formula=y~cov, dados=dados10))
+```
+
+Para a construção dos intervalos de confiança assintóticos, 
+basta avaliar a inversa da matriz hessiana no ponto encontrado
+e os erros padrão das estimativas são dados pelas raízes quadradas dos elementos diagonais.
+
+```{r}
+Io <- -hessiano(par=beta10, formula=y~cov, dados=dados10)
+Io
+(erro.padrao <- sqrt(diag(solve(Io))))
+```
+
+Lembrando que as variâncias de $\hat{\beta_0}$ e $\hat{\beta_1}$ são dadas pelos termos da diagonal da inversa da matriz de informação observada, temos pela distribuição assintótica do EMV que um intervalo de $95\%$ de confiança para $\beta_0$ e $\beta_1$ poderia ser obtido por:
+
+```{r}
+beta10[1] + c(-1,1)*qnorm(0.975)*erro.padrao[1]
+beta10[2] + c(-1,1)*qnorm(0.975)*erro.padrao[2]
+```
+
+Nossos resultados coincidem com as estimativas 
+retornadas pela função `glm()` do `R`.
+
+```{r message = FALSE}
+beta10.glm <- glm(y ~ cov, family=poisson, data=dados10)
+coef(beta10.glm)
+summary(beta10.glm)$coef
+confint(beta10.glm, type="quad")  
+```
+
+Os intervalos acima podem ser inadequados quando os parâmetros são não
+ortogonais por considerar isoladamente a curvatura em cada direção.  O grau de
+não ortogonalidade também é influenciado pela da ordem de magnitude das
+covariáveis e consequentemente dos parâmetros.  Uma primeira alternativa é a
+obtenção dos intervalos através de verossimilhança (ou deviance) perfilhada, que
+tipicamente fornece intervalos mais largos e por vezes assimétricos.  Esta
+solução pode ser computacionalmente mais cara ou mesmo proibitiva dependendo da
+quantidade de observações e parâmetros no modelo.
+
+```{r message = FALSE}
+confint(beta10.glm)
+```
+
+Uma outra solução é utilizar covariáveis centradas para 
+obter verossimilhanças (aproximadamente) ortogonais.
+Além disto as covariáveis podem ainda ser escalonadas para
+que os coeficientes tenham ordem de grandeza comparáveis
+e a função tenha contornos ao menos aproximadamente circulares.
+Desta forma, os coeficientes são inicialmente estimados pontualmente 
+e por intervalo para variáveis transformadas.
+Posteriormente, as estimativas são transformadas para escala original
+pela equação que define a reparametrização.
+
+Com isso, exemplificamos a construção dos cálculos computacionais
+do modelo de regressão de Poisson. 
+Procedemos a estimação por máxima verossimilhança, obtivemos o vetor \textit{escore} e a matriz \textit{hessiana} que possibilitaram o uso do algoritmo de Newton-Raphson. 
+Vimos também que a aproximação quadrática no caso do modelo Poisson é bastante acurada, 
+sendo que em nossos exemplos é
+ visualmente difícil encontrar diferença entre ela e a exata mesmo para a amostra de tamanho 10. 
+Usando resultados assintóticos construímos intervalos de confiança de duas formas diferentes. 
+Além disso, com os resultados obtidos estamos aptos a proceder os testes de hipóteses, 
+por exemplo, $H_0 :\beta_1 = 0$ contra $H_1 : \beta_1 \neq 0$. 
+Neste caso, poderíamos usar o tradicional teste de Wald, teste escore 
+ou mesmo o teste de razão de verossimilhança.

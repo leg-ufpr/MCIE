@@ -1,0 +1,344 @@
+## Modelo contagem-Gama {#sec:vero-countgamma}
+
+Contagens são variáveis aleatórias que assumem valores inteiros não
+negativos. Esses valores representam o número de vezes que um evento ocorre em
+um domínio fixo contínuo, como um intervalo de tempo ou espaço, ou discreto,
+como a avaliação de um indivíduo ou setor censitário.
+
+Em análise de dados de contagem o uso do modelo de regressão Poisson tem
+ocorrência predominante. Esse modelo tem sido uma escolha natural e imediata
+para essa classe de variável aleatória devido primeiramente à compatibilidade de
+suporte. Além disso, dados de contagem apresentam certa assimetria em relação à
+média e variabilidade que depende desse valor médio, duas características que
+são inerentes ao modelo de regressão Poisson. Entretanto, também inerente à esse
+modelo, está a forte suposição de equidispersão, ou seja, a da variância
+esperada ser igual à média esperada.
+
+Afastamentos dessa suposição são frequentemente observadas em análise de dados,
+principalmente a superdispersão. Superdispersão corresponde à variância ser
+maior que a média. Isso pode ser resultado de
+
+* ausência de covariáveis importantes, sejam ausentes por que não foram observadas ou ausentes porque não foram declaradas, como por exemplo a omissão da interação entre covariáveis;
+* excesso de zeros, que na verdade trata-se de uma mistura de distribuições em que parte dos zeros são gerados pelo processo Poisson e parte é gerado por um processo Bernoulli;
+* diferentes amplitudes de domínio, quando eventos são contados em intervalos de tempo ou espaço em que o tamanho desses intervalos é variável e não considerado na análise, geralmente como *offset*.
+* efeito aleatório à nível de observações ou grupos de observações, quando existe no preditor teórico um componente estocástico, à nível de observações ou grupos de observação (blocos), $\ldots$ .
+
+Note que em todas as situações acima foram introduzidos processos que geram mais variabilidade (mistura com Bernoulli, efeito aleatório) ou que não permitem explicar a variabilidade existente (desconhecimento dos domínios, falta de covariáveis ou termos no modelo) de uma variável aleatória Poisson.
+
+Uma forma de relaxar a suposição de equidispersão é generalizar o processo Poisson. Para isso exploramos a relação que existe entre a distribuição Exponencial e a distribuição de Poisson. De maneira bem simplificada, suponha que temos eventos que ocorrem sob um domínio unidimensional de forma que o intervalo entre eventos tenha distribuição Exponencial. Se dividirmos o domínio em intervalos de igual tamanho, o número de eventos por intervalo terá distribuição de Poisson. Então, para generalizarmos a distribuição do número de eventos, basta atribuirmos outra distribuição para o intervalo entre eventos. Exatamente empregando esse raciocínio que @winkelmann:1995 generalizou a distribuição Poisson empregando a distribuição Gama para o intervalo entre eventos. Entretanto, qualquer outra distribuição de suporte positivo poderia ser empregada. O notável e vantajoso da distribuição Gama é que a distribuição Exponencial é um caso particular dela. Ou seja, a distribuição Gama tem a seguinte função densidade de probabilidade
+\[  
+\text{Gama}(y; \alpha, \beta) = \frac{\beta^\alpha}{\Gamma(\alpha)}\exp\{-\beta x\}\,x^{\alpha-1},
+\]
+e para $\alpha= 1$ temos a função densidade de probabilidade da distribuição Exponencial como caso particular
+\[
+  \text{Exp}(y; \beta) = \beta\exp\{-\beta x\} .
+\]
+
+Para entender como as distribuições estão de fato ligadas, pense assim: a variância da Gama é $\alpha/\beta^2$, logo, menor valor de $\alpha$ corresponde a menor variância, quer dizer que se concentra uma grande proporção de valores ao redor da média, então intervalos entre eventos serão mais regulares e se dividimos o domínio em intervalos iguais temos um número pouco variável de eventos por intervalo (subdispersão). Por outro lado, maior valor de $\alpha$ corresponde à maior variância, logo, os intervalos entre eventos são mais variáveis/irregulares, de forma que ao dividir o domínio em intervalos temos um número de eventos por intervalo com maior variância (superdispersão).
+
+Na Figura \@ref(fig:countgamma1) foram representados eventos ocorrendo ao longo de um domínio onde a distribuição dos intervalos entre eventos é Gama com média fixa e igual à 1. Em cada um dos casos os parâmetros usados foram sub:$(\alpha=5, \beta=5)$, equi:$(\alpha=1, \beta=1)$, super:$(\alpha=0.2, \beta=0.2)$ que correspondem às variâncias de 0.2, 1 e 5 respectivamente. As funções densidade de probabilidade estão no topo da Figura. No centro da Figura temos o domínio dividido em intervalos unitários e o número de eventos por intervalo representado. Notamos uma distribuição mais uniforme no sub que nos demais o que está de acordo com a argumentação do parágrafo anterior. Para obter os histogramas foram geradas amostras de 50000 elementos e o intervalo teve amplitude de 10 unidades para quantificação do número de eventos (por isso a média passou a ser 10).
+
+```{r echo = FALSE, results = "hide", fig.show = "hide"}
+n <- 100
+# alpha=1, beta=1, E(X)=1/1=1, V(X)=1/1²=1, CV=1 (equidisperso)
+r1 <- rgamma(n, shape=1, rate=1)
+# alpha=5, beta=5, E(X)=5/5=1, V(X)=5/5²=0.2, CV<1 (subdisperso)
+r2 <- rgamma(n, shape=5, rate=5)
+# alpha=0.2, beta=0.2, E(X)=0.2/0.2=1, V(X)=0.2/0.2²=5, CV>1 (superdisperso)
+r3 <- rgamma(n, shape=0.2, rate=0.2)
+rr <- c(r2, r1, r3)
+ss <- rep(-1:1, each=n)
+rr <- do.call(c, tapply(rr, ss, cumsum))
+da <- data.frame(rr, ss)
+str(da)
+
+#x11(w=12, h=3)
+par(mar=c(3,3.5,3,1))
+plot(ss~rr, data=da, ylim=c(-1.25, 2))
+lim <- with(da, c(ceiling(max(tapply(rr, ss, min))), floor(min(tapply(rr, ss, max)))))
+plot(ss~rr, ylim=c(-1.25, 2), data=subset(da, rr>lim[1] & rr<lim[2]),
+     xaxt="n", yaxt="n", xlim=lim, xlab=NA, ylab=NA)
+int <- seq(lim[1], lim[2], 1)
+abline(h=-1:1, v=int, col="gray90")
+mtext(text=rev(c("super","equi","sub")), at=-1:1, side=2)
+mtext(text="Dispersão", side=2, line=1.5)
+mtext(text="Domínio", side=1, line=1)
+mtext(text="Número de eventos por intervalo", side=3, line=1)
+tb <- with(da, tapply(rr, ss, function(x) table(cut(x, int))))
+lapply(tb, function(x) c(sum(x), mean(x), var(x), var(x)/mean(x)))
+lapply(tb, table)
+nn <- cbind(do.call(c, tb), int[-1], rep(-1:1, each=length(int)-1))
+head(nn)
+text(nn[,2]-0.5, nn[,3], label=nn[,1], pos=3)
+
+n <- 50000
+r1 <- rgamma(n, shape=1, rate=1)     # equi
+r2 <- rgamma(n, shape=5, rate=5)     # sub
+r3 <- rgamma(n, shape=0.2, rate=0.2) # super
+
+rr <- c(r2, r1, r3)
+ss <- rep(-1:1, each=n)
+rr <- do.call(c, tapply(rr, ss, cumsum))
+int <- seq(ceiling(min(rr)), floor(max(rr)), by=10)
+tb <- tapply(rr, ss, function(x) table(cut(x, int)))
+
+sapply(tb, function(x) c(mean(x), var(x), var(x)/mean(x)))
+
+par(mfrow=c(1,3), mar=c(4,4,2,1))
+lapply(tb, function(x){
+  hist(x, breaks=(min(x)-1):max(x)+0.5, col="gray90")
+  abline(v=mean(x), lwd=2)
+  box()
+})
+layout(1)
+```
+
+```{r countgamma1, echo = FALSE, fig.width = 9, fig.height = 8, results = "hide", fig.cap = "Funções densidade de probabilidade para diferentes distribuições de intervalos entre eventos (acima).  Eventos distribuídos ao longo de um domínio dividido em intervalos com o número de eventos por intervalo representado (centro). Histogramas do número de eventos por intervalo para cada distribuição de intervalo entre eventos (abaixo)."}
+lim <- with(da, c(ceiling(max(tapply(rr, ss, min))), floor(min(tapply(rr, ss, max)))))
+layout(matrix(c(1,2,3,4,4,4,5,6,7), ncol=3, byrow=TRUE))
+# 1 gráfico
+m <- 0.001; M <- 3
+xseq <- seq(m,M,0.01)
+curve(dgamma(x, shape=5, rate=5), 0, 3,
+      main=expression(G(alpha==5, beta==5)), ylim=c(0,1), xlab="", ylab="")
+polygon(c(xseq,M,m), c(dgamma(xseq,5,5),0,0), col="gray90")
+abline(v=1)
+curve(dgamma(x, shape=1, rate=1), 0, 3,
+      main=expression(G(alpha==1, beta==1)), ylim=c(0,1), xlab="", ylab="")
+polygon(c(xseq,M,m), c(dgamma(xseq,1,1),0,0), col="gray90")
+abline(v=1)
+curve(dgamma(x, shape=0.2, rate=0.2), 0, 3,
+      main=expression(G(alpha==0.2, beta==0.2)), ylim=c(0,3), xlab="", ylab="")
+polygon(c(xseq,M,m), c(dgamma(xseq,0.2,0.2),0,0), col="gray90")
+abline(v=1)
+# 2o gráfico
+par(mar=c(3,3.5,2,0.5))
+plot(ss~rr, ylim=c(-1.25, 2), data=subset(da, rr>lim[1] & rr<lim[2]),
+     xaxt="n", yaxt="n", xlim=lim, xlab=NA, ylab=NA)
+int <- seq(lim[1], lim[2], 1)
+abline(h=-1:1, v=int, col="gray90")
+mtext(text=c("super","equi","sub"), at=1:-1, side=2)
+mtext(text="Dispersão", side=2, line=1.5)
+mtext(text="Domínio", side=1, line=1)
+mtext(text="Número de eventos por intervalo", side=3, line=0.5)
+tb <- with(da, tapply(rr, ss, function(x) table(cut(x, int))))
+nn <- cbind(do.call(c, tb), int[-1], rep(-1:1, each=length(int)-1))
+text(nn[,2]-0.5, nn[,3], label=nn[,1], pos=3)
+# 3o gráfico
+int <- seq(ceiling(min(rr)), floor(max(rr)), by=10)
+tb <- tapply(rr, ss, function(x) table(cut(x, int)))
+str(tb)
+attr(tb[[1]], which="name") <- "subdisperso"
+attr(tb[[2]], which="name") <- "equidisperso"
+attr(tb[[3]], which="name") <- "superdisperso"
+# e gráfico
+par(mar=c(4,4,2,1))
+lapply(tb, function(x){
+  hist(x, breaks=(min(x)-1):max(x)+0.5, col="gray90",
+       main=attr(x, which="name"), xlab="", ylab="")
+  abline(v=mean(x), lwd=2)
+  box()
+})
+layout(1)
+```
+
+@winkelmann:1995 obteve que a função de probabilidades de uma variável aleatória de contagem ($N$) pode ser escrita como função da distribuição acumulada dos intervalos entre eventos ($T$). Assim, para intervalos Gama, a distribuição de probabilidades do número de eventos por intervalo unitário é dada por
+
+$$
+\begin{equation} (\#eq:verocountgamma1)
+  P(N=n) = G(1, \alpha n, \beta)-G(1, \alpha(n+1), \beta).
+\end{equation}
+$$
+
+A distribuição de $N$ é superdispersa para $0<\alpha<1$ e subdispersa para $\alpha>1$.
+
+Uma vez conhecida a função de probabilidade de uma variável aleatória, podemos fazer a estimação dos parâmetros pelo método da máxima verossimilhança. Tomando a equação \@ref(eq:verocountgamma1) e estendendo para um modelo de regressão obtemos a seguinte função de log-verossimilhança
+
+$$
+\begin{equation}
+  l(y_i; x_i, \alpha, \gamma) = \sum_{i=1}^{n} \log\left( G(1, \alpha y_i, \alpha\exp(x_i^\top\gamma))-G(1, \alpha (y_i+1), \alpha\exp\{x_i^\top\gamma)\} \right).
+\end{equation}
+$$
+
+em que $y_i$ é o número de eventos observado na observação $i$, $x_i$ um vetor de covariáveis conhecidas, $\gamma$ é o vetor de parâmetros associado as covariáveis $x_i$. No modelo acima estamos descrevendo a média de $T$ por um modelo de regressão uma vez que $E(T|x_i) = \alpha/\beta = \exp(-x_i^\top\gamma)$ que manipulando resulta em $\beta = \alpha\exp(x_i^\top\gamma)$. A média de $N$ por sua vez pode ser obtida pela seguinte expressão
+
+$$
+\begin{equation} (\#eq:en)
+  E(N|x_i) = \sum_{i=1}^{\infty} G(\alpha i, \alpha\exp(x_i^\top\gamma)).
+\end{equation}
+$$
+
+Uma variável de contagem importante do estudo de populações de seres vivos é o número de descendentes produzidos durante a vida. Nas espécies vegetais de importância agrícola, fatores que alteram o número de descendentes também têm impacto na produtividade das culturas. Na cultura do algodão (*Gossypium hirsutum*) a produtividade é função principalmente do número de capulhos produzidos. Ataques de pragas desfolhadoras, por causarem redução da área foliar ou facilitar o desenvolvimento de doenças, podem reduzir a capacidade produtiva da cultura. Para avaliar os efeitos da desfolha, um experimento foi conduzido em casa de vegetação. Em vasos com duas plantas de algodão foram aplicados os níveis de desfolha artificial 0, 25, 50, 75 e 100\% de remoção da área foliar (feito com tesoura). A desfolha foi estudada nos estágios fenológicos vegetativo, presença de botão floral, início do florescimento, presença de maça e presença de capulho. Cada combinação desses níveis teve cinco repetições em delineamento completamente casualizado. Ao final do ciclo da cultura, o número de capulhos por vaso foi registrado.
+Os dados estão no complemento *online* do texto.
+
+A subdispersão é uma característica facilmente observada no número de capulhos. Ao dispor a variância amostral como função das médias amostrais percebemos que todos os valores ficaram abaixo da linha 1:1 (Figura \@ref(fig:meansd)), portanto, uma evidência contra a suposição de equidispersão. Nessa situação, o emprego do modelo de regressão Poisson não é adequado e o modelo de regressão contagem-Gama, desenvolvido por 
+@winkelmann:1995, será aplicado. A função de log-verossimilhança do modelo está disponível no código \@ref(lem:logvero).
+
+```{r echo = FALSE, message = FALSE}
+require(lattice) ; require(latticeExtra)
+est <- c("vegetativo","botao","flor","maca","capulho")
+cap <- expand.grid(rept=1:5, des=seq(0,100,l=5)/100,
+                   est=factor(est, levels=est))
+cap <- subset(cap, select=-rept)
+cap$nc <- c(10,9,8,8,10,11,9,10,10,10,8,8,10,8,9,9,7,7,8,9,8,6,6,5,
+            6,7,8,8,9,10,9,12,7,10,9,8,9,9,10,8,11,10,7,8,8,7,7,7,
+            7,8,10,9,8,12,8,7,5,5,7,5,6,5,7,4,7,8,5,7,6,4,5,5,4,4,5,
+            8,10,7,8,10,9,6,6,8,6,9,7,11,8,9,6,6,6,6,7,3,3,2,4,3,11,
+            7,9,12,11,9,13,8,10,10,9,7,7,9,9,8,8,10,8,10,9,8,10,8,10)
+xyplot(nc~des|est, data=cap)
+```
+
+```{r meansd, echo = FALSE, fig.width = 5, fig.height = 5, fig.cap = "Variância amostral em função da média amostral para o número de capulhos do algodão.", fig.align = "center"}
+require(plyr)
+aux <- ddply(cap, .(des, est), summarise, m=mean(nc), v=var(nc))
+
+print(
+xyplot(v~m, aux, aspect="xy", type=c("p","g"), col=1,
+       jitter.x=TRUE, xlim=c(0,11), ylim=c(0,11),
+       xlab=expression("Média amostral"~(bar(x))),
+       ylab=expression("Variância amostral"~(s^2)),
+       panel=function(...){
+         panel.xyplot(...)
+         panel.abline(a=0, b=1, lty=2)
+       })
+  )
+```
+
+
+```{lemma logvero}
+**Função de log-verossimilhança para o modelo de regressão contagem-Gama.**
+```
+
+
+```{r}
+ll <- function(theta, y, X){
+  ## theta: vetor de parâmetros/estimativas
+  ## y: vetor de dados observados
+  ## X: matrix de covariáveis associadas aos valores observados
+  eXb <- exp(X%*%theta[-1]) #*theta[1]
+  ## retorna a log verossimilhança para a amostra
+  sum(log(pgamma(1, theta[1]*y, theta[1]*eXb)-
+          pgamma(1, theta[1]*(y+1), theta[1]*eXb)))
+}
+```
+A análise exploratória dos dados indica que o valor médio do número de capulhos depende do estágio e do nível de desfolha de forma não aditiva. Assim, usamos um modelo de interação entre os fatores com polinômio de segundo grau para efeito do nível de desfolha. Dessa maneira, a matriz do modelo é construida por meio da função `model.matrix()`. Esse modelo considera a estimação de um vetor de 11 parâmetros: intercepto único, efeito linear e efeito quadrático de desfolha por nível de estágio. A estimação usando `optim()` exige valores iniciais 
+para iniciar o algoritmo. Um conjunto de bons valores iniciais são as estimativas dos parâmetros para o modelo de regressão de Poisson, que obtemos no `R` com a função `glm()`.
+
+```{r warning = FALSE}
+X <- model.matrix(~est:(des+I(des^2)), data=cap)
+## estimação modelo Poisson
+rp <- glm(nc~est:(des+I(des^2)), data=cap, family=poisson)
+## estimação modelo Contagem Gamma
+op <- optim(c(alpha=1, coef(rp)), ll, y=cap$nc, 
+            X=X, hessian=TRUE, method="BFGS", 
+            control=list(fnscale=-1))
+# 2*diferença da log-verossimilhança
+dll <- c(diff.ll=2*abs(op$value-c(logLik(rp)))); dll 
+```
+
+Ao comparar as verossimilhanças do modelo Poisson com o contagem-Gama estamos testanto a hipótese do parâmetro 
+$\alpha=1$. Vemos que essa hipótese foi rejeitada. De forma complementar ao teste de hipótese, podemos obter o perfil de log-verossimilhança para o parâmetro $\alpha$ e construir intervalos de confiança. Para isso escrevemos outra função de log-verossimilhança onde $\alpha$ é fixo e a estimação se dá apenas para os demais parâmentros do modelo (código \@ref(lem:logveroalpha)). Para fins de comparação, construimos intervalos de confiança baseados na aproximação quadrática da função de log-verossilhança para avaliar a qualidade da aproximação. Nos códigos abaixo tais procedimentos são ilustrados. A função `uniroot.all()` do pacote `rootSolve` é empregada para obter os intervalos de confiança baseados no perfil da deviance.
+
+```{lemma logveroalpha}
+**Função de perfil de log-verossimilhança para o parâmetro $\alpha$ do modelo de regressão contagem-Gama.**
+```
+
+```{r}
+ll.alpha <- function(theta, alpha, y, X){
+  ## theta: vetor de parâmetros/estimativas
+  ## alpha: escalar do parâmetro alpha fixo
+  ## y: vetor de dados observados
+  ## X: matrix de covariáveis associadas aos valores observados
+  eXb <- exp(X%*%theta) #*theta[1]
+  ## retorna a log verossimilhança com um valor FIXO de ALPHA
+  sum(log(pgamma(1, alpha*y, alpha*eXb)-
+          pgamma(1, alpha*y+alpha, alpha*eXb)))
+}
+```
+
+```{r}
+alpha <- sort(c(seq(3,8,l=30), op$par[1])) # valores para alpha
+perfil <- sapply(alpha,
+                function(a){
+                 op <- optim(coef(rp), ll.alpha, alpha=a, y=cap$nc, X=X,
+                             method="BFGS", control=list(fnscale=-1))
+                 c(op$value, op$par[1])
+                 })
+
+coef <- op$par; vcov <- -solve(op$hessian); llik <- op$value
+alp <- coef["alpha"]; sd.alp <- sqrt(vcov["alpha","alpha"])
+dev.perf <- 2*(llik-perfil[1,])  # deviance da log-ver perfilhada
+dev.quad <- (alp-alpha)^2/sd.alp # deviance da aprox quadrática
+
+require(rootSolve)
+qchi <- qchisq(0.95, df=1)
+fperf <- approxfun(alpha, dev.perf-qchi)
+lim <- uniroot.all(fperf, c(0, 10)) # limites do IC perf
+lim2 <- alp+c(-1,1)*1.96*sd.alp     # limites do IC assint
+```
+
+O perfil de log-verossimilhança para $\alpha$ está representado na Figura \@ref(fig:plotprofile). A aproximação quadrática apresentou intervalos de mesma amplitude daqueles obtidos pelo perfil de verossimilhança, porém com um leve deslocamento para a esquerda. Nenhum dos intervalos contém o valor sob a hipótese nula e portanto os dados apresentam subdispersão. Assim, o número de capulhos por algodão apresenta uma distribuição mais regular que aquela prevista pela distribuição de Poisson.
+
+```{r plotprofile, echo = FALSE, fig.width = 9, fig.height = 5, fig.align = "center", fig.cap = "Perfil de log-verossimilhança representado pelo valor na diferença na deviance (esq.) e a raíz da diferença na deviance (dir.) para o parâmetro $\\alpha$. Setas indicam os limites do intervalo de confiança.", warning = FALSE}
+keytext <- c("perfil de verossimilhança","aproximação quadrática")
+par(mfrow=c(1,2))
+# gráfico 1
+plot(dev.perf~alpha, type="l", lty=1, ylim=c(-0.5,15),
+     xlab=expression(alpha), ylab=expression(2*(L(hat(alpha))-L(alpha))))
+lines(dev.quad~alpha, lty=2)
+legend("topright", legend=keytext, lty=1:2, bty="n", cex=1, ncol=1)
+abline(h=qchi, lty=3)
+arrows(lim, qchi, lim, -0.5, lty=1, length=0.1)
+arrows(lim2, (alp-lim2)^2/sd.alp, lim2, -0.5, lty=2, length=0.1)
+abline(v=alp)
+plot(sqrt(dev.perf)~alpha, type="l", lty=1, ylim=c(-0.03,4),
+     xlab=expression(alpha), ylab=expression(sqrt(2*(L(hat(alpha))-L(alpha)))))
+lines(sqrt(dev.quad)~alpha, lty=2)
+legend("topright", legend=keytext, lty=1:2, bty="n", cex=1, ncol=1)
+#par(xpd=FALSE)
+abline(h=sqrt(qchi), lty=3)
+arrows(lim, sqrt(qchi), lim, 0, lty=1, length=0.1)
+arrows(lim2, sqrt((alp-lim2)^2/sd.alp), lim2, 0, lty=2, length=0.1)
+abline(v=alp)
+```
+
+Os valores esperados para o número de capulhos foram obtidos pela equação \@ref(eq:en), bem como os limites do intervalo de predição (Figura \@ref(fig:countpred)).
+
+As estimativas dos parâmetros do modelo indicam que não existe efeito de desfolha no estágio presença de capulhos. No florescimento a desfolha reduz o número de capulhos à taxas decrescentes, o impacto é maior para leves desfolhas e a partir de 70\% não há mais considerável redução. Nos demais estágios observa-se uma tolerância à até 30\% de desfolha sem prejuízo aos capulhos, acima disso ocorre redução à taxas crescentes.
+
+```{r}
+tabcoef <- data.frame(Estimativas=coef, ErroPadrão=sqrt(diag(vcov)))
+tabcoef$zvalor <- with(tabcoef, Estimativas/ErroPadrão)
+tabcoef$pvalor <- with(tabcoef, pnorm(abs(zvalor), lower=FALSE)*2)
+tabcoef
+```
+
+```{r echo = FALSE}
+pred <- expand.grid(est=levels(cap$est), des=seq(0,1,0.05))
+Xp <- model.matrix(~est:(des+I(des^2)), pred)
+pred$eta <- Xp%*%coef[-1]
+pred$y <- exp(pred$eta)
+
+# obter as bandas de confiança
+U <- chol(vcov[-1,-1]) # decomposição de Cholesky na vcov
+pred$se <- sqrt(apply(Xp%*%t(U), 1, function(x) sum(x^2))) # erros padrões
+
+# valores preditos num grid fino
+aux <- c(pred$eta)+outer(pred$se, qnorm(0.975)*c(lwr=-1, fit=0, upr=1), "*")
+n <- 1:40
+aux <- matrix(sapply(aux, function(m){ sum(pgamma(1, shape=alp*(n), rate=alp*exp(m))) }),
+              ncol=3, dimnames=list(NULL, c("lwr","fit","upr")))
+pred <- cbind(pred, aux)
+#names(pred)
+```
+
+```{r countpred, echo = FALSE, fig.width = 9, fig.height = 3.5, fig.cap = "Valores observados e preditos acompanhados do intervalo de confiança de 95\\% para o número de capulhos do algodão em função do nível de desfolha e estágio fenológico.",  fig.align = "center"}
+print(
+xyplot(nc~des|est, data=cap, jitter.x=TRUE, col="gray40",
+       xlab="Nível artificial de desfolha", ylab="Número de capulhos",
+       strip=strip.custom(bg="gray90"), layout=c(5,1))+
+  as.layer(xyplot(fit~des|est, data=pred, type="l", col=1, lty=1, lwd=2))+
+  as.layer(xyplot(lwr~des|est, data=pred, type="l", col=1, lty=2, lwd=1))+
+  as.layer(xyplot(upr~des|est, data=pred, type="l", col=1, lty=2, lwd=1))
+)
+```

@@ -1,0 +1,294 @@
+## Poisson com efeito aninhado {#sec:PoisAninhado}
+
+```{r echo = FALSE}
+laplace <- function(funcao, otimizador,n.dim, ...){
+  integral <- -999999
+  inicial <- rep(0,n.dim)
+  temp <- try(optim(inicial,funcao,...,method=otimizador,hessian=TRUE,control=list(fnscale=-1)))
+  if(class(temp) != "try-error"){
+  integral <- exp(temp$value)* (exp(0.5*log(2*pi) - 0.5*determinant(-temp$hessian)$modulus))}
+  return(integral)
+}
+```
+
+Considere o experimento, onde $i$ unidades amostrais são divididas em $j$ blocos e dentro de cada bloco são realizadas $k$ repetições. A Figura \@ref(fig:aninhado) ilustra este delineamento amostral.
+
+
+```{r aninhado, echo = FALSE, fig.width = 7, fig.height = 7, fig.align = "center", fig.cap = "Estrutura de um delineamento com efeito aninhado."}
+plot(c(0,1),c(0,1),type="n",ylab="",xlab="")
+abline(v=c(0,0.2,0.4,0.6,0.8,1))
+abline(h=c(0,0.2,0.4,0.6,0.8,1))
+text(y=0.95,x=0.5,labels="Unidade amostral 1",cex=1.5)
+text(y=0.85,x=0.1,labels="Grupo 1")
+text(y=0.85,x=0.3,labels="Grupo 2")
+text(y=0.85,x=0.5,labels="Grupo 3")
+text(y=0.85,x=0.7,labels="Grupo 4")
+text(y=0.85,x=0.9,labels="Grupo 5")
+
+text(y=0.75,x=0.5,labels="Unidade amostral 2",cex=1.5)
+text(y=0.65,x=0.1,labels="Grupo 1")
+text(y=0.65,x=0.3,labels="Grupo 2")
+text(y=0.65,x=0.5,labels="Grupo 3")
+text(y=0.65,x=0.7,labels="Grupo 4")
+text(y=0.65,x=0.9,labels="Grupo 5")
+
+text(y=0.55,x=0.5,labels="Unidade amostral 3",cex=1.5)
+text(y=0.45,x=0.1,labels="Grupo 1")
+text(y=0.45,x=0.3,labels="Grupo 2")
+text(y=0.45,x=0.5,labels="Grupo 3")
+text(y=0.45,x=0.7,labels="Grupo 4")
+text(y=0.45,x=0.9,labels="Grupo 5")
+
+text(y=0.35,x=0.5,labels="Unidade amostral 4",cex=1.5)
+text(y=0.25,x=0.1,labels="Grupo 1")
+text(y=0.25,x=0.3,labels="Grupo 2")
+text(y=0.25,x=0.5,labels="Grupo 3")
+text(y=0.25,x=0.7,labels="Grupo 4")
+text(y=0.25,x=0.9,labels="Grupo 5")
+
+text(y=0.15,x=0.5,labels="Unidade amostral 5",cex=1.5)
+text(y=0.05,x=0.1,labels="Grupo 1")
+text(y=0.05,x=0.3,labels="Grupo 2")
+text(y=0.05,x=0.5,labels="Grupo 3")
+text(y=0.05,x=0.7,labels="Grupo 4")
+text(y=0.05,x=0.9,labels="Grupo 5")
+```
+
+Suponha que a variável de interesse segue um modelo de Poisson. Então um modelo adequado para este tipo de experimento é:
+
+\begin{align*}
+  & Y_{ijk} \sim P(\lambda_{ijk}) \\
+  & g(\lambda_{ijk}) = (\beta_0 + b_i) + b_{i:j} \\
+  & b_i \sim N(0, \sigma^2) \;\; ; \;\;  b_{i:j} \sim N(0,\tau^2)
+\end{align*}
+onde $i = 1, \ldots , N$ é o número de unidades amostrais envolvidas no experimento que 
+no caso da Figura~\ref{fig:aninhado} possui $N = 5$. O índice $j = 1,\ldots, n_i$
+ identifica os blocos dentro de cada unidade amostral e $k=1, \ldots, n_{ij}$ é o número de repetições dentro de cada grupo em cada unidade amostral. Note que este modelo tem três parâmetros $\underline{\theta} = (\beta_0, \sigma^2, \tau^2)$.
+
+Para este exemplo vamos simular um conjunto de dados seguindo esta estrutura. Vamos fixar o número de unidades amostrais em $N = 4$, vamos dividir cada unidade em $n_i = 5$ blocos e dentro de cada bloco realizar $n_{ij}=4$ observações. A função `rpois.ani()` simula dados deste modelo.
+A Figure \@ref(fig:descaninhado) ilustra a estrutura do experimento.
+
+```{lemma}
+**Função para simular do modelo de regressão Poisson com efeitos aleatórios aninhados sobre o intercepto.**
+```
+
+```{r}
+rpois.ani <- function(N, ni, nij, beta.fixo, prec.pars){
+  ua <- as.factor(rep(1:nij,each=N*ni))
+  bloco <-rep(as.factor(rep(1:ni,each=nij)),N)
+  rep <- rep(as.factor(rep(1:nij,ni)),N)
+  dados <- data.frame(ua,bloco,rep)
+  dados$Bloco.A <- interaction(ua,bloco)
+  Z1 <- model.matrix(~ ua - 1,data=dados)
+  Z2 <- model.matrix(~Bloco.A -1, data=dados)
+  X <- model.matrix(~1, data=dados)
+  n.ua <- ncol(Z1)
+  n.bloco <- ncol(Z2)
+  b.ua <- rnorm(n.ua,0,sd=1/prec.pars[1])
+  b.bloco <- rnorm(n.bloco, sd=1/prec.pars[2])
+  Z <- cbind(Z1,Z2)
+  XZ <- cbind(X,Z)
+  beta <- c(beta.fixo,b.ua,b.bloco)
+  preditor <- XZ%*%beta
+  lambda <- exp(preditor)
+  y <- rpois(length(lambda),lambda=lambda)
+  dados$y <- y
+  names(dados) <- c("ID","bloco","rep","Bloco.A","y")
+  return(dados)
+}
+```
+
+Para simular do modelo precisamos fixar o vetor de parâmetros, vamos usar $\beta_0 = 3$, $\sigma = 1$ e $\tau = 2$. A seguinte chamada da função \code{rpois.ani()} realiza a simulação e retorna um conjunto de dados, no formato adequado para ser utilizado posteriormente no processo de inferência.
+
+```{r}
+set.seed(123)
+dados <- rpois.ani(N = 4, ni = 5, nij = 4, beta.fixo = 3, 
+                   prec.pars=c(2,2))
+head(dados)
+```
+
+```{r descaninhado, echo = FALSE, fig.width = 9, fig.height = 3, fig.align = "center", fig.cap = "Análise descritiva modelo com efeito aninhado.", message = FALSE}
+require(lattice)
+print(xyplot(y ~ bloco | ID, data=dados, layout=c(4,1), col=1, 
+      strip=strip.custom(bg="gray90"), jitter.x=T))
+```
+
+A seguir escrevemos uma função com a estrutura do modelo.
+
+```{lemma}
+**Integrando da função de verossimilhança para o modelo de regressão de Poisson com efeito aleatório aninhado sobre o intercepto.**
+```
+
+```{r}
+Poisson.Ani <- function(b, beta.fixo, prec.pars,X, Z, Y,log=TRUE){
+  sigma <- exp(prec.pars[1]) 
+  tau <- exp(prec.pars[2])
+  preditor <- as.matrix(X)%*%beta.fixo + as.matrix(Z)%*%b
+  lambda <- exp(preditor)
+  ll =  sum(dpois(Y,lambda=lambda,log=TRUE)) + 
+            dnorm(b[1], 0, sd = 1/sigma , log=TRUE) + 
+            sum(dnorm(b[2:6], 0, sd = 1/tau , log=TRUE))
+  if(log == FALSE){ll <- exp(ll)}
+  return(ll)}
+```
+
+Note a reparametrização feita nos parâmetros de variância, onde vamos estimá-los
+em escala logarítmica. Esta transformação muda o espaço de busca do algoritmo
+numérico dos reais positivos para todo os reais, o que ajuda no processo de
+otimização. Além disso, observe a complexidade deste modelo: para cada unidade
+amostral temos $6$ desvios aleatórios, um pela própria unidade amostral e mais
+$5$ um para cada bloco dentro da unidade amostral. Isso impacta fortemente no
+método de integração a ser escolhido para resolver a integral contida na função
+de verossimilhança. Por exemplo, pelo método de Gauss-Hermite, suponha que
+escolhemos $21$ pontos de integração em seis dimensões implica que a cada
+interação do algoritmo de maximização numérica precisamos avaliar a função $21^6
+= 85766121$ vezes, o que é inviável. Nestas situações apenas a aproximação de
+Laplace ainda é aplicável, e será usada neste problema. Veja também que com
+apenas $4$ unidades amostrais, devemos estimar $4 + 4*5 = 24$ efeitos aleatórios
+no total. A função `vero.Poisson.Ani()` apresenta uma versão simplificada
+da função `veroM()` do código \@ref(lem:veroM) para o caso do Modelo Poisson com
+efeito aninhado usando apenas a integração por Laplace.
+
+```{lemma}
+**Função de verossimilhança para o modelo de regressão de Poisson com efeito aleatório aninhado sobre o intercepto.**
+```
+
+```{r}
+vero.Poisson.Ani <- function(modelo, formu.X, formu.Z, beta.fixo, 
+                             prec.pars,otimizador, dados){
+ dados.id <- split(dados, dados$ID)
+ ll <- c()
+ for(i in 1:length(dados.id)){
+    X <- model.matrix(as.formula(formu.X),data=dados.id[[i]])
+    Z <- model.matrix(as.formula(formu.Z),data=dados.id[[i]])
+    ll[i] <- laplace(modelo,otimizador=otimizador,n.dim=ncol(Z), 
+                     X=X, Z=Z , Y=dados.id[[i]]$y, 
+                     beta.fixo=beta.fixo,
+                     prec.pars=prec.pars,log=TRUE)
+  }
+  return(sum(log(ll)))
+}
+```
+
+Escrevemos o modelo no formato adequado para ser usado dentro da função `mle2()`.
+
+
+```{lemma}
+**Função de log-verossimilhança marginal para o modelo de regressão de Poisson com efeito aleatório aninhado sobre o intercepto.**
+```
+
+```{r}
+mod.Poisson.Ani <- function(b0,sigma,tau, otimizador,formu.X, 
+                            formu.Z,  dados){
+ll = vero.Poisson.Ani(modelo = Poisson.Ani, formu.X = formu.X, 
+                      formu.Z = formu.Z, beta.fixo = b0, 
+                      prec.pars=c(sigma,tau),
+                      otimizador=otimizador,dados=dados)
+  #print(round(c(b0,sigma,tau,ll),2))
+  return(-ll)}
+```
+
+O processo de otimização da função de log-verossimilhança marginalizada pela função `mle2()`.
+
+```{r message = FALSE}
+require(bbmle)
+dados$UM <- 1
+ini <- c(log(mean(dados$y)), log(sd(dados$y))/2)
+Poisson.Aninhado = mle2(mod.Poisson.Ani,
+                        start=list(b0= ini[1],sigma=ini[2],tau= ini[2]),
+                        method="BFGS",control=list(lmm=3, reltol=1e-5),
+                        data=list(formu.X="~1", formu.Z="~UM+bloco-1", 
+                        otimizador = "BFGS",dados=dados))
+summary(Poisson.Aninhado)
+```
+
+Dada a reparametrização dos parâmetros de variância, precisamos retorná-los para escala original. De acordo com a propriedade de invariância dos estimadores de máxima verossimilhança, para as estimativas pontuais basta aplicar a transformação inversa, ou seja,
+
+```{r}
+exp(coef(Poisson.Aninhado)[2:3])
+```
+
+verifica-se que os valores estimados estão bastante próximos dos verdadeiros valores dos parâmetros utilizados na simulação. Para a construção de intervalos de confiança para o parâmetro $\beta_0$ basta usar os resultados assintóticos e construir o intervalo de confiança usando o erro padrão fornecido junto ao $summary()$ do modelo, ou então,
+
+```{r}
+confint(Poisson.Aninhado, method="quad")
+```
+
+note que a saída acima apresenta os intervalos de confiança para os parâmetros de variância reparametrizados. Se desejarmos obter intervalos aproximados para os parâmetros de variância na escala original não podemos apenas aplicar a transformação inversa. Para isto, precisamos utilizar os resultados apresentados nos Teoremas $4$ e $5$. Aplicando estes resultados temos,
+
+```{r}
+Vcov <- vcov(Poisson.Aninhado)
+sd.sigma <- sqrt(exp(coef(Poisson.Aninhado)[2])^2*Vcov[2,2])
+sd.tau <- sqrt(exp(coef(Poisson.Aninhado)[3])^2*Vcov[3,3])
+ic.sigma = exp(coef(Poisson.Aninhado)[2]) + c(-1,1)*qnorm(0.975)*sd.sigma
+ic.tau = exp(coef(Poisson.Aninhado)[3]) + c(-1,1)*qnorm(0.975)*sd.tau
+ic.sigma
+ic.tau
+```
+
+os intervalos de confiança obtidos via aproximação quadrática parecem muito curtos. Isso pode ser devido a uma pobre aproximação do Hessiano numérico, utilizado para calcular os erros padrões assintóticos, ou a aproximação quadrática é muito ruim nesta situação, apresentando erros padrões extremamente otimistas.
+
+Para investigar a primeira possibilidade, podemos recalcular o Hessiano numérico pelo método de Richardson especifico para aproximar numericamente a derivada segunda de uma função qualquer. Este método está implementado na função `hessian()` do pacote `numDeriv`. Para usar a função `hessian()`, precisamos reescrever a função de verossimilhança, passando os parâmetros em forma de vetor.
+
+```{r}
+mod.Poisson.Ani.Hessian <- function(par, dados){
+  saida <- mod.Poisson.Ani(b0=par[1], sigma = par[2], tau = par[3], 
+                           otimizador="BFGS", formu.X = "~1", 
+                           formu.Z = "~UM + bloco - 1", dados=dados)
+  return(saida)
+}
+```
+
+Reescrita a função queremos avaliar o Hessiano no ponto de máximo, ou seja, a matriz de informação observada.
+
+```{r}
+Io <- numDeriv::hessian(mod.Poisson.Ani.Hessian, x = coef(Poisson.Aninhado), 
+              method="Richardson", dados=dados)
+```
+
+Podemos comparar o inverso da matriz de informação observada, pelo algoritmo \code{BFGS} e o obtido fora pelo método de Richardson.
+
+```{r}
+Vcov         ## Anterior
+solve(Io)    ## Richardson
+```
+
+É possível ver claramente que pelo método de Richardson as variância são maiores, levando a maior confiança dos resultados. Podemos novamente construir os intervalos de confiança agora com os novos desvios padrões, inclusive para o parâmetro de média $\beta_0$.
+
+```{r}
+Vcov.H <- solve(Io)
+ic.b0 <- coef(Poisson.Aninhado)[1] + c(-1,1)*sqrt(Vcov.H[1,1])
+sd.sigma.H <- sqrt(exp(coef(Poisson.Aninhado)[2])^2*Vcov.H[2,2])
+sd.tau.H <- sqrt(exp(coef(Poisson.Aninhado)[3])^2*Vcov.H[3,3])
+ic.sigma.H = exp(coef(Poisson.Aninhado)[2]) + 
+                 c(-1,1)*qnorm(0.975)*sd.sigma.H
+ic.tau.H = exp(coef(Poisson.Aninhado)[3]) + 
+               c(-1,1)*qnorm(0.975)*sd.tau.H
+ic.b0
+ic.sigma.H
+ic.tau.H
+```
+
+Com os erros padrões corrigidos os intervalos de confiança ficaram mais largos, e mais coerentes com o que esperamos, nos dois casos o verdadeiro valor dos parâmetros estão contidos nos intervalos. Uma outra opção, muito mais cara computacionalmente é obter os intervalos baseados em perfil de verossimilhança.
+
+```{r perfilaninhado, echo = FALSE, message = FALSE, fig.align = "center", fig.width = 9, fig.height = 3, fig.cap = "Perfil de verossimilhança - Modelo Poisson com efeito aninhado."}
+#perfil = profile(Poisson.Aninhado,which=1:3,zmax = 1.96, std.err=c(sqrt(Vcov.H[1,1]),sqrt(Vcov.H[2,2]),sqrt(Vcov.H[3,3])))
+#save(perfil,file="perfil.RData")
+load("perfil.RData")
+par(mfrow=c(1,3))
+plot(perfil)
+```
+
+Podemos comparar os intervalos perfilhados com os obtidos pela aproximação quadrática.
+
+```{r}
+perfil.b0 <- confint(perfil)[1,]
+perfil.sigma <- exp(confint(perfil)[2,])
+perfil.tau <- exp(confint(perfil)[3,])
+ic = cbind(rbind(ic.b0,perfil.b0),
+          rbind(ic.sigma.H,perfil.sigma),
+          rbind(ic.tau.H,perfil.tau))
+ic
+```
+
+Os resultados mostram que a aproximação quadrática, tende a apresentar intervalos mais curtos que os de verossimilhança perfilhada. O parâmetro que parece sofrer mais com este efeito é o $\sigma$. Com isso, concluímos o processo de inferência do modelo Poisson com efeito aninhado.

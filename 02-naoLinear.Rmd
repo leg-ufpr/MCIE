@@ -1,0 +1,229 @@
+## Parametrização em modelo não lineares {#sec:naoLinear}
+
+Um modelo de regressão é não linear quando pelo menos uma derivada do modelo em
+relação aos parâmetros não for livre dos parâmetros.  Em geral, a adoção de
+modelos de regressão não linear está associado à considerações teóricas sobre a
+parte mecanística/determinística do fenômeno. Modelos dessa classe são
+frequentes na física e na química onde os resultados para experimentos simples,
+como determinar o tempo de queda livre de um objeto e o produto final de uma
+reação química, podem ser determinados pelo conhecimento das condições
+experimentais. Por construção, os modelos não lineares possuem parâmetros com
+significado de forma que o conhecimento desses parâmetros permite uma
+interpretação fundamentada do fenômeno por meio dos parâmetros que o
+determinam/governam.
+
+O modelo logístico é um modelo de regressão não linear largamente usado em
+diversas áreas. Na área biológica é empregado principalmente para descrever o
+crescimento ou evolução, como crescimento de seres vivos e evolução de
+doenças. Devido à grande aplicação por diversas áreas, o modelo apresenta
+diferentes parametrizações, motivadas pela conveniente interpretação que cada
+uma delas dá ao fenômeno. Entretanto, como já apresentado nos capítulos
+anteriores, a parametrização de um modelo têm um importante papel com relação a
+estabilidade numérica do processo de estimação e a qualidade das inferências
+estatísticas.
+
+De forma simplificada, o modelo logístico tem a seguinte expressão geral
+
+\begin{equation}
+  \text{logis}(x, \theta, \beta) = \frac{\theta}{1+f(\exp\{x\},\beta)}
+\end{equation}
+
+em que $x$ é a variável independente, $\theta$ é a assíntota do modelo que
+representa o valor limite da função quando $x$ tende ao infinito, e $f(\cdot)$ é
+uma função do vetor de parâmetros $\beta$ e do exponencial de $x$. As
+reparametrizações desse modelo surgem das diferentes formas da função
+$f(\cdot)$. Vamos aqui considerar quatro parametrizações, a saber
+
+* $f_a(x) = \exp\{(a_1-x)/a_2\}$;
+
+* $f_b(x) = b_1 \exp\{b_2 x\}$;
+
+* $f_c(x) = \exp\{c_1+c_2 x\}$;
+
+* $f_d(x) = (-1+1/d_1)\exp\{-d_2 x\}$.
+
+Em todas essas parametrizações consideramos $\theta$ conhecido e igual a 1 
+simplesmente para facilitar as ilustrações dos resultados e superfícies de verossimilhança.  
+O vetor $\beta$ com dois elementos representados por letras arábicas. 
+Todas as expressões são reparametrizações de um mesmo modelo. 
+Para ilustrar, considere o modelo $f_a(\cdot)$ de onde obtemos que
+
+$$
+\begin{array}{lll}
+  b_1=\exp\{a_1/a_2\} & c_1=a_1/a_2  &  d_1=1/(1+\exp\{a_1/a_2\})\\
+  b_2=-1/a_2          & c_2=-1/a_2   &  d_2=1/a_2. \\
+\end{array}
+$$
+
+
+Dessa maneira, a partir das estimativas pontuais sob qualquer modelo podemos
+obter as de qualquer outro aplicando as equações de reparametrização. Este é um
+fato importante pois podemos ajustar ao dados apenas ao modelo que seja mais
+adequado para estimação e inferência e também computacionalmente e a partir
+deste obter estimativas em outras parametrizações que podem ser desejáveis para
+interpretações práticas.
+
+Para avaliar a inferência sob diferentes parametrizações, faremos o ajuste de
+cada uma delas à dados de incidência de ferrugem do pessegueiro, causada pelo
+fungo *Tranzshcelia discolor*, em função do tempo em plantas da cultivar
+Chimarrita (figura \@ref(fig:incplot)). O pomar foi implantado em 2004 em
+Curitiba (25$^\circ$, 55' 10'' S, 49$^\circ$ 57' 26'' W, 945m), com espaçamento
+de 1m entre plantas de 2,5m entre linhas. Cada planta foi considerada como uma
+unidade experimental onde foram avaliadas o número de folhas com presença de
+ferrugem em relação ao total. Isso foi feito em 6 ramos marcados por planta
+durante 14 avaliações com intervalo de 10 à 16 dias entre avaliações. Para
+análise considerou-se a proporção observada de folhas atacadas.
+
+Considerou-se o modelo gaussiano para as observações e a função de
+log-verossimilhança foi implementada de forma a receber qualquer modelo de
+regressão não linear (código \@ref(lem:logverologis)).  Esta suposição é usual
+na prática embora, neste contexto, uma resposta binomial poderia ser
+considerada.  As funções em `R` para os modelos foram criadas e a estimação foi
+feita pela `optim()`. Após a estimação foram obtidos os contornos de
+log-verossimilhança para os pares de parâmetros mostrados na
+Figura \@ref(fig:llcontornos).
+
+
+```{r echo = FALSE, results = "hide"}
+#------------------------------------------------------------------------------------------
+# ler
+
+dados <- structure(list(dia = c(
+                          0L, 0L, 0L, 0L, 0L, 0L, 14L, 14L, 14L, 14L, 
+                          14L, 14L, 24L, 24L, 24L, 24L, 24L, 24L, 38L, 38L, 
+                          38L, 38L, 38L, 38L, 54L, 54L, 54L, 54L, 54L, 54L,
+                          69L, 69L, 69L, 69L, 69L, 69L, 81L, 81L, 81L, 81L,
+                          81L, 81L, 92L, 92L, 92L, 92L, 92L, 92L, 106L, 106L,
+                          106L, 106L, 106L, 106L, 117L, 117L, 117L, 117L, 117L,
+                          117L, 128L, 128L, 128L, 128L, 128L, 128L, 142L, 142L,
+                          142L, 154L, 154L, 166L, 166L),
+                        inc2 = c(
+                          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                          0.09, 0, 0.13, 0, 0, 0.08, 0.18, 0.05, 0.38, 0.25,
+                          0.13, 0.15, 0.5, 0.14, 0.33, 0.4, 0.63, 0.16, 0.5,
+                          0.62, 0.56, 0.73, 0.63, 0.3, 0.89, 0.57, 0.92, 0.62,
+                          0.75, 0.52, 1, 0.67, 1, 1, 1, 0.53, 1, 0.85, 1, 1, 1,
+                          0.93, 1, 1, 1, 1, 1, 0.96, 1, 1, 1, 1, 1, 1, 1, 1, 1)),
+                   .Names = c("dia", "inc2"), class = "data.frame")
+```
+
+```{lemma logverologis}
+**Função de log-verossimilhança para modelos de regressão não linear.**
+```
+
+```{r}
+ll <- function(th, y, x, model){
+  ex <- do.call(model, list(x=x, th=th))
+  sd <- sqrt(crossprod(y-ex)/length(x))
+  ll <- sum(dnorm(y, mean=ex, sd=sd, log=TRUE))
+  ll
+}
+```
+
+```{r message = FALSE}
+# parametrizações
+f.a <- function(x, th){ 1/(1+exp((th[1]-x)/th[2])) }
+f.b <- function(x, th){ 1/(1+th[1]*exp(th[2]*x)) }
+f.c <- function(x, th){ 1/(1+exp(th[1]+th[2]*x)) }
+f.d <- function(x, th){ 1/(1+(-1+1/th[1])*exp(-th[2]*x)) }
+
+# dados
+y <- dados$inc2; x <- dados$dia
+
+# lista com valores iniciais e modelo
+init.list <- list(A=list(par=c(80,13), model=f.a),
+                  B=list(par=c(120,-0.06), model=f.b),
+                  C=list(par=c(5,-0.06), model=f.c),
+                  D=list(par=c(0.008, 0.065), model=f.d))
+
+# lista com termos fixos durante otmização
+fixed.list <- list(fn=ll, x=x, y=y, method="BFGS",
+                   control=list(fnscale=-1))
+
+# otimização em série dos modelos
+op.all <-
+  lapply(init.list,
+         function(i){
+           op <- do.call(optim, c(i, fixed.list)); op
+         })
+
+# estimativas dos parâmetros
+pars <- sapply(op.all, "[[", "par"); pars
+
+# log-verossimilhança dos modelos
+ll0 <- sapply(op.all, "[[", "value"); ll0
+
+# contornos de log-verossimilhança
+leng <- 100
+grid.a <- expand.grid(th1=seq(67,79,l=leng), th2=seq(11,20,l=leng))
+grid.a$ll <- apply(grid.a, 1, ll, y=y, x=x, model=f.a)
+grid.a$dev <- with(grid.a, -2*(ll-ll0["A"]))
+
+levels <- c(0.05,0.5,0.75,0.9,0.95,0.99)
+qchi <- qchisq(levels, df=2)
+
+require(lattice)
+
+contourplot(dev~th1+th2, data=grid.a, at=qchi,
+            labels=list(labels=as.character(levels), cex=0.8))
+```
+
+```{r incplot, echo = FALSE, fig.width = 5.5, fig.height = 4.5, fig.cap = "Valores observados e ajustados de incidência em função do tempo. As parametrizações são iguais em termos de valores ajustados.", fig.align = "center"}
+plot(inc2~jitter(dia), dados, ylab="Incidência", xlab="Dias")
+curve(f.a(x, th=pars[,1]), 0, 180, add=TRUE, lwd=1.4)
+```
+
+
+Verifica-se que na parametrização~$A$ os contornos de *deviance* são
+praticamente elípticos com eixos paralelos aos eixos cartesianos. Do ponto de
+vista de otimização, o procedimentos baseados em avaliação de gradiente tem
+melhor taxa de convergência quando à função objetivo apresenta simetria e
+ortogonalidade. Do ponto de vista de inferência estatística, por exemplo na
+obtenção de intervalos de confiança, a ortogonalidade permite fazer inferência
+para um parâmetro sem a necessidade de correções considerando a curvatura na
+direção dos demais parâmetros.
+
+A parametrização $C$, em comparação com $A$, apresentou rotação dos eixos do contorno com inclinação negativa e uma leve assimetria dos contornos. A rotação deve-se ao fato de que as funções de reparametrização entre $A$ e $C$ são praticamente lineares e a assimetria devido a uma delas ser um quociente. As parametrizações $B$ e $D$ apresentaram forte desvio da forma elíptica com contornos em formato de "banana". Dentre esses últimos, 
+o modelo $B$ parece ser o mais susceptível e pode apresentar problemas numéricos pois apresenta 
+assimetria mais acentuada do que o modelo $D$. 
+Dessa forma, as parametrizações em termos de conveniência 
+para estimação e inferência estatística seguem a ordem de preferência: $A$, $C$, $D$ e $B$. 
+Vale relembrar que tanto as estimativas pontuais quanto intervalares do modelo em uma parametrização podem levar aos seus equivalentes em outra parametrização pelo princípio da invariância do estimador de máxima verossimilhança.
+
+
+```{r echo = FALSE, results = "hide"}
+grid.b <- expand.grid(th1=seq(30,700,l=leng), th2=seq(-0.09,-0.05,l=leng))
+grid.b$ll <- apply(grid.b, 1, ll, y=y, x=x, model=f.b)
+grid.b$dev <- with(grid.b, -2*(ll-ll0["B"]))
+
+grid.c <- expand.grid(th1=seq(3.5,6.7,l=leng), th2=seq(-0.09,-0.05,l=leng))
+grid.c$ll <- apply(grid.c, 1, ll, y=y, x=x, model=f.c)
+grid.c$dev <- with(grid.c, -2*(ll-ll0["C"]))
+
+grid.d <- expand.grid(th1=seq(0.0005,0.027,l=leng), th2=seq(0.049,0.09,l=leng))
+grid.d$ll <- apply(grid.d, 1, ll, y=y, x=x, model=f.d)
+grid.d$dev <- with(grid.d, -2*(ll-ll0["D"]))
+
+grid.full <- rbind(grid.a, grid.b, grid.c, grid.d)
+grid.full$para <- rep(c("A","B","C","D"), each=leng^2)
+
+expr <- c(expression(f[a](x) == 1/(1+exp((a[1]-x)/a[2]))),
+          expression(f[b](x) == 1/(1+b[1]*exp(b[2]*x))),
+          expression(f[c](x) == 1/(1+exp(c[1]+c[2]*x))),
+          expression(f[d](x) == 1/(1+(-1+1/d[1])*exp(-d[2]*x))))
+```
+
+```{r llcontornos, echo = FALSE, fig.width = 8, fig.height = 7, fig.cap = "Contornos de deviance para os parâmetros do modelo logístico em cada uma das parametrizações.", fig.align = "center"}
+print(
+contourplot(dev~th1+th2|para, data=grid.full, at=qchi, scales="free",
+            labels=list(labels=as.character(levels), cex=0.8), #aspect=0.8,
+            xlab=expression("(a,b,c,d)"[1]), ylab=expression("(a,b,c,d)"[2]),
+            strip=strip.custom(bg="gray90", factor.levels=(expr)),
+            par.settings=list(layout.heights=list(strip=2)),
+            panel=function(...){
+              panel.contourplot(...)
+              i <- which.packet()
+              panel.abline(v=pars[1,i], h=pars[2,i], lty=2)
+            })
+  )
+```

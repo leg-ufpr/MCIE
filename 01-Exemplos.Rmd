@@ -1,5 +1,3 @@
-# Ilustrando ideias
-
 ## Estimação pontual
 
 ```{example, label="ex1"}
@@ -110,7 +108,7 @@ curve(veroPois(x, dados = y, tipo = "dev", maxlogL = mll), 8, 11,
       ylab=expression(D(theta)), xlab=expression(theta))
 ```
 
-```{r veroExemplo1, echo = FALSE, fig.width = 8, fig.height = 2, fig.cap = 'Diferentes formas de visualizar a função de verossimilhança - Distribuição Poisson.'}
+```{r veroExemplo1, echo = FALSE, fig.width = 8, fig.height = 2, fig.cap = 'Diferentes formas de visualizar a função de verossimilhança - Distribuição Poisson.', fig.align = "center"}
 par(mfrow = c(1, 4), mar=c(2.6, 2.6, 1.2, 0.5), mgp = c(1.6, 0.6, 0))
 mll <- sum(dpois(y, lambda=mean(y), log=TRUE))
 curve(veroPois(x, dados=y, tipo="L", maxlogL=mll), 8, 11, 
@@ -299,7 +297,7 @@ $\hat{\theta} \sim \mathrm{N}(\theta, \frac{\theta}{n})$.
 Na Figura \@ref(fig:distExemplo1) sobrepomos o histograma das estimativas 
 obtidas nas simulações com a distribuição assintótica (normal).
 
-```{r distExemplo1, echo = FALSE, fig.width = 7.5, fig.height = 5, fig.cap = 'Illustração da distribuição assintótica do estimador de máxima verossimilhança- Distribuição Poisson.'}
+```{r distExemplo1, echo = FALSE, fig.width = 7.5, fig.height = 5, fig.cap = 'Illustração da distribuição assintótica do estimador de máxima verossimilhança- Distribuição Poisson.', fig.align = "center"}
 set.seed(123)
 emv5 <- replicate(1000, {mean(rpois(5, lam=3.5))})
 emv50 <- replicate(1000, {mean(rpois(50, lam=3.5))})
@@ -497,7 +495,7 @@ devA.theta <- sapply(grid.theta, dev.aprox, theta.hat = 1/mean(y), y=y)
 
 Figura \@ref(fig:Exemplo2) apresenta os gráficos com os pontos de corte indicados de forma equivalente em todas as funções.
 
-```{r Exemplo2, echo = FALSE, fig.width = 8, fig.height = 4, fig.cap = 'Verossimilhança relativa (esquerda) e função deviance exata e aproximada (direita) - Distribuição exponencial.'}
+```{r Exemplo2, echo = FALSE, fig.width = 8, fig.height = 4, fig.cap = 'Verossimilhança relativa (esquerda) e função deviance exata e aproximada (direita) - Distribuição exponencial.', fig.align = "center"}
 par(mfrow=c(1,2))
 plot(LR.theta ~ grid.theta,type="l",ylab=expression(LR(theta)),xlab=expression(theta))
 abline(h=0.146)
@@ -563,7 +561,7 @@ mean(apply(ic, 1, function(x) (x[1] < THETA & x[2] > THETA)))
 No código acima simulamos a cada passo do laço `for()` uma nova realização da variável aleatória $Y$, com esta realização calculamos a estimativa de máxima verossimilhança e o seu respectivo intervalo de confiança baseado na _deviance_ e guardamos o resultado em um objeto chamado $ic$. De acordo com a interpretação frequentista dos $100$ intervalos de confiança que calculamos esperamos que $95$ deles contenham o verdadeiro valor do parâmetro neste caso $\theta = 1$. O gráfico apresentado na Figura \@ref(fig:icExp) ilustra os resultados. Neste caso,  conforme esperado, temos exatamente que $5$ dos intervalos não contem o valor verdadeiro do parâmetro. É claro que por se tratar de um exemplo de simulação variações podem ocorrer. 
 
 
-```{r icExp, echo = FALSE, fig.width = 8, fig.height = 6, fig.cap = 'Ilustração da interpretação frequentista de intervalo de confiança.'}
+```{r icExp, echo = FALSE, fig.width = 8, fig.height = 6, fig.cap = 'Ilustração da interpretação frequentista de intervalo de confiança.', fig.align = "center"}
 plot(c(0.4,1.8)~c(1,100),type="n",ylab=expression(theta),xlab="Ensaio")
 abline(h=1)
 for(i in 1:100){
@@ -593,7 +591,7 @@ mean(apply(ic, 1, function(x) (x[1] < THETA & x[2] > THETA)))
 
 Vamos mostrar os intervalos obtidos e verificar quais contêm o verdadeiro valor do parâmetro. Os resultados não apresentados na Figura \@ref(fig:icASS).
 
-```{r icASS, echo = FALSE, fig.width = 8, fig.height = 6, fig.cap = 'Ilustração da interpretação frequentista de intervalo de confiança.'}
+```{r icASS, echo = FALSE, fig.width = 8, fig.height = 6, fig.cap = 'Ilustração da interpretação frequentista de intervalo de confiança.', fig.align = "center"}
 plot(c(0.4,1.8)~c(1,100),type="n",ylab=expression(theta),xlab="Ensaio")
 abline(h=1)
 for(i in 1:100){
@@ -695,7 +693,7 @@ e os relaciona à função de verossimilhança do modelo. O teste da razão de v
 O teste escore avalia o quanto a curvatura da função no ponto especificado pelo teste
 se afasta de zero, o valor no máximo. O teste de Wald avalia a distância entre o valor especificado no teste e o EMV, padronizando esta distância pela curvatura da função ao redor de seu máximo.
 
-```{r, TH2, echo = FALSE, fig.width = 6.5, fig.height = 5, fig.cap = 'Diferentes formas de construir teste de hipótese baseado em verossimilhança - Distribuição Bernoulli'}
+```{r, TH2, echo = FALSE, fig.width = 6.5, fig.height = 5, fig.cap = 'Diferentes formas de construir teste de hipótese baseado em verossimilhança - Distribuição Bernoulli', fig.align = "center"}
 
 # Simulando a amostra
 set.seed(123)
@@ -782,7 +780,7 @@ wald <- function(H0, EMV, V.EMV, alpha){
 }
 ```
 
-```{lemma, Wald}
+```{lemma, escore}
 **Função genérica para aplicar o teste escore.**
 ```
 
@@ -821,18 +819,19 @@ wald(H0 = 0.4, EMV = mean(dados), V.EMV = V.EMV, alpha = 0.05)
 O teste escore é ligeiramente mais complicado uma vez que é necessário 
 programar a função escore e a informação esperada.
 
-```{lemma, Wald}
+```{lemma}
 **Função escore - Distribuição Bernoulli.**
 ```
 
 ```{r}
 U <- function(theta, y) {
+  n <- length(y)
   esco <- (sum(y)/theta) -  ((n-sum(y))/(1-theta))
   return(esco)
 }
 ```
 
-```{lemma, Wald}
+```{lemma}
 **Informação esperada - Distribuição Bernoulli.**
 ```
 
@@ -851,7 +850,7 @@ escore(H0 = 0.4, U = U, Ie = Ie, alpha = 0.05, y = dados)
 Neste caso os três testes levam a mesma conclusão. Em geral, o teste escore é o 
 que requer mais cálculos, uma vez que exige a obtenção da função escore e da informação esperada, o que em geral é feito analiticamente. Por outro lado, tem uma clara vantagem sobre os demais porque não exige a avaliação da função de log-verossimilhança e nem mesmo a obtenção da estimativa de máxima verossimilhança. O teste de Wald é o mais utilizado pelo menos de forma inicial uma vez que sua construção é simples. O teste da razão de verossimilhança é também muito utilizado, tanto para testar valores para um determinado parâmetro quanto para a comparação de modelos aninhados. Na situação em que usamos métodos numéricos para maximização da função de log-verossimilhança um subproduto é a informação observada que pode ser usada diretamente na estatística de teste de Wald. Além disso, quando comparamos modelos aninhados a diferença entre os valores da log-verossimilhança dos modelos, permite a construção do teste da razão de verossimilhança de forma bastante direta, porém requer duas otimizações, uma para cada modelo, enquanto que o de Wald apenas uma.
 
-## Reparametrização
+## Reparametrização {#sec:vero-repar}
 
 Em diversas aplicações o interesse principal pode ser sobre alguma função de um parâmetro do modelo. Por exemplo em uma distribuição exponencial de parâmetro $\theta$ o interesse pode estar na probabilidade de obter um valor maior que $k$ expressa por $\psi = \exp\{-\theta k\}$, o que pode ser visto como uma reparametrização. Além disto, por vezes pode ser mais simples estimar em uma certa parametrização do que em outra. Por exemplo, no caso de parâmetros de variância em geral é mais estável numericamente estimar a sua raiz ou o log da raiz. Note também que reparametrizações mudam as regiões de busca em algoritmos de maximização. 
 
@@ -969,7 +968,7 @@ c(theta.est, mu.est)
 
 Entretanto, na prática não é conveniente nem necessário reescrever a função de verossimilhança para cada reparametrização de interesse. Pela propriedade de invariância pode-se obter a função de verossimilhança de $\mu$ partindo de $\theta$ e vice-versa. Os gráficos da função de verossimilhança e log-verossimilhança nas duas parametrizações são apresentados na Figura \@ref(fig:repa).
 
-```{r, repa, echo = FALSE, fig.width = 6, fig.height = 6, fig.cap = 'Verossimilhança e log-verossimilhança para theta e mu.'}
+```{r, repa, echo = FALSE, fig.width = 6, fig.height = 6, fig.cap = 'Verossimilhança e log-verossimilhança para theta e mu.', fig.align = "center"}
 LLMAX <- L.theta(theta.est, y=dados)
 LLMIN <- L.theta(0.045, y=dados)
 require(rootSolve)
@@ -1064,7 +1063,7 @@ ic.mu.esp <- ic.assintotico(EMV = mu.est, Io = n/mu.est^2, alpha=0.05)
 Vamos também criar uma função genérica à qual tem como seu argumento principal 
 a função _deviance_ do modelo.
 
-```{lemma, dev}
+```{lemma}
 **Função genérica para construir intervalo de confiança baseado na _deviance_.**
 ```
 
@@ -1093,7 +1092,7 @@ rbind(ic.theta, ic.dev.theta)
 rbind(ic.dev.mu, ic.mu.obs,ic.mu.esp)
 ```
  
-```{r, devExemplo4, echo = FALSE, fig.width = 8, fig.height = 4, fig.cap = 'Deviances exatas e aproximadas para cada parametrização. Linhas verticais indicam os respectivos intervalos de confiança.'}
+```{r, devExemplo4, echo = FALSE, fig.width = 8, fig.height = 4, fig.cap = 'Deviances exatas e aproximadas para cada parametrização. Linhas verticais indicam os respectivos intervalos de confiança.', fig.align = "center"}
 d.theta <- apply(as.matrix(grid.theta),1,dev.theta, theta.hat = theta.est, y=dados)
 d.theta.app <- apply(as.matrix(grid.theta),1,dev.app.theta, theta.hat = theta.est, y=dados)
 

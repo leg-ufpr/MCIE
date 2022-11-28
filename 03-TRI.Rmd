@@ -1,0 +1,151 @@
+## Modelo de Teoria de Resposta ao Item {#sec:tri}
+
+A teoria de resposta ao item (TRI) tem ganhado muito destaque com a expansão e
+visibilidade de suas aplicações, principalmente em avaliações na área de
+educação.  Os modelos básicos de TRI pode ser vistos como modelos de efeitos
+aleatórios, com a particularidade que, na sua forma básica, não há parâmetros de
+variância para estimar explicitamente.  Para ilustrar isso, será implementado o
+modelo logístico de três parâmetros, destacando alguns casos particulares deste.
+
+Considere o caso onde um teste é formado por $i$ questões e $j$ indivíduos são
+avaliados.  O modelo logístico de três parâmetros postula que a probabilidade de
+um indivíduo qualquer responder corretamente a cada uma das questões envolve:
+(i) a habilidade latente do individuo $\theta_j$, (ii) a dificuldade $\beta_i$,
+(iii) a discriminância $\alpha_i$ e (iv) a probabilidade de acerto casual $c_i$,
+para cada uma das questões.  A equação do logístico de três parâmetros é:
+\[
+P(Y_{ij} | \theta_j ) = ( 1 - c_i) + \frac{c_i}{1 + \exp\{-\alpha_i(\theta_j - \beta_i)\}} .
+\]
+
+Pode-se identificar facilmente dois casos particulares.
+ O primeiro quando a probabilidade de acerto casual é desprezível, ou seja, $c_i = 0$. 
+ O segundo quando a discriminância  é igual para todas as questões, ou seja, $\alpha_i = \alpha$.  
+ No caso de $\alpha =1$ tem-se o conhecido modelo de Rasch.
+
+O modelo completo descrito de forma hierárquica fica da seguinte forma:
+\begin{align*}
+  Y_{ij} | \theta_j &\sim B(n = 1, p_{ij}) \\
+  \theta_j &\sim N(0, 1).
+\end{align*}
+
+Para fazer inferência sobre os parâmetros deste modelo, é necessário a obtenção da verossimilhança marginal, obtida após a integração dos efeitos aleatórios, neste caso, as habilidades latentes $\theta_j$. O integrando desta verossimilhança marginal é o produto de uma binomial por uma gaussiana padrão, 
+e não tem solução analítica. Desta forma, pode-se usar métodos para integração numérica 
+como os já apresentados.
+
+A implementação deste modelo segue os mesmos princípios dos outros modelos de efeitos aleatórios já apresentados porém com duas diferenças básicas. A primeira é que o preditor neste caso é não linear dado pelo modelo logístico. A segunda é que não temos o parâmetro de variância do efeito aleatório, 
+que é neste caso suposto igual a $1$. 
+Como primeiro passo, vamos implementar a função do modelo logístico com três parâmetros.
+
+```{lemma}
+**Definição do modelo logístico.**
+```
+
+```{r}
+logistico <- function(beta, alpha, ce, theta){
+        return(ce + (1-ce)* (1/(1+ exp(-alpha*(theta-beta)))))
+}
+```
+
+Vamos criar uma função que permite obter simulações deste modelo.
+
+```{lemma}
+**Função para simular do modelo logístico de TRI.**
+```
+
+```{r}
+simula.tri <- function(n.ind, beta, alpha, ce){
+  theta <- rnorm(n.ind, 0, 1)
+  p <- matrix(NA, ncol = length(beta), nrow = n.ind)
+  y <- p
+  for(i in 1:length(beta)){
+  p[,i] <- logistico(beta = beta[i], alpha = alpha[i], 
+                     ce = ce[i], theta=theta)}
+  for(i in 1:n.ind){
+  y[i,] <- rbinom(n=length(beta), size = 1, p = p[i,])}
+  dados <- data.frame(y = y, ID = 1:100)
+  return(dados)}
+```
+
+Para exemplificar o ajuste vamos simular um conjunto de dados com $100$ indivíduos e $5$ questões.
+Definimos os seguinte valores para os parâmetros: 
+$\beta_i = (-2,-1,0,1,2)$ e $\alpha = 1$ e $ce = 0$, ou seja, um modelo de Rasch. 
+
+```{r}
+set.seed(123)
+dados <- simula.tri(n.ind=100, beta=c(-2,-1, 0, 1, 2), alpha=c(1,1,1,1,1), 
+                    ce=c(0,0,0,0,0))
+```
+
+A seguir definimos uma função para computar o integrando da função de verossimilhança para um individuo.
+
+```{lemma}
+**Definição do integrando para modelo de Rasch.**
+```
+
+```{r}
+integrando <- function(theta, b1, b2,b3, b4, b5, y, log = FALSE){
+  beta <- c(b1,b2,b3,b4,b5)
+  n.beta <- length(beta)
+  p <- matrix(NA, ncol = n.beta, nrow = 1)
+  ll = sapply(theta, function(thetai){
+    for(i in 1:n.beta){
+      p[,i] <- logistico(beta = beta[i], alpha = 1, ce = 0, 
+                         theta=thetai)
+    }
+    sum(dbinom(y, size = 1, prob = p, log=TRUE)) + 
+          dnorm(thetai, 0, 1, log=TRUE)})
+  if(log == FALSE){ll <- exp(ll)}
+  return(ll)
+}
+```
+
+Para facilitar vamos usar para a integração numérica a função `integrate()`. 
+Deixamos para o leitor implementar com as outras opções de integração numérica apresentadas.
+
+```{lemma}
+**Verossimilhança marginal do modelo Rasch.**
+```
+
+```{r}
+marginal <- function(b1, b2, b3, b4, b5, dados){
+  y.id <- split(dados, dados$ID)
+  beta <- c(b1,b2,b3,b4,b5)
+  print(round(beta,4))
+  n.beta <- length(beta)
+  integral <- c()
+  for(i in 1:length(y.id)){
+  integral[i] <- integrate(integrando, lower= -Inf, upper = Inf, 
+                    b1 = b1, b2 = b2, b3 = b3, b4 = b4, b5 = b5, 
+                    y = as.numeric(y.id[[i]][1:n.beta]))$value}
+  ll <- sum(log(integral))
+  return(-ll)
+}
+```
+
+Por fim, podemos maximizar a função de log-verossimilhança marginal, usando o pacote `bbmle`.
+
+```{r echo = FALSE, message = FALSE}
+require(bbmle)
+#save(ajuste, file="TRI.ajuste.RData")
+load("TRI.ajuste.RData")
+```
+
+```{r}
+summary(ajuste)
+```
+
+Esta é uma implementação simplesmente ilustrativa. 
+Podemos torná-la muito mais rápida computacionalmente, 
+escrevendo o integrando de uma forma mais eficiente e 
+calculando apenas as integrais necessárias.
+
+A seguir apresentamos os comandos para ajustar o mesmo modelo
+utilizando o pacote `ltm` \@citep(ltm).
+Os resultados coincidem com os anteriores porém a implementação
+é claramente mais eficiente.
+
+```{r}
+require(ltm)
+dados <- dados[,-6]
+rasch(dados, constraint=cbind(length(dados)+1, 1))
+```

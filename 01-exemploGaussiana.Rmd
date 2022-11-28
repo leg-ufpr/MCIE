@@ -1,0 +1,723 @@
+# Ilustrando ideias
+
+## Exemplo - Distribuição Gaussiana {#sec:vero-normal}
+
+Suponha que $Y_1, Y_2, \ldots, Y_n$ são variáveis aleatórias independentes e identicamente distribuídas com distribuição gaussiana de média $\mu$ e variância $\sigma^2$. Denote isto por $Y_i \sim N(\mu, \sigma^2)$. Note que neste caso o vetor de parâmetros $\underline{\theta} = (\mu, \sigma)^{\top}$. Onde $\mu \in \Re$ e $\sigma \in \Re^+$ são os respectivos espaços paramétricos. O objetivo é estimar $\mu$ e $\sigma$ além de encontrar intervalos ou regiões de confiança. Note que agora temos dois parâmetros e estamos trabalhando com uma superfície de log-verossimilhança.
+Os princípios vistos no caso uniparamétrico se mantém mas
+a construção de gráficos e a obtenção das estimativas são mais trabalhosas. 
+Vejamos alguns fatos relevantes deste exemplo. 
+Como sempre, começamos escrevendo a função de verossimilhança,
+
+\[
+         L(\mu, \sigma) = (2\pi)^{-n/2} \sigma^{-n} \exp\{ - \frac{1}{2 \sigma^2} \sum_{i=1}^n (y_i - \mu)^2\}.
+\]
+
+A log-verossimilhança é dada por,
+
+\[
+  l(\mu,\sigma) = -\frac{n}{2} \log 2 \pi - n \log \sigma - \frac{1}{2 \sigma^2} \sum_{i=1}^n ( y_i - \mu)^2.
+\]
+
+A função *escore* toma a forma de um sistema de equações,
+
+\begin{align*}
+  U(\mu) &= \frac{\partial l(\mu, \sigma)}{\partial \mu} = \frac{\sum_{i=1}^n y_i }{\sigma^2} - \frac{n \mu}{\sigma^2} \\
+  U(\sigma) &= -\frac{n}{\sigma} + \frac{1}{\sigma^3} \sum_{i=1}^n (y_i - \mu)^2 .
+\end{align*}
+
+Neste caso podemos facilmente resolver este sistema chegando as estimativas de máxima verossimilhança,
+
+\[
+  \hat{\mu} = \frac{\sum_{i=1}^n y_i}{n} \quad \text{e} \quad \hat{\sigma} = \frac{\sum_{i=1}^n (y_i - \mu)^2}{n}.
+\]
+
+A matriz de informação observada fica da seguinte forma,
+
+\[
+I_O (\mu, \sigma) = \left[\begin{array}{cc}
+ -\frac{\partial^2 l(\mu, \sigma)}{\partial \mu^2}  & - \frac{\partial^2 l(\mu, \sigma)}{\partial \mu \partial \sigma}  \\
+  - \frac{\partial^2 l(\mu, \sigma)}{\partial \mu \partial \sigma} & -\frac{\partial^2 l(\mu, \sigma)}{\partial \sigma^2}
+\end{array}\right] .
+\]
+
+Temos então,
+
+\begin{align*}
+  \frac{\partial^2 l(\mu, \sigma)}{\partial \mu^2} &= \frac{\partial U(\mu)}{\partial \mu} = - \frac{n}{\sigma^2} \\
+  \frac{\partial^2 l(\mu, \sigma)}{\partial \sigma^2} &= \frac{\partial U(\sigma)}{\partial \sigma} = - \frac{2n}{\sigma^2} \\
+  \frac{\partial^2 l(\mu, \sigma)}{\partial \mu \partial \sigma} &= \frac{\partial U(\sigma)}{\partial \sigma} = -\frac{2}{\sigma^3}
+  \sum_{i=1}^n (y_i - \overline{y}) = 0.
+\end{align*}
+
+Logo,
+
+\[ I_O(\hat{\mu}, \hat{\sigma}) = \left[\begin{array}{cc}
+    \frac{n}{\hat{\sigma}^2} & 0 \\
+    0 & \frac{2n}{ \hat{\sigma}^2}  
+\end{array}\right] .
+\]
+
+Neste caso a matriz de informação observada coincide com a matriz de informação esperada. Além disso, note a importante propriedade de ortogonalidade entre os parâmetros, indicada pelos termos fora da diagonal da matriz de informação serem zero. A derivada cruzada entre dois parâmetros ser zero, é condição suficiente para que estes parâmetros sejam ortogonais. 
+A ortogonalidade é uma propriedade muito conveniente e simplifica as inferências, 
+uma vez que podemos fazer inferência para um parâmetro sem nos preocupar com os valores do outro.
+
+Para construção dos intervalos de confiança, a maneira mais direta é usar os resultados assintóticos dos estimadores de máxima verossimilhança, neste caso temos que a distribuição assintótica de $\hat{\underline{\theta}} = (\hat{\mu}, \hat{\sigma})^\top$ é
+
+\[
+\begin{bmatrix}
+\hat{\mu}  \\ \hat{\sigma}
+\end{bmatrix} \sim NM_2\left (\begin{bmatrix}
+\mu  \\ \sigma
+\end{bmatrix} , \begin{bmatrix}
+\hat{\sigma}^2/n & 0 \\ 
+ 0 & \hat{\sigma}^2/2n 
+\end{bmatrix} \right )
+\]
+
+Intervalos de confiança de Wald podem ser obtidos por:
+
+\[
+  \hat{\mu} \pm z_{\alpha/2} \sqrt{\hat{\sigma}^2/n} 
+\]
+
+e para $\sigma$ temos
+
+\[
+\hat{\sigma} \pm z_{\alpha/2} \sqrt{\hat{\sigma}^2/2n}.
+\]
+
+
+A função de verossimilhança deste exemplo é simétrica e quadrática na direção de $\mu$, 
+e portanto a aproximação é exata. 
+Porém a verossimilhança é assimétrica na direção de $\sigma$.
+Destacamos ainda que a assimetria é maior $\sigma^2$, um pouco menos acentuada em $\sigma$
+e ainda menos acentuada em $\log(\sigma)$. 
+Nos remetemos a discussão na Sessão \@ref(sec:vero-repar) para mais detalhes e consequências.
+Na prática, se intervalos baseados na aproximação quadrática serão utilizados
+o mais recomendado então é parametrizar a função para uma forma mais próxima a simetria
+com $\psi=\log(\sigma)$, obter intervalos para $\psi$ e depois transformá-los para escala original do parâmetro, 
+por transformação 
+direta se verossimilhança em $\psi$ for muito próxima à simetria 
+ou caso contrário pelo método delta.
+
+Outra opção é obter uma região de confiança baseada na *deviance*,
+
+\begin{align*}
+  D(\mu, \sigma) &= 2 [ l(\hat{\mu}, \hat{\sigma}) - l(\mu,\sigma)] \\
+                 &= 2[ n \log \left( \frac{\sigma}{\hat{\sigma}} \right) + \frac{1}{2\sigma^2}\sum_{i=1}^n(y_i - \mu)^2 - \frac{1}{2\hat{\sigma}^2} \sum_{i=1}^n (y_i - \hat{\mu})].
+\end{align*}
+
+A *deviance* aproximada tem a seguinte forma
+
+\[
+  D(\mu, \sigma) \approx ( \underline{\theta} - \underline{\hat{\theta}})^\top I_o(\underline{\hat{\theta}}) ( \underline{\theta} - \underline{\hat{\theta}}).
+\]
+
+
+Note que neste caso a superfície de log-verossimilhança em duas dimensões esta sendo aproximada por uma elipse. 
+É bastante intuitivo pensar que aproximar uma função em duas dimensões é mais difícil que em uma.
+Sabemos também que esta aproximação tenderá a ser melhor quanto maior for o tamanho da amostra. 
+Para exemplificar esta ideia a Figura \@ref(fig:devNormal) apresenta o gráfico da função *deviance* bidimensional em $(\mu, \sigma)$
+para o caso do modelo gaussiano para quatro tamanhos de amostra, n=10, 50, 100 e 1000.
+
+```{r echo = FALSE, results = "hide"}
+set.seed(123)
+y10 <- rnorm(10,10,1.5)
+y50 <- rep(y10,5)
+y100 <- rep(y10,10)
+y1000 <- rep(y10,100)
+ll.gauss <- function(theta, y, logsigma=FALSE){
+    if(logsigma) theta[2] <- exp(theta[2])
+    ll <- sum(dnorm(y,theta[1], theta[2],log=TRUE))
+    return(ll)
+}
+
+n.m.sd10 <- c(length(y10), mean(y10), sd(y1000))
+n.m.sd50 <- c(length(y50), mean(y50), sd(y1000))
+n.m.sd100 <- c(length(y100), mean(y100), sd(y1000))
+n.m.sd1000 <- c(length(y1000), mean(y1000), sd(y1000))
+
+devi.approx <- function(theta, amostra, logsigma=FALSE){
+    if(logsigma) theta[2] <- exp(theta[2])
+    n <- amostra[1]
+    theta.est <- c(amostra[2],amostra[3]*(n-1)/n)
+    Io <- diag(c(n/theta.est[2]^2,2*n/theta.est[2]^2))
+    dev.app <- crossprod(theta - theta.est, Io) %*% (theta - theta.est)
+    return(dev.app)
+}
+
+Nseq <- 401
+mu <- seq(8.2,11.8,l= Nseq)
+sigma <- seq(0.4,3.5,l= Nseq)
+grid.theta <- expand.grid(mu,sigma)
+
+vero10 <- apply(as.matrix(grid.theta),1,ll.gauss,y=y10)
+vero50 <- apply(as.matrix(grid.theta),1,ll.gauss,y=y50)
+vero100 <- apply(as.matrix(grid.theta),1,ll.gauss,y=y100)
+vero1000 <- apply(as.matrix(grid.theta),1,ll.gauss,y=y1000)
+
+de.ap10 <- apply(as.matrix(grid.theta),1,devi.approx,amostra=n.m.sd10)
+de.ap50 <- apply(as.matrix(grid.theta),1,devi.approx,amostra=n.m.sd50)
+de.ap100 <- apply(as.matrix(grid.theta),1,devi.approx,amostra=n.m.sd100)
+de.ap1000 <- apply(as.matrix(grid.theta),1,devi.approx,amostra=n.m.sd1000)
+
+devi10 <- 2*(ll.gauss(theta=c(mean(y10),sd(y10)*0.9),y=y10) - vero10)
+devi50 <- 2*(ll.gauss(theta=c(mean(y50),sd(y50)*0.98),y=y50) - vero50)
+devi100 <- 2*(ll.gauss(theta=c(mean(y100),sd(y100)*0.99),y=y100) - vero100)
+devi1000 <- 2*(ll.gauss(theta=c(mean(y1000),sd(y1000)*0.999),y=y1000) - vero1000)
+```
+
+```{r devNormal, echo = FALSE, fig.width = 6.5, fig.height = 6.5, fig.cap = "Deviance exata (linha sólida) e aproximada (linha tracejada) para diferentes tamanhos de amostra - Distribuição Normal.", fig.align = "center"}
+par(mfrow=c(2,2),mar=c(2.8, 2.8, 1.7, 1),mgp = c(1.8, 0.7, 0))
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(mu,sigma,matrix(devi10,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,
+        xlab=expression(mu),ylab=expression(sigma),
+        main="n=10", lwd=1.7)
+par(new=TRUE)
+contour(mu,sigma,matrix(de.ap10,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,
+        xlab=expression(mu),ylab=expression(sigma),axes=FALSE,
+        lty=1,col="red",lwd=1)
+#
+contour(mu,sigma,matrix(devi50,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,xlab=expression(mu),ylab=expression(sigma),
+        main="n=50",ylim=c(1,2),xlim=c(9.5,10.7), lwd=1.7)
+par(new=TRUE)
+contour(mu,sigma,matrix(de.ap50,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,
+        xlab=expression(mu),ylab=expression(sigma),axes=FALSE,
+        lty=1,col="red",lwd=1,ylim=c(1,2),xlim=c(9.5,10.7))
+#
+contour(mu,sigma,matrix(devi100,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,xlab=expression(mu),ylab=expression(sigma),
+        main="n=100",ylim=c(1.05,1.7),xlim=c(9.65,10.55), lwd=1.7)
+par(new=TRUE)
+contour(mu,sigma,matrix(de.ap100,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,xlab=expression(mu),ylab=expression(sigma),axes=FALSE,
+        lty=1,col="red",lwd=1,ylim=c(1.05,1.7),xlim=c(9.65,10.55))
+#
+contour(mu,sigma,matrix(devi1000,Nseq,Nseq),levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,xlab=expression(mu),ylab=expression(sigma),
+        main="n=1000",xlim=c(9.98,10.25),ylim=c(1.25,1.48), lwd=1.7)
+par(new=TRUE)
+contour(mu,sigma,matrix(de.ap1000,Nseq,Nseq),levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,xlab=expression(mu),ylab=expression(sigma),axes=FALSE,
+        lty=1,col="red",lwd=1,xlim=c(9.98,10.25),ylim=c(1.25,1.48))
+##legend("topleft",legend=c("Exata","Aproximada"),col=c("black","red"),lwd=1:2,lty=1:2)
+```
+
+Na Figura \@ref(fig:devNormal) vemos que com $n=10$ 
+a verossimilhança exibe forte assimetria na direção do parâmetro $\sigma$ e
+a aproximação quadrática é claramente insatisfatória.
+Com o aumento do tamanho da amostra a aproximação quadrática vai ficando cada vez mais próxima da *deviance* exata, mais uma vez ilustrando o comportamento assintótico da verossimilhança. 
+É importante notar também em modelos com dois ou mais parâmetros a aproximação pode melhorar 
+mais rapidamente para um do que outro. 
+No exemplo a aproximação é exata para $\mu$ para qualquer tamanho de amostra.
+Já para $\sigma$ é necessário um tamanho de amostra relativamente grande 
+para que a *deviance* em sua direção tome um comportamento próximo do simétrico. 
+A função se aproxima da simetria mais rapidamente se parametrizada com $\log(\sigma)$.
+
+Em outros modelos, como no caso dos modelos lineares generalizados (MLG) a intuição é a mesma ainda que a aproximação para parâmetros de média deixe de ser exata. 
+De forma geral, para parâmetros de média a aproximação quadrática 
+tende a apresentar bons resultados mesmo com amostras reduzidas. 
+O mesmo não pode ser dito para parâmetros de dispersão ou mesmo de correlação. 
+ Em outras palavras,  estimar a média é mais simples que estimar a variabilidade, 
+que por sua vez é mais simples do que estimar correlações.  
+
+
+As regiões de confiança são as curvas de nível na superfície de *deviance*. Note que apenas com a *deviance* não temos intervalos marginais como os obtidos pela aproximação quadrática. 
+Uma possível solução é projetar a superfície na direção do parâmetro de interesse na maior amplitude, que é obtida quando fixamos o outro parâmetro na sua estimativa de máxima verossimilhança. 
+Porém esta prática só produz bons resultados quando os parâmetros são ao menos aproximadamente ortogonais.
+Uma solução mais genérica, ainda que computacionalmente mais trabalhosa é o obtenção das verossimilhanças
+perfilhadas.  
+No caso particular da distribuição gaussiana, que tem a propriedade de ortogonalidade entre $\mu$ e $\sigma$, a verossimilhança condicionada na estimativa de máxima verossimilhança coincide com a verossimilhança perfilhada. 
+Para ilustrar este fato considere a obtenção da verossimilhança perfilhada para $\mu$ e $\sigma$ 
+pelas funções a seguir:
+
+```{lemma}
+**Função para log-verossimilhança perfilhada em relação aos parâmetros $\mu$ e $\sigma$ da distribuição gaussiana.**
+```
+
+```{r}
+## Perfil para mu
+pl.mu <- function(sigma, mu, dados){
+    pll <- sum(dnorm(dados, mean=mu, sd=sigma, log=TRUE))
+    return(pll)}
+## Perfil para sigma
+pl.sigma <- function(mu, sigma, dados){
+    pll <- sum(dnorm(dados, mean=mu, sd=sigma, log=TRUE))
+    return(pll)}
+```
+
+Vamos criar uma malha de valores nos quais a função será avaliada para a construção dos gráficos. 
+Também vamos obter a log-verossimilhança condicionada na estimativa de máxima verossimilhança, 
+que consiste em avaliar apenas a função para um dos parâmetros com o outro fixado em sua estimativa.
+
+
+```{r}
+set.seed(123)
+y10 <- rnorm(10,10,1.5)
+grid.mu <- seq(9, 11.3, length=200)
+grid.sigma <- seq(0.65, 2.7, length=200)
+## Condicional para mu:
+mu.cond <- sapply(grid.mu, pl.sigma, sigma=sqrt(var(y10)*9/10), dados=y10)
+## Condicional para sigma:
+sigma.cond <- sapply(grid.sigma, pl.mu, mu=mean(y10), dados=y10)
+```
+
+Para obter o perfil de verossimilhança, por exemplo para $\sigma$ precisamos de uma malha de valores de $\sigma$ e para cada valor nesta malha encontrar o valor digamos $\hat{\mu}_{\sigma}$ que maximiza a verossimilhança perfilhada. 
+Para este exemplo existem formas fechadas para os estimadores, portanto basta aplicar
+a expressão do estimador de um parâmetro para cada valor na malha de valores do parâmetro sendo perfilhando.
+Entretanto para ilustração utilizamos uma forma mais geral,
+adequada para casos onde não há expressões fechadas, na qual maximizamos a função utilizando
+procedimentos numéricos, o que implica em uma otimização numérica de um parâmetro para cada 
+valor na grade do parâmetro que está sendo perfilhado. 
+Para a maximização usamos a função `optimize()` própria para maximização em apenas uma dimensão como é o caso neste exemplo. O código abaixo ilustra o procedimento para o conjunto de 10 dados.
+O gráfico da esquerda da Figura \@ref(fig:devcondperf) mostra a superfície de deviance com
+as linhas tracejadas indicando os cortes para obtenção das deviances perfilhadas
+dos gráficos do centro e a direita. Nestes gráficos são também mostradas as
+funções deviance condicionadas no MLE (linha sólida).
+
+
+```{r}
+mu.perf <- matrix(0, nrow=length(mu), ncol=2)
+for(i in 1:length(mu)){
+mu.perf[i,] <- unlist(optimize(pl.mu,c(0,200), 
+	             mu=mu[i],dados=y10,maximum=TRUE))}
+
+sigma.perf <- matrix(0, nrow=length(sigma), ncol=2)
+for(i in 1:length(sigma)){
+sigma.perf[i,] <- unlist(optimize(pl.sigma,c(0,1000), 
+                sigma=sigma[i],dados=y10,maximum=TRUE))}
+```
+
+```{r devcondperf, echo = FALSE, fig.width = 7.5, fig.height = 2.5, fig.align = "center", fig.cap = "Deviance conjunta, perfilhada e condicional para $\\mu$ e $\\sigma$ - Distribuição Normal."}
+par(mfrow=c(1,3), mar=c(3,3,1.5,1.5), mgp=c(1.7,0.8, 0))
+#
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(mu,sigma,matrix(devi10,Nseq,Nseq),
+        levels=qchisq(LEVELS,df=2),
+        labels=LEVELS,
+        xlab=expression(mu),ylab=expression(sigma))
+lines(mu, mu.perf[,1], lty=2)
+lines(sigma.perf[,1], sigma, lty=2)
+#
+plot(grid.mu,-2*(mu.cond - max(mu.cond)),type="l",ylab=expression(D(mu[sigma])),xlab=expression(mu),ylim=c(0,5), lwd=1.5,col="red")
+lines(mu,-2*(mu.perf[,2] - max(mu.perf[,2])),lty=1,lwd=1)
+abline(h=qchisq(0.95,df=1))
+legend("top", c("Condicional", "Perfilhada"), lwd=c(1.5,1),col=c("black","red"),lty=c(1,1),cex=0.85)
+
+plot(grid.sigma,-2*(sigma.cond - max(sigma.cond)),type="l",ylab=expression(D(sigma[mu])),xlab=expression(sigma),ylim=c(0,5), lwd=1.5,col="red")
+lines(sigma,-2*(sigma.perf[,2] - max(sigma.perf[,2])),lty=1,lwd=1)
+abline(h=qchisq(0.95,df=1))
+legend("top", c("Condicional", "Perfilhada"), lwd=c(1.5,1),col=c("red","black"),lty=c(1,1),cex=0.85)
+```
+
+A Figura \@ref(fig:devcondperf) ilustra que a *deviance* perfilhada 
+e a *deviance* condicional coincidem para o parâmetro $\sigma$
+porém não para o parâmetro de média $\mu$. Isto reflete o fato de que ao perfilhar $\sigma$
+o valor maximizado $\hat{\mu}_{\sigma} = \hat{\mu}$ e não depende de $\sigma$.
+Já no perfil de $\mu$ cada um dos valores maximizados $\hat{\sigma}_{\mu}$ dependem dos valores de $\mu$.
+Para obter intervalos de confiança basta definir o corte nestas funções seja por valor relativo da verossimilhança 
+ou usando o quantil da distribuição $\chi^2$ para o nível de confiança desejado e encontrar as raízes da equação, 
+assim como nos exemplos uniparamétricos. 
+A verossimilhança perfilhada permite tratar um problema multiparamétrico como um problema uniparamétrico 
+levando em consideração a forma da verossimilhança na direção de todos os parâmetros do modelo. 
+Porém, esta abordagem pode ser extremamente cara computacionalmente, 
+uma vez que para cada avaliação da verossimilhança perfilhada pode ser necessário uma maximização, que em geral vai requerer algum método numérico.
+
+### Dados intervalares {#sec:normalCens}
+
+Quando definimos a função de verossimilhança no início deste capítulo,
+mencionamos que dados são medidos em  algum intervalo
+definido pela precisão da medição. 
+No exemplo anterior fizemos a suposição usual de que 
+ este intervalo é pequeno em relação a variação dos dados
+ e portanto os valores dos dados são tratados como pontos
+na cálculo da função de verossimilhança 
+e utilizamos \@ref(eq:veroiid)
+
+Vamos considerar agora a situação na qual os dados
+são medidos em intervalos *não desprezíveis*.
+Desta forma voltamos a definição mais geral da verossimilhança
+em \@ref(eq:verogeral) para obter sua expressão.
+
+Como exemplo vamos considerar a distribuição gaussiana $Y_i \sim N(\mu, \sigma^2)$,
+$\underline{\theta} = (\mu, \sigma)$.
+Suponha que  temos um conjunto de dados
+que consiste de:
+
+* observações "pontuais": $\verb|72,6  81,3  72,4  86,4  79,2  76,7  81,3|$ ;
+
+* observações intervalares:
+    + uma observação com valor acima de 85,
+    + uma observação com valor acima de 80,
+    + quatro observações com valores entre 75 e 80,
+    + seis observações com valores abaixo de 75. 
+
+Supondo independência, a contribuição para verossimilhança das observações
+pontuais é o valor da densidade no ponto,
+enquanto que para as intervalares é a probabilidade
+da observação estar no intervalo.
+Para os tipos de dados neste exemplo temos:
+\begin{align*}
+L(\underline{\theta}) &= f(y_i)        \mbox{ para } y_i \mbox{ pontual}, \\
+L(\underline{\theta}) &= 1 - F(85)     \mbox{ para } y_i > 85, \\
+L(\underline{\theta}) &= 1 - F(80)     \mbox{ para } y_i > 80, \\
+L(\underline{\theta}) &= F(80) - F(75) \mbox{ para } 75 < y_i < 80,\\ 
+L(\underline{\theta}) &= F(75)         \mbox{ para } y_i < 85 .
+\end{align*}
+
+A seguir escrevemos a função de (negativo da) verossimilhança 
+que recebe como argumentos os parâmetros,
+os dados pontuais como um vetor e os intervalares
+como uma matriz de duas colunas na qual cada linha corresponde a um dado.
+
+```{lemma nllnormI}
+**Função para log-verossimilhança para dados pontuais e intervalares de distribuição gaussiana.**
+```
+
+```{r eval = FALSE}
+nllnormI <- function(par, xp, XI){
+	## xp : vetor com observações "pontuais"
+	## XI: matrix (n x 2) com dados intervalares 
+	ll1 <- sum(dnorm(xp, mean=par[1], sd=par[2], log=T))
+	L2 <- pnorm(XI, mean=par[1], sd=par[2])
+    ll2 <- sum(log(L2[,2] - L2[,1]))
+    return(-(ll1 + ll2))
+}
+```
+
+
+```{r echo = FALSE}
+nllnormI <- function(par, xp, XI, logsigma=FALSE){
+    if(logsigma) par[2] <- exp(par[2])
+	ll1 <- ifelse(missing(xp), 0, 
+	         sum(dnorm(xp, mean=par[1], sd=par[2], log=T)))
+    if(missing(XI)) ll2 <- 0
+    else{ 
+         if(ncol(XI) != 2 || any(XI[,2] <= XI[,1]))
+           stop("XI deve ser matrix com 2 colunas com XI[,2] > XI[,2]")
+  		 L2 <- pnorm(XI, mean=par[1], sd=par[2])
+  		 ll2 <- sum(log(L2[,2] - L2[,1]))
+    }
+    return(-(ll1 + ll2))
+}
+```
+
+Nos comandos a seguir definimos os objetos que contém os dados.
+A matriz dos dados intervalares é transposta apenas para visualização
+Usamos estimativas baseadas nos dados completos como
+valores iniciais e encontramos as estimativas usando todos os
+dados maximizando e função de verossimilhança numericamente.
+
+
+```{r}
+x <- c(72.6, 81.3, 72.4, 86.4, 79.2, 76.7, 81.3)		
+t(xI <- cbind(c(85, 80, rep(75, 4), rep(-Inf, 6)),
+              c(rep(Inf, 2), rep(80, 4), rep(75, 6))))
+(ini <- c(mean(x), sd(x)))
+(ests <- optim(ini, nllnormI, xp=x, XI=xI)$par)
+```
+
+Quando possível, é mais conveniente fazer o gráfico das superfícies de verossimilhança
+na escala da *deviance*
+que requer o valor da verossmimilhança avaliado nas estimativas dos parâmetros.
+Vamos utilizar a função *deviance* genérica
+definida em \@ref(lem:dev-generica)
+que pode ser usada com outras densidades com dois parâmetros.
+Por conveniência definimos também a função em forma vetorizada
+que utilizaremos com o comando `outer()`
+na obtenção das superfícies.
+
+
+```{lemma dev-generica}
+**Função deviance genérica.**
+```
+
+
+```{r}
+devFun <- function(theta, est, llFUN, ...){
+  return(2 * (llFUN(theta, ...) - llFUN(est, ...)))
+}
+devSurf <- Vectorize(function(x,y, ...) devFun(c(x,y), ...))
+```
+
+O gráfico à esquerda da Figura \ref@(fig:devNormalCens) mostra superfícies
+de verossimilhança na escala da *deviance*
+e é obtido com os comandos a seguir.
+As linhas tracejadas indicam o local do corte na superfície de deviance para obter
+a verossimilhança perfilhada.
+O gráfico da direita usa a parametrização $\log(\sigma)$.
+O aspecto talvez mais importante é notar que,
+diferentemente dos gráficos \@ref(fig:devNormal),
+com dados intervalares a superfície 
+não mais exibe ortogonalidade entre os parâmetros.
+
+```{r echo = FALSE, results = "hide"}
+lini <- c(mean(x), log(sd(x)))
+lests <- optim(lini, nllnormI, xp=x, XI=xI, log=T)$par
+mu <- seq(70,82, l=100)
+sigma <- seq(3, 14, l=50)
+devMS <- outer(mu, sigma, FUN=devSurf, llFUN=nllnormI, 
+               est=ests, xp=x, XI=xI)
+
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+
+lsigma <- seq(log(3), log(14), l=50)
+devMS <- outer(mu, lsigma, FUN=devSurf, llFUN=nllnormI, 
+               est=lests, xp=x, XI=xI, logsigma=T)
+
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+
+pl.mu <- function(mu, ...){
+    sigma.pl <- function(sigma, ...) 
+          devFun(c(mu, sigma), ...)
+    unlist(optimize(sigma.pl, int=c(0, 20), ...))
+}
+muPL <- t(sapply(mu, pl.mu, llFUN=nllnormI, est=ests, xp=x, XI=xI))
+
+pl.sigma <- function(sigma, ...){
+    mu.pl <- function(mu, ...) 
+          devFun(c(mu, sigma), ...)
+    unlist(optimize(mu.pl, int=c(60, 90), 
+                    llFUN=nllnormI, est=ests, xp=x, XI=xI))
+}
+sigmaPL <- t(sapply(sigma, pl.sigma, llFUN=nllnormI, est=ests, xp=x, XI=xI))
+````
+
+
+```{r eval = FALSE}
+mu <- seq(70,82, l=100)
+sigma <- seq(3, 14, l=100)
+devMS <- outer(mu, sigma, FUN=devSurf, llFUN=nllnormI, 
+               est=ests, yp=x, YI=xI)
+
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(mu, sigma, devMS, levels=qchisq(LEVELS,df=2),
+        labels=LEVELS, xlab=expression(mu),ylab=expression(sigma))
+points(t(ests), pch=19, col=2, cex=0.7)
+```
+
+```{r devNormalCens, echo = FALSE, fig.align = "center", fig.widht = 8, fig.height = 4, fig.cal = "Deviances de $(\\mu,\\sigma)$ e $(\\mu,\\log(\\sigma))$, dados intervalares - Distribuição Normal."}
+par(mfrow=c(1,2))
+lini <- c(mean(x), log(sd(x)))
+lests <- optim(lini, nllnormI, xp=x, XI=xI, log=T)$par
+contour(mu, sigma, devMS, levels=qchisq(LEVELS,df=2),
+        labels=LEVELS, xlab=expression(mu),ylab=expression(sigma))
+points(t(ests), pch=19, col=2, cex=0.7)
+lines(mu, muPL[,1], lty=2)
+lines(sigmaPL[,1], sigma, lty=2)
+contour(mu, lsigma, devMS, levels=qchisq(LEVELS,df=2),
+        labels=LEVELS, xlab=expression(mu),ylab=expression(log(sigma)))
+points(t(lests), pch=19, col=2, cex=0.7)
+```
+
+No código a seguir redefinimos a função de verossimilhança anterior
+acrescentando alguns elementos.
+Colocamos uma opção para parametrização usando $\log(\sigma)$ 
+através do argumento `logsigma`.
+Comandos para verificar se argumentos de dados foram informados 
+permitem rodar a função mesmo sem dados pontuais
+ou intervalares.
+Finalmente verificamos internamente se a matriz de
+dados intervalares está especificada corretamente.
+
+```{lemma normalCens}
+**Redefinição da função para log-verossimilhança para dados pontuais e intervalares de distribuição gaussiana.**
+```
+
+```{r}
+nllnormI <- function(par, xp, XI, logsigma=FALSE){
+    if(logsigma) par[2] <- exp(par[2])
+	ll1 <- ifelse(missing(xp), 0, 
+	         sum(dnorm(xp, mean=par[1], sd=par[2], log=T)))
+    if(missing(XI)) ll2 <- 0
+    else{ 
+         if(ncol(XI) != 2 || any(XI[,2] <= XI[,1]))
+           stop("XI deve ser matrix com 2 colunas com XI[,2] > XI[,2]")
+  		 L2 <- pnorm(XI, mean=par[1], sd=par[2])
+  		 ll2 <- sum(log(L2[,2] - L2[,1]))
+    }
+    return(-(ll1 + ll2))
+}
+```
+
+
+Neste exemplo fizemos a suposição de distribuição gaussiana para os dados, mas 
+os mesmos princípios e procedimentos são aplicáveis a outras distribuições.
+O procedimento pode ser usado com dados puramente intervalares como por exemplo dados 
+agrupados. Suponha que os dados sejam provenientes de alguma fonte da qual  
+se tenha apenas a distribuição (tabela) de frequências.
+Podemos então definir a verossimilhança como no exemplo e obter as estimativas
+mesmo sem ter acesso aos dados originais, ainda que com menor precisão.
+
+Dados intervalares são muitas vezes tratados pelo termo *dados censurados*,
+refletindo o fato de que o dado real não é observado devido a alguma restrição
+(censura). Tais dados podem ocorrer, por exemplo, devido a limites de detecção de aparelhos
+que podem ser incapazes de obter medidas acima (censura à direita) e/ou abaixo (censura à esquerda) de certos limites.
+Outra situação são medições que por alguma razão só podem ser feitas entre dois valores (censura intervalar).
+Dados censurados são discutidos em diversas áreas e entre elas são 
+discutidos  detalhadamente no escopo de análise de sobrevivência.
+Recomendamos os textos de 
+@colosimo-giolo:06 e @carvalho-etal:11 para leitores interessados no assunto.
+
+### Informação de cada dado
+
+Na sessão anterior mostramos como dados pontuais e intervalares 
+podem ser combinados na verossimilhança.
+Entretanto, a informação contida em cada um deles não é a mesma.
+É intuitivo que um dado pontual contém mais informação do que um intervalar,
+em especial em distribuições com um parâmetro de dispersão como a normal.
+Este fato pode ser visto e descrito na verossimilhança que pode ser feita 
+para cada observação individualmente.
+A mais informativa vai ser mais "fechada", ou seja exibir uma maior curvatura.
+
+Para ilustrar vamos considerar o seguinte exemplo, adaptado de @Pawitan2001.
+Considere $Y \sim N(\theta, 1)$ e as as seguintes observações:
+
+1. $y=2.45$,
+2. $0.9 < y < 4$,
+3. $y_{(5)} = 3.5$ é o máximo de um grupo de cinco outras observações.
+
+
+Sejam $\phi(\cdot)$ e $\Phi(\cdot)$ a densidade e densidade acumulada da normal padrão, respectivamente.
+  A verossimilhança para cada uma das observações é calculada da seguinte forma:
+  
+  
+  \begin{align*}
+  L(\theta; y)  &= \phi(y-\theta) \equiv \frac{1}{\sqrt{2\pi}} \exp\{-\frac{1}{2} (y-\theta)^2\} ; \\
+  L_1 &= L(\theta; y=2.45)  = \phi(y-\theta) = \frac{1}{\sqrt{2\pi}} \exp\{-\frac{1}{2} (2.45-\theta)^2\} ; \\
+  L_2 &= L(\theta; 0,9 < y < 4)  = \Phi(4-\theta) - \Phi(0,9-\theta) ;\\
+  L_3 &= L(\theta; y_{(5)} = 3.5)  = 5\{\Phi(y_{(n)} - \theta)\}^{5-1} \phi(y_{(5)} - \theta).
+  \end{align*}
+  
+  
+  Note que a última verossimilhança decorre de um argumento multinomial e com
+  \[F(y) = P(Y_{\{n\}} \leq y) = P[Y_{\{i\}} <  y \;\forall i \neq n \mbox{ e } Y_{\{n\}} = y] \]
+  
+  
+```{r keep.source = TRUE, results = "hide", eval = FALSE}
+theta.vals <- seq(-0.5, 5.5, l=201)
+L1 <- function(theta) dnorm(2.45, m=theta, sd=1)
+L1.vals <- L1(theta.vals)
+plot(theta.vals, L1.vals/max(L1.vals), ty="l", col=2, lty=2, 
+     xlab=expression(theta), ylab=expression(LR(theta)))
+##
+L2 <- function(theta) 
+        pnorm(4,mean=theta,sd=1)-pnorm(0.9,mean=theta,sd=1)
+L2.vals <- L2(theta.vals)
+lines(theta.vals, L2.vals/max(L2.vals), ty="l",  lty=5, 
+      col="darkolivegreen")
+##
+L3 <- function(theta) 
+        5*pnorm(3.5,m=theta,s=1)^4 * dnorm(3.5,m=theta,s=1)
+L3.vals <- L3(theta.vals)
+lines(theta.vals, L3.vals/max(L3.vals), ty="l", lty=4, col=4)
+```
+
+Pode-se ainda considerar a função de verossimilhança conjunta das três observações que, assumindo independência,
+é dada pelo produto da verossimilhanças individuais $L(\theta) = L1 \cdot L2 \cdot L3$.
+
+
+```{r results = "hide", eval = FALSE}
+L4 <- function(theta)
+  L1(theta) * L2(theta) * L3(theta)
+L4.vals <- L4(theta.vals)
+lines(theta.vals, L4.vals/max(L4.vals), ty="l")
+legend("topright", c("y=2.45", "0,9<y<4", "y[5]=3.5", "conjunta"), 
+       lty=c(2,3,4,1), col=c("red","darkolivegreen","blue","black"))
+```
+
+Curvas da função de log-verossimilhança $l(\theta) = \log[L(\theta)]$ podem ser obtidas notando que, 
+em geral, este é um cálculo computacionalmente mais adequado e estável.
+Outra alternativa é traçar curvas da função deviance $D(\theta) = -2[l(\theta) - l(\hat{\theta})]$.
+Nos gráficos a seguir utilizamos um valor máximo computado para a sequência de valores para o parâmetro 
+como uma aproximação de $l(\hat{\theta})$.
+As funções de verossimilhança, log-verossimilhança e deviance (escalonadas) são 
+mostradas na Figura \@ref(fig:ex3).
+Notamos no gráfico as diferentes curvaturas para 
+ cada tipo de dado. O intervalar é o menos informativo,
+ seguido pelo pontual. 
+O máximo é mais informativo pois, além de ser pontual, 
+temos também a informação de sua ordenação.
+
+```{r ex3, echo = FALSE, fig.align = "center", fig.cap = "Verossimilhanças relativas, log-verossimilhanças e deviances para as observações individuais e a conjunta.", fig.widht = 9, fig.height = 3}
+par(mfrow=c(1,3), mar=c(3,3,.5,.5), mgp=c(1.7,.7,0))
+theta.vals <- seq(-0.5, 5.5, l=201)
+L1 <- function(theta) dnorm(2.45, m=theta, sd=1)
+L1.vals <- L1(theta.vals)
+plot(theta.vals, L1.vals/max(L1.vals), ty="l", col=2, lty=2, 
+     xlab=expression(theta), ylab=expression(LR(theta)))
+##
+L2 <- function(theta) 
+        pnorm(4,mean=theta,sd=1)-pnorm(0.9,mean=theta,sd=1)
+L2.vals <- L2(theta.vals)
+lines(theta.vals, L2.vals/max(L2.vals), ty="l",  lty=5, 
+      col="darkolivegreen")
+##
+L3 <- function(theta) 
+        5*pnorm(3.5,m=theta,s=1)^4 * dnorm(3.5,m=theta,s=1)
+L3.vals <- L3(theta.vals)
+lines(theta.vals, L3.vals/max(L3.vals), ty="l", lty=4, col=4)
+
+L4 <- function(theta)
+  L1(theta) * L2(theta) * L3(theta)
+L4.vals <- L4(theta.vals)
+lines(theta.vals, L4.vals/max(L4.vals), ty="l")
+legend("topright", c("y=2.45", "0,9<y<4", "y[5]=3.5", "conjunta"), 
+       lty=c(2,3,4,1), col=c("red","darkolivegreen","blue","black"))
+
+l1 <- function(theta) -0.5 * (log(2*pi) + (2.45 - theta)^2)
+## ou ...
+l1 <- function(theta) dnorm(2.45, m=theta, sd=1, log=TRUE)
+l1.vals <- l1(theta.vals)
+plot(theta.vals, l1.vals-max(l1.vals), ty="l", lty=2, col=2,
+     xlab=expression(theta), ylab=expression(l(theta)))
+##
+l2 <- function(theta) log(pnorm(4, mean=theta, sd=1) - pnorm(0.9, mean=theta, sd=1))
+l2.vals <- l2(theta.vals)
+lines(theta.vals, l2.vals-max(l2.vals), ty="l",  lty=5, 
+      col="darkolivegreen")
+##
+l3 <- function(theta) log(5) + 4*pnorm(3.5, mean=theta, sd=1, log=T) + 
+                      dnorm(3.5, mean=theta, sd=1, log=T)
+l3.vals <- l3(theta.vals)
+lines(theta.vals, l3.vals-max(l3.vals), ty="l", lty=4, col=4)
+#
+l4 <- function(theta) l1(theta) + l2(theta) + l3(theta)
+l4.vals <- l4(theta.vals)
+lines(theta.vals, l4.vals- max(l4.vals), ty="l", lty=1, col=1)
+#
+legend("topright", c("y=2.45", "0,9<y<4", "y[5]=3.5", "conjunta"), 
+       lty=c(2,3,4,1), col=c("red","darkolivegreen","blue","black"))
+
+plot(theta.vals, -2*(l1.vals - max(l1.vals)), ty="l", xlab=expression(theta), ylab=expression(D(theta)), col=2, lty=2)
+lines(theta.vals, -2*(l2.vals - max(l2.vals)), ty="l",  lty=5, col="darkolivegreen")
+lines(theta.vals, -2*(l3.vals - max(l3.vals)), ty="l",  lty=4, col=4)
+lines(theta.vals, -2*(l4.vals - max(l4.vals)), ty="l",  lty=1, col=1)
+legend("topright", c("y=2.45", "0,9<y<4", "y[5]=3.5", "conjunta"), 
+       lty=c(2,3,4,1), col=c("red","darkolivegreen","blue","black"))
+```
+
+
+A estimativa do parâmetro pode ser obtida de forma usual maximizando a função
+de (log)verossimilhança conjunta das observações.
+
+```{r}
+ll.ex3 <- function(theta){
+  l1 <- -0.5 * (log(2*pi) + (2.45 - theta)^2)
+  l2 <- log(pnorm(4, mean=theta, sd=1) - pnorm(0.9, mean=theta, sd=1))
+  l3 <- log(5) + 4*pnorm(3.5, mean=theta, sd=1, log=T) + 
+    dnorm(3.5, mean=theta, sd=1, log=T)
+  return(l1+l2+l3)
+}
+optimize(ll.ex3, interval=c(0,5), maximum=TRUE)
+```

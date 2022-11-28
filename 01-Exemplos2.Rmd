@@ -25,7 +25,7 @@ Uma simulação da série fixando os valores necessários é feita com os comand
 Definimos o valor do parâmetro $\rho = 0,7$ e o número de observações $n = 100$.
 A série simulada é mostrada na Figura \@ref(fig:simar1).
 
-```{r simar1, echo = FALSE, fig.width = 8, fig.height = 2, fig.cap = 'Valores da série simulada - Modelo AR1.'}
+```{r simar1, echo = FALSE, fig.width = 8, fig.height = 4, fig.cap = 'Valores da série simulada - Modelo AR1.', fig.align = "center"}
 set.seed(1242)
 rho <- 0.7 ; n <- 100
 y <- numeric(n) ## cria vetor com elementos nulos
@@ -87,7 +87,7 @@ unlist(rho.est.a <- optimize(llAR1.a, int=c(0, 1), dados=y, maximum=TRUE))
 (rho.a <- rho.est.a$maximum)
 ```
 
-No código \@ref(lem:veroAR1} a seguir definimos a verossimilhança completa que inclui a distribuição da primeira observação que neste caso é convenientemente especificada como, 
+No código \@ref(lem:veroAR1) a seguir definimos a verossimilhança completa que inclui a distribuição da primeira observação que neste caso é convenientemente especificada como, 
 \[ 
 [Y_1] \sim N(0, 1/(1-\rho^2)) .
 \]
@@ -135,7 +135,7 @@ ICdev <- function(par, devfun, cD, ...) devfun(par, ...) - cD
                          llfun=llAR1.V, est=rho.emv, dados=y))
 ```
 
-```{r veroar1, echo = FALSE, fig.width = 8, fig.height = 5, fig.cap = 'Função de verossimilhança (esquerda) e _deviance_ (direita) aproximada (vermelha) e completa (preta) com estimativas pontual e intervalar do parâmetro rho para os dados simulados do modelo AR1.'}
+```{r veroar1, echo = FALSE, fig.width = 8, fig.height = 5, fig.cap = 'Função de verossimilhança (esquerda) e _deviance_ (direita) aproximada (vermelha) e completa (preta) com estimativas pontual e intervalar do parâmetro rho para os dados simulados do modelo AR1.', fig.align = "center"}
 par(mfrow=c(1,2))
 curve(llAR1.a.V(x, dados=y), 0, 1, xlab=expression(rho), ylab=expression(l(rho)), col=2)  
 curve(llAR1.V(x, dados=y), 0, 1, add=T)  
@@ -156,7 +156,7 @@ Passamos agora a outra forma de escrever a verossimilhança utilizando a express
 
 \begin{equation}
 [Y_1, \ldots,  Y_N] \sim N(0, \Sigma),
-(\#eq:ar1mv)
+(\#eq:AR1mv)
 \end{equation}
 em que os elementos de $\Sigma$ são $\Sigma_{ij} = \rho^{|i-j|}(1/(1-\rho^2))$.
 Os elementos da matriz são portanto função da distância $|i-j|$ entre as observações. 
@@ -288,7 +288,7 @@ Vamos agora não mais fixar o valor para a variância $\sigma^2$ e considerá-la
 A implementação supõe que o primeiro argumento da função é um vetor de comprimento dois com os valores para  $\sigma$ e $\rho$ , nesta ordem.
 
 ```{lemma, veroAR1mv2}
-**Função de log-verossimilhança l(sigma, rho) para o modelo AR1.**
+**Função de log-verossimilhança l($\\sigma, \\rho$) para o modelo AR1.**
 ```
 
 ```{r}
@@ -310,7 +310,7 @@ llAR1mv2 <- function(par, dados, repar=FALSE){
 
 Nesta parametrização do modelo AR1 temos que o espaço paramétrico é restrito $\sigma > 0$ e $|\rho| < 1$. Uma possível reparametrização para qual o espaço paramétrico é o $\Re^2$ é adotar $\tau = \log(\sigma)$ e a transformação de Fisher $\varphi = \frac{1}{2} \log\left(\frac{1+\rho}{1-\rho}\right)$. Esta opção é implementada pelo argumento `repar` na função de verossimilhança definida em \@ref(lem:veroAR1mv2). Desta forma as três chamadas a seguir produzem o mesmo valor.
 
-```{r, echo=F,results=hide,eval=F}
+```{r, echo=F,results="hide",eval=F}
 # Original
 llAR1mv(0.7, dados=y)
 
@@ -339,7 +339,7 @@ c(exp(rpar[[1]][1]), (exp(2*rpar[[1]][2])-1)/(exp(2*rpar[[1]][2])+1))
 A Figura \@ref(fig:devAR1) mostra as superfícies de verossimilhança para ambas parametrizações. Neste caso, a parametrização original produziu contornos mais próximos de um comportamento quadrático. Outro fato relevante revelado na figura é a quase ortogonalidade entre os parâmetros que pode ser observada em ambos os casos. 
 Isto pode ser verificado numericamente na matriz de covariância dos estimadores obtida pela inversa da matriz de informação observada. Temos aqui que os elementos fora da diagonal possuem valores pequenos em comparação com os da diagonal, ou seja a matriz é proxima de uma matriz diagonal.
 
-```{r, echo=F,results=hide}
+```{r, echo=F,results="hide"}
 Nseq <- 201
 s.s <- seq(0.77, 1.22, len=Nseq)
 r.s <- seq(0.5, 0.93, len=Nseq)
@@ -355,7 +355,8 @@ vero2 <- apply(as.matrix(t.s2), 1, llAR1mv2, dados=y, repar=TRUE)
 dev2 <- -2 * (vero2 - rpar$value)
 ```
 
-```{r devAR1, echo = FALSE, fig.width = 8, fig.height = 5, fig.cap = 'Superfícies de deviance para o modelo AR1 para parâmetros originais (esquerda) e reparametrizado (direita).'}
+```{r devAR1, echo = FALSE, fig.width = 8, fig.height = 5, fig.cap = 'Superfícies de deviance para o modelo AR1 para parâmetros originais (esquerda) e reparametrizado (direita).', fig.align = "center"}
+par(mfrow = c(1, 2))
 LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
 contour(s.s, r.s, matrix(dev1,Nseq,Nseq),
         levels=qchisq(LEVELS,df=2),
@@ -376,9 +377,10 @@ points(t(rpar[[1]]), pch=20, col=2)
 ```
 
 Vamos focar agora na inferência sobre o parâmetro $\rho$ neste modelo de dois parâmetros, ou seja, o parâmetro $\sigma^2$ é considerado _nuisance_. No modelo definido em \@ref(eq:AR1mv) a matriz de covariâncias pode ser reescrita como $\Sigma = \sigma^2 R_{\rho}$ destacando que a matriz de correlação $R_{\rho}$ tem seus termos dependendo apenas do parâmetro $\rho$. A função de verrosimilhança \@ref(eq:AR1mv) fica equivalente a 
-\begin{equation}\label{eq:veroAR1s}
+\begin{equation}
 \mathrm{l}(\boldsymbol{\theta}) = \mathrm{l}(\sigma, \rho) =
 -\frac{n}{2}\log(2\pi) - \frac{n}{2}\log(\sigma^2) - \frac{1}{2}|R_{\rho}| - \exp\{\frac{1}{2\sigma^2}y^{\prime} R_{\rho}^{-1}y\} .
+(\#eq:veroAR1s)
 \end{equation}
 
 Tomando-se a derivada em relação à $\sigma^2$ e igualando à zero obtém-se o estimador deste parâmetro em relação à $\rho$, 
@@ -386,7 +388,7 @@ Tomando-se a derivada em relação à $\sigma^2$ e igualando à zero obtém-se o
 
 A verossimilhança concentrada ou _perfilhada_ de $\rho$ é então obtida substituindo-se $\sigma^2$ por $\hat{\sigma}_{\rho}^2$ em \@ref(eq:veroAR1s) e temos então:
 \[\mathrm{pl}(\rho) = -\frac{n}{2}\left(\log(2\pi) + \log(\sigma^2) + 1\right) - \frac{1}{2} \log(|R_{\rho}|) . \]
-Esta função é implementada em \@ref{lem:pveroAR1) e retorna dois valores: o da verossilhança $\mathrm{l}(\rho, \sigma^2_{\rho})$ e de $\sigma^2_{\rho}$, a estimativa de $\sigma^2_{\rho}$ ao valor de $\rho$.
+Esta função é implementada em \@ref(lem:pveroAR1) e retorna dois valores: o da verossilhança $\mathrm{l}(\rho, \sigma^2_{\rho})$ e de $\sigma^2_{\rho}$, a estimativa de $\sigma^2_{\rho}$ ao valor de $\rho$.
 
 A implementação da função de verossimilhança perfilhada é simples. Tomamos a verossilhança que tem apenas $\rho$ como parâmetro e adicionamos a opção para que se $\sigma$ não for fornecido seja calculado para o valor corrente de $\rho$. Se o valor de $\sigma$ for fornecido é tomado como constante e a verossimilhança condicional à este valor é calculada.
 
@@ -425,7 +427,7 @@ O gráfico da _deviance_ perfilhada é visualizado à direita na Figura \@ref(fi
 As funções diferem considerando uma maior região do espaço paramétrico conforme mostrado no gráfico do centro. Entretanto, na região do espaço paramétrico relevante para inferências no entorno do ponto de máximo as funções são quase indistinguíveis. Isto é mais um reflexo da quase ortogonalidade entre os parâmetros ao redor do máximo da função. No gráfico da deviance mostrada à esquerda e linhas indicam os cortes para obtenção das perfilhadas e condicionais. 
 
 
-```{r perfAR1, echo = FALSE, fig.width = 9, fig.height = 3, fig.cap = 'Superfície de deviance (esquerda) com indicações dos cortes para obtenção das perfilhadas e condicionais. Deviances perfilhadas e condicionais para o parâmetro $\rho$ do modelo AR1.'}
+```{r perfAR1, echo = FALSE, fig.width = 9, fig.height = 3, fig.cap = 'Superfície de deviance (esquerda) com indicações dos cortes para obtenção das perfilhadas e condicionais. Deviances perfilhadas e condicionais para o parâmetro $\rho$ do modelo AR1.', fig.align = "center"}
 par(mfrow=c(1,3),mar=c(2.6, 2.6, 1.5, 0.8),mgp=c(1.5, 0.6, 0))
 ## verossimilhanças condicionais e perfilhadas
 sigma.rho <- function(rho, dados){ 
@@ -475,14 +477,17 @@ legend(0.6, 10, c("Perfilhada","Condicional"), col=1:2, lty=1:2, cex=0.8)
 
 Para finalizar consideramos o modelo AR1 mais geral, que inclui um termo para descrever a média do processo. Uma forma de escrever tal modelo é: 
 \begin{align}
-y_{y+1} &= \alpha + \rho y_t + e_{t+1} \label{eq:ar1alpha} \\
-\nonumber e_{t+1} & \sim {\rm N}(0, \sigma^2)
+y_{y+1} &= \alpha + \rho y_t + e_{t+1} \\
+ e_{t+1} & \sim {\rm N}(0, \sigma^2)
+(\#eq:ar1alpha)
 \end{align}
 A média do processo é dada por:
 \[ {\rm E}[y_t] = \mu = \frac{\alpha}{1-\rho},  \]
 e o modelo acima pode ser então reescrito na forma:
-\begin{equation}\label{eq:ar1mu} 
-y_{y+1} = (1-\rho) + \rho y_t + e_{t+1}. \end{equation}
+\begin{equation}
+y_{y+1} = (1-\rho) + \rho y_t + e_{t+1}.
+(\#eq:ar1mu)
+\end{equation}
 Para a expressão da verossimilhança, simplesmente acrescenta-se o termo 
 de média a \@ref(eq:veroAR1mu) que fica:
 \begin{equation}
@@ -531,17 +536,19 @@ with(fit.ar, x.mean)
 
 Note que enquanto nosso código retorna as estimativas de $(\mu, \sigma, \rho)$ na parametrização definida em \@ref(eq:ar1mu) as funções `ar()` e `arima()` retornam estimativas de $(\alpha, \sigma^2, \rho)$ definida em \@ref(eq:ar1alpha).
 
-##\begin{align*}
-##  \Sexpr{round(coef(fit.arima)[2], dig=4)} &= \hat{\alpha} = (1-\hat{\rho}) \hat{\mu} =
-##  (1 - \Sexpr{round(par3[[1]][3], dig=4)}) \cdot \Sexpr{round(par3[[1]][1], dig=4)} = ##\Sexpr{round((1-par3[[1]][3])*par3[[1]][1], dig=4)}\\
-##  \Sexpr{round(with(fit.arima, sigma2), dig=4)} &= \hat{\sigma}^2 = ##\Sexpr{round(par3[[1]][2], dig=4)}^2 = \Sexpr{round(par3[[1]][2]^2, dig=4)} 
-##\end{align*}
+$$
+\begin{align*}
+`r round(coef(fit.arima)[2], dig=4)` &= \hat{\alpha} = (1-\hat{\rho}) \hat{\mu} =
+  (1 - `r round(par3[[1]][3], dig=4)`) \cdot `r round(par3[[1]][1], dig=4)` = `r round((1-par3[[1]][3])*par3[[1]][1], dig=4)`\\
+  `r round(with(fit.arima, sigma2), dig=4)` &= \hat{\sigma}^2 = `r round(par3[[1]][2], dig=4)`^2 = `r round(par3[[1]][2]^2, dig=4)` 
+\end{align*}
+$$
 
 Aproveitamos esta última função para ilustrar e funcionalidade do pacote `bbmle` e da função genérica de ajuste de modelos `mle2()`. A função recebe o negativo da log-verossimilhança do modelo desejado, tal como em \@ref(lem:veroAR1mu) neste exemplo.
 Internamente a função `optim()` é utilizada por `default` na otimização e outras podem ser selecionadas. Entretando a função _envoltório_ `mle2()` prepara os resultados de forma que várias explorações do ajuste tais como intervalos de confiança e verossimilhnaças perfilhadas podem ser facilmente obtidas, sem a necessidade de programações adicionais.
 
 
-```{lemma, veroAR1a}
+```{lemma}
 **Função de verossimilhança para o modelo AR1 modeficada para uso com bbmle::mle2().**
 ```
 
@@ -559,7 +566,7 @@ llAR1.bb <- function(mu, sigma, rho, dados){
 
 O ajuste produz os mesmos resultados obtidos anteriormente por outros métodos.
 
-```{r}
+```{r warning = FALSE, message = FALSE}
 require(bbmle)
 ar1bb <- mle2(llAR1.bb, start=list(mu=0, sigma=1, rho=0.5), 
               data=list(dados=y))

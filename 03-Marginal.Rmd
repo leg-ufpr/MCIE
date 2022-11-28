@@ -1,0 +1,172 @@
+## Verossimilhança Marginal
+
+Os modelos mistos lineares generalizados são os modelos de regressão com efeitos
+aleatórios mais comumente usados, que estendem os mistos com resposta gaussiana
+para distribuições na família exponencial como nos modelos lineares
+generalizados.  O objetivo desta Seção é descrever a formulação de um modelo de
+regressão com efeitos aleatórios de uma forma geral.  Modelos para dados
+longitudinais, medidas repetidas, modelos com efeitos espaciais, temporais e
+espaço temporais podem ser descritos todos na mesma *estrutura* tratando
+de uma forma unificada uma ampla classe de modelos estatísticos.
+
+A seguir, vamos descrever o modelo no contexto de dados agrupados e conforme
+necessário vamos indicando pequenas mudanças que geram modelos conhecidos, por
+exemplo, para dados longitudinais e espaciais.  Seja $Y_{ij}$ a $j$-ésima medida
+para a unidade amostral $i, i = 1, \ldots, N$ , $j = 1, \ldots, n_i$ e
+$\underline{Y}_i$ o vetor $n_i$-dimensional de todas as medidas realizadas na
+unidade amostral $i$. Assumindo independência condicional no vetor
+$q$-dimensional de efeitos aleatórios $\underline{b}_i$, para o qual atribuímos
+uma distribuição $NMV_q(\underline{0}, \Sigma)$, as respostas $Y_{ij}$ são
+independentes com densidade da forma,
+
+\[
+f_i(y_{ij} | \underline{b}_i, \underline{\beta}, \phi),
+\]
+
+com $g(\mu_{ij}) = \mathbf{x}_{ij}^T \boldsymbol{\underline{\beta}} +
+\mathbf{z}_{ij}^T \mathbf{\underline{b}_i}$ para uma função de ligação
+$g(\cdot)$ conhecida, com $\mathbf{x}_{ij}$ e $\mathbf{z}_{ij}$ vetor de
+covariáveis conhecidas de dimensão $p$ e $q$ respectivamente,
+$\boldsymbol{\underline{\beta}}$ um vetor p-dimensional de coeficientes de
+regressão fixos desconhecidos, e $\phi$ algum parâmetro extra na
+verossimilhança, geralmente indicando precisão ou variância. Para completar a
+especificação do modelo, seja $f(\mathbf{\underline{b}_i}|\Sigma)$ a densidade
+da $NMV_q(\mathbf{0},\Sigma)$ distribuição atribuída para os efeitos aleatórios
+$\mathbf{\underline{b}_i}$.
+
+Como já mencionado, a estimação dos parâmetros envolvidos no modelo pode ser feita maximizando a verossimilhança marginal, com a integração dos efeitos aleatórios. 
+A contribuição para a verossimilhança da cada unidade amostral (grupo)  é:
+\[
+f_i(\underline{y}_i | \underline{\beta}, \Sigma, \phi) = \int \prod_{j=1}^{n_i} f_{ij}(y_{ij} | \underline{b}_i, \underline{\beta}, \phi) f(\underline{b}_i | \Sigma)d \underline{b}_i ,
+\]
+a verossimilhança completa para $\underline{\beta}$, $\Sigma$ e $\phi$ é dada por
+
+\begin{equation}
+L(\underline{\beta}, \Sigma, \phi) = \prod_{i=1}^N f_i(\underline{y}_i | \underline{\beta}, \Sigma, \phi)  ,
+(\#eq:veroMarginal)
+\end{equation}
+
+e sob a suposição de independência entre os grupos temos que
+\begin{equation}
+L(\underline{\beta}, \Sigma, \phi) = \prod_{i=1}^N \int 
+\prod_{j=1}^{n_i} f_{ij}(y_{ij} | \underline{b}_i, \underline{\beta}, \phi) f(\underline{b}_i | \Sigma) d \underline{b}_i . 
+(\#eq:veroMarginalgrupos)
+\end{equation}
+
+A principal dificuldade em maximizar \@ref(eq:veroMarginal) é a presença das $N$
+integrais sobre os efeitos aleatórios $q$-dimensionais. Em alguns casos
+especiais estas integrais podem ser resolvidas analiticamente, como no caso do
+modelo geoestatístico em \@ref(sec:efal-geo) e, de forma geral, modelos com
+resposta gaussiano. Porém, na maioria das situações onde a resposta é não
+gaussiana as integrais envolvidas no cálculo da função de verossimilhança não
+tem solução analítica.
+
+Além disso, um problema adicional é a dimensão do vetor de efeitos aleatórios.
+Quando $q$ é pequeno, o que acontece em modelos de regressão com somente o
+intercepto aleatório ($q=1$) ou inclinação aleatória ($q=2$ para uma única
+covariável) as integrais são passíveis de ser resolvidas por métodos de
+integração numérica convencionais, como Gauss-Hermite, Laplace e Monte Carlo.
+Estes métodos serão abordados na sequência.  Porém, em alguns modelos, como por
+exemplo os modelos espaciais, a dimensão do vetor aleatório pode chegar a $q =
+N$, ou seja, o vetor tem a dimensão do tamanho da amostra, possivelmente grande,
+o que torna os métodos convencionais de integração numérica não aplicáveis.
+Métodos de integração numérica como Gauss-Hermite e Monte Carlo vão ser úteis
+quando a dimensão do vetor de efeitos aleatórios é pequena, digamos, menor que
+seis. Para efeitos aleatórios de maior dimensão uma implementação muito
+cuidadosa do método de Laplace pode ser adequada em algumas situações.
+
+Em modelos onde o vetor de efeitos aleatórios é de grande dimensão o mais usual
+é lançar mão de métodos que avaliam a verossimilhança por algoritmos de
+amostragem.  Neste contexto os métodos MCMC - Monte Carlo via Cadeias de Markov
+- são extremamente poderosos para ajustar modelos de alta complexidade podendo
+ser usados para inferência baseada apenas na função de verossimilhança, ou na
+sua forma mais usual, sob o paradigma bayesiano.
+
+Na sequência vamos apresentar alguns métodos tradicionais de integração
+numérica, que podem ser usados quando ajustamos modelos de efeitos aleatórios de
+baixa complexidade na estrutura aleatória. Os métodos serão aplicados na
+estimação de alguns modelos simples para medidas repetidas e dados longitudinais
+não gaussianos.  Vamos iniciar com um modelo simples mais que serve de exemplo
+para apresentação dos métodos.
+
+### Simulação da Poisson com intercepto aleatório {#sec:simulaPoisIntercepto}
+
+Em todos os métodos de integração numérica que serão apresentados vamos utilizar o modelo de Poisson com intercepto aleatório definido em \@ref(eq:modPoisIntercepto)
+para exemplificar o cálculo numérico. Para isto, precisamos de amostras deste modelo para podermos avaliar a função de verossimilhança para uma dada configuração de parâmetros, que é o objetivo final do uso dos métodos de integração numérica em modelos de regressão com efeitos aleatórios. A função 
+`simPois()` simula amostras deste modelo de acordo com a parametrização usada.
+
+```{lemma simulaPoisIntercepto}
+**Função para simular variáveis aleatórias de um modelo de Poisson com efeito aleatório de intercepto.**
+```
+
+```{r}
+ simPois <- function(f.fixo, f.aleat, beta.fixo, prec.pars, data){
+   X <- model.matrix(f.fixo, data)
+   Z <- model.matrix(f.aleat, data)
+   n.bloco <- ncol(Z)
+   n.rep <- nrow(Z)/n.bloco
+   bi <- rnorm(n.bloco,0,sd=1/prec.pars)
+   XZ <- cbind(X,Z)
+   beta <- c(beta.fixo,bi)
+   preditor <- XZ%*%beta
+   lambda <- exp(preditor)
+   y <- rpois(length(lambda),lambda=lambda)
+   return(cbind(y=y, data))
+ }
+```
+
+Para simular do modelo precisamos das matrizes de delineamento $X$ e $Z$ e dos parâmetros $\beta_0$ e $\tau$. De acordo com o tamanho das matrizes $X$ e $Z$ a função identifica quantas unidades amostrais e quantas repetições por unidade amostral devem ser simuladas. Feita a função podemos usá-la.
+
+```{r}
+ dt <- data.frame(ID=as.factor(rep(1:10,each=10)))
+ set.seed(123)
+ dados <- simPois(f.fixo=~1, f.aleat=~-1 + ID, 
+                  beta.fixo = 2, prec.pars=3, data=dt)
+```
+
+De acordo com o código acima, foram simuladas $10$ unidades amostrais e, em cada uma destas unidades, são retiradas $10$ amostras totalizando $100$ observações. 
+O modelo tem uma média geral igual a 2 e atribui a cada grupo um desvio (efeito aleatório) deste valor. 
+Neste exemplo, para cada avaliação da verossimilhança devemos resolver $10$ integrais uma para cada unidade amostral. 
+Nos exemplos, vamos usar apenas uma unidade amostral e fixar os parâmetros nos valores simulados para avaliar a integral. 
+A função integrando escrita de forma vetorial, fica dada por:
+
+```{lemma}
+**Integrando da função de verossimilhança do modelo de regressão de Poisson com efeito aleatório de intercepto.**
+```
+
+```{r}
+ integrando <- function(b, f.fixo, beta.fixo, prec.pars, 
+                        log=TRUE, dados){
+   mf <- model.frame(f.fixo, dados)
+   y <- model.response(mf)
+   X <- model.matrix(f.fixo, mf)
+   tau <- exp(prec.pars)
+   ll <- sapply(b,function(bi){
+      preditor <- X%*%beta.fixo + bi
+      lambda <- exp(preditor)   
+      sum(dpois(y, lambda=lambda, log=TRUE)) + 
+                 dnorm(bi, 0, sd=1/tau,log=TRUE)})
+   if(log == FALSE) ll <- exp(ll)
+   return(ll)
+ }
+```
+
+Escrever a função em forma vetorial, significa simplesmente que podemos passar um vetor de valores e que a função será avaliada em cada um destes valores. Outro fato importante na forma de escrever o integrando é fazer o máximo possível das operações em escala logarítmica. 
+Isso evita problemas com representações numéricas.
+Porém devemos sempre ter em mente que estamos calculando a integral 
+na escala original e nunca em logaritmo. Por exemplo,
+
+```{r}
+ ## Escala original
+ integrando(b=c(-1,0,1), f.fixo = y~1, dados = subset(dados, ID == 1),
+            beta.fixo = 2, prec.pars=4, log=FALSE)
+ ## Escala log
+ integrando(b=c(-1,0,1), f.fixo = y~1, dados = subset(dados, ID == 1),
+            beta.fixo = 2, prec.pars=4, log=TRUE)
+```
+
+O formato vetorial da função facilita a construção de algoritmos para integração numérica. É conveniente fazer um gráfico da função integrando para termos uma ideia do formato da função que estamos integrando. A Figura \@ref(fig:integrando) apresenta o gráfico do integrando avaliado para cada uma das $10$ unidades amostrais simuladas, o eixo $y$ foi padronizado para poder colocar todas as funções no mesmo gráfico.
+
+```{r integrando, echo = FALSE,fig.cap = "Integrando de acordo com unidade amostral - Modelo Poisson com intercepto aleatório.", fig.align = "center"}
+knitr::include_graphics("figs/intnum-006.pdf")
+```

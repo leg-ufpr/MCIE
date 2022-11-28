@@ -1,30 +1,44 @@
 # Definições e propriedades
 
-Neste Capítulo apresentamos os três objetivos fundamentais da inferência estatística, estimação pontual, intervalar e teste de hipóteses através da função de verossimilhança.
+Neste Capítulo apresentamos os três objetivos fundamentais da inferência estatística, 
+estimação pontual, intervalar e teste de hipóteses baseado na função de verossimilhança.
 
 ```{definition}
-**Função de verossimilhança** - Seja $\mathbf{y}$ um vetor $n \times 1$ representando uma realização de um vetor aleatório $\mathbf{Y}$ com função de probabilidade ou densidade probabilidade $\mathrm{f}(\mathbf{Y},\boldsymbol{\theta})$, onde $\boldsymbol{\theta}$ denota um vetor $p \times 1$ de parâmetros, com $\boldsymbol{\theta} \in \Theta$, sendo $\Theta$ o respectivo espaço paramétrico. 
-A função de verossimilhança ou simplesmente verossimilhança para $\boldsymbol{\theta}$ dado os valores observados $\mathbf{y}$ 
-é a função $\mathrm{L}(\boldsymbol{\theta}| \mathbf{y}) \equiv \mathrm{f}(\mathbf{Y},\boldsymbol{\theta})$. 
+**Função de verossimilhança** - Seja $\mathbf{y}$ um vetor $n \times 1$ representando 
+uma realização de um vetor aleatório $\mathbf{Y}$ com função de probabilidade ou 
+densidade probabilidade $\mathrm{f}(\mathbf{Y},\boldsymbol{\theta})$, onde 
+$\boldsymbol{\theta}$ denota um vetor $p \times 1$ de parâmetros, com 
+$\boldsymbol{\theta} \in \Theta$, sendo $\Theta$ o respectivo espaço paramétrico. 
+A função de verossimilhança ou simplesmente verossimilhança para $\boldsymbol{\theta}$ 
+dado os valores observados $\mathbf{y}$ é a função $\mathrm{L}(\boldsymbol{\theta}| \mathbf{y}) \equiv \mathrm{f}(\mathbf{Y},\boldsymbol{\theta})$. 
 
 ```
 
-A função de verossimilhança é dada pela expressão da distribuição conjunta de todas as variáveis aleatórias envolvidas no modelo, porém vista como função dos parâmetros, uma vez que tendo os dados sido observados, são quantidades fixas. Para cada particular valor do parâmetro que pode ser escalar ou vetor, 
-a verossimilhança é uma medida de compatibilidade, plausibilidade ou similaridade do modelo com a amostra observada medida pela probabilidade ou densidade conjunta dos valores observados. Fracamente falando, pode-se
+A função de verossimilhança é dada pela expressão da distribuição conjunta de 
+todas as variáveis aleatórias envolvidas no modelo, porém vista como função dos 
+parâmetros, uma vez que tendo os dados sido observados, são quantidades fixas. 
+Para cada particular valor do parâmetro que pode ser um escalar ou vetor, 
+a verossimilhança é uma medida de compatibilidade, plausibilidade ou similaridade 
+do modelo com a amostra observada medida pela probabilidade ou densidade conjunta 
+dos valores observados. Fracamente falando, pode-se
 dizer que a verossimilhança nos fornece a probabilidade de observar o que
 foi realmente observado, dado o modelo assumido para os dados.
 
 A expressão da verossimilhança $\mathrm{L}(\boldsymbol{\theta}| \mathbf{y})$ 
 pode ser mais cuidadosamente definida considerando a natureza das variáveis aleatórias.
-Para modelos discretos não há ambiguidade e o valor da função de verossimilhança é a probabilidade de ocorrer o dado observado, ou seja
+Para modelos discretos não há ambiguidade e o valor da função de verossimilhança 
+é a probabilidade de ocorrer o dado observado, ou seja
 \[
 \mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \equiv \mathrm{P}_{\boldsymbol{\theta}}(\mathbf{Y}=\mathbf{y}). \]
+
 No caso de modelos contínuos a probabilidade de um particular conjunto de 
-valores ser observado é nula. Entretanto, na prática medidas contínuas são tomadas com algum grau de precisão em um intervalo, digamos,
+valores ser observado é nula. Entretanto, na prática medidas contínuas são tomadas 
+com algum grau de precisão em um intervalo, digamos,
 $y_{iI} \leq y_i \leq y_{iS}$ e a verossimilhança para um conjunto de observações é:
-\begin{equation}\label{eq:verogeral}
+\begin{equation}
 \mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) = \mathrm{P}_{\boldsymbol{\theta}}(y_{1I} \leq y_1 \leq y_{1S}, y_{2I} \leq y_2 \leq y_{2S}, 
 \ldots, y_{nI} \leq y_n \leq y_{nS}).
+(\#eq:verogeral)
 \end{equation}
 Esta definição é geral e requer a especificação da distribuição conjunta
 de $\mathrm{Y}$. Fazendo a suposição de observações independentes tem-se que:
@@ -44,23 +58,33 @@ e a verossimilhança é dada por:
 &= \prod_{i=1}^n \int_{y_i - \delta/2}^{y_i + \delta/2} \mathrm{f}(y_i , \boldsymbol{\theta}) \mathrm{d}y_i.
 \end{align*}
 Se o grau de precisão é alto, ou seja $\delta$ é pequeno em relação a variabilidade dos dados a expressão se reduz a
-\[ \mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \approx \left(\prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta}) \right) \delta^n  , \]
+\[ 
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \approx \left(\prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta}) \right) \delta^n  , 
+(\#eq:veroiid)
+\]
 e se $\delta$ não depende dos valores dos parâmetros temos a verossimilhança
-como produto das densidades individuais,  
+como o produto das densidades individuais,  
 \begin{equation}\label{eq:veroiid}
 \mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \approx \prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta})  ,
 \end{equation}
-e de forma mais geral para observações não independentes 
-com a densidade multivariada: 
+e de forma mais geral para observações não independentes com a densidade multivariada: 
 \begin{equation}\label{eq:veromv}
 \mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \approx \mathrm{f}(\mathbf{y}, \boldsymbol{\theta}) .
 \end{equation}
 
-No caso onde os elementos de $\mathbf{y}$ são independentes a verossimilhança é simplesmente um produto das distribuições de cada variável aleatória $Y_i$ individualmente, ou seja, $\mathrm{L}(\boldsymbol{\theta}| \mathbf{y}) = \prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta})$. 
-Neste caso, o procedimento de inferência pode ser bastante facilitado tanto analítica como computacionalmente. Porém, cabe ressaltar que isso não é uma exigência, e situações onde as amostras não são independentes são tratadas da mesma forma, escrevendo a verossimilhança de uma forma adequada, 
-considerando a distribuição conjunta do vetor $\mathbf{Y}$. 
+No caso onde os elementos de $\mathbf{y}$ são independentes a verossimilhança é 
+simplesmente um produto das distribuições de cada variável aleatória $Y_i$ 
+individualmente, ou seja, $\mathrm{L}(\boldsymbol{\theta}| \mathbf{y}) = \prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta})$. 
+Neste caso, o procedimento de inferência pode ser bastante facilitado tanto analítica 
+como computacionalmente. Porém, cabe ressaltar que isso não é uma exigência, 
+e situações onde as amostras não são independentes são tratadas da mesma forma, 
+escrevendo a verossimilhança de uma forma adequada, considerando a distribuição 
+conjunta do vetor $\mathbf{Y}$. 
 
-Esta parte do texto concentra-se exclusivamente no uso da função de verossimilhança como base para explicar os aspectos envolvidos na inferência estatística, seja na obtenção de estimativas pontuais, intervalares ou testes de hipóteses. Começamos revisando conceitos de estimação e suas relações com a função de verossimilhança.
+Esta parte do texto concentra-se exclusivamente no uso da função de verossimilhança 
+como base para explicar os aspectos envolvidos na inferência estatística, seja na 
+obtenção de estimativas pontuais, intervalares ou testes de hipóteses. 
+Começamos revisando conceitos de estimação e suas relações com a função de verossimilhança.
 
 ## Estimação pontual
 

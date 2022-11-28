@@ -1,0 +1,472 @@
+## Processo Pontual {#sec:PP}
+
+Um *processo pontual* é um tipo de processo estocástico no qual
+cada realização consiste de um conjunto contável de posições $x_i$ registradas em
+uma região. Os pontos de ocorrência são chamados de *eventos*.
+As posições são registradas em tempos e/ou localizações no espaço, embora
+possam ser anotadas em outros espaços.
+Tipicamente o objetivo é verificar se há algum padrão que possa 
+ser associado à ocorrência dos pontos.
+Denotamos por $N(A)$ o número de eventos que ocorre em uma região,
+\[ N(A) = \#(x_i \in A) . \]
+
+
+O processo é estacionário se, para qualquer inteiro $k$ 
+e regiões $A_i : i = 1, \dots, k$, a distribuição conjunta de 
+$N(A_1), \dots, N(A_k)$ é invariante a translações
+por uma quantidade arbitrária $x$.
+
+Um processo pontual pode ser caracterizado por sua 
+*função de intensidade* $\lambda(x)$ que está associada à  
+probabilidade de ocorrência de eventos na região.
+As seguintes definições são análogas aos conceitos de média e (co)variância
+para processos com valores nos reais e caracterizam a ocorrência 
+e interação dos eventos em um processo pontual.
+Denote por $dx$ uma pequena região contendo o ponto $x$.
+
+```{definition name = "Função de intensidade (de primeira ordem)."}
+\[
+\lambda({x}) = \lim_{|d{x}| \to 0}
+\left\{\frac{E[N(d{x})]}{|d{x}|} \right\}
+\]
+```
+
+
+```{definition name = "Função de intensidade de segunda ordem."}
+\[
+\lambda_2({x}_i,{x}_j) = \lim_{\stackrel{\scriptstyle |d{x}_i|
+\to 0}{\scriptstyle |d{x}_j | \to 0}}
+\left\{\frac{E[N(d{x}_i)N(d{x}_j)]}{|d{x}_i| |d{x}_i|}\right\}
+\]
+```
+
+
+```{definition name = "Densidade de covariância."}
+\[
+\gamma({x}_i, {x}_j) = \lambda_2({x}_i, {x}_j) - \lambda({x}_i)
+\lambda ({x}_j).
+\]
+```
+
+Se o processo pontual é estacionário (e isotrópico no caso de processos espaciais)
+segue que:
+
+1. $\lambda({x}) = E[N(d{x})]/|d{x}|  \equiv \lambda = E[N(A)]/|A|$,  (constante, em todo $A$)
+
+2. $\lambda_2({x}_i,{x}_j) \equiv \lambda_2(\|{x}_i-{x}_j\|)$ \hspace{0.2in}  (depende apenas da distância $s=\|{x}_i-{x}_j\|$) 
+
+3. $\gamma({x}_i,{x}_j) \equiv \gamma(s) = \lambda_2(s) - \lambda^2$.
+
+Uma classe particular de processos pontuais são os
+*processos de Poisson*, nos quais os eventos  
+ocorrem de maneira independente uns dos outros, ou seja, a ocorrência de um
+evento em uma localização não modifica a probabilidade de ocorrência de eventos
+em sua vizinhança.
+
+```{definition name = "Processo de Poisson"}
+Seja $\lambda({x})$ uma função não negativa, 
+a intensidade de um processo pontual. Então:
+
+1. O número de eventos, $N(A)$, em qualquer região $A$ d segue uma distribuição Poisson com média
+\[ 
+{\rm E}[N(A)] = \int_A \lambda({x}) d{x} 
+\]
+
+2. dado $N(A)=n$, as localizações dos $n$ eventos em $A$ formam
+   uma amostra aleatória independente da distribuição em $A$ com função de densidade de probabilidade proporcional a $\lambda({x})$.
+```
+
+Se sob as condições anteriores $\lambda({x})=\lambda$, para todo ${x}$, 
+o processo é dito ser um  *processo de Poisson homogêneo* (PPH)
+e corresponde a total aleatoriedade.
+Neste caso, $\lambda$ é interpretado como o número esperado de eventos 
+por unidade de tamanho da região, ou seja, o número esperado de eventos
+ na região é $\lambda ||A||$ em que $||A||$ é a dimensão da região. 
+
+De forma mais geral se $\lambda({x})$ não é contante 
+sobre a área, o processo é dito
+um *processo de Poisson não-homogêneo* (PPI)
+e o número esperado de eventos em uma região $A_i$ é
+$\int_{A_i} \lambda({x}) d({x})$.
+
+
+Dentre as propriedades dos processos de Poisson estão:
+
+1. Os números de eventos $N(A)$ e $N(B)$ tomados em duas regiões 
+   disjuntas são variáveis aleatórias independentes
+   
+2. ${\rm Var}\{N(A)\}/{\rm E}[N(A)] = 1$, em todo $A$
+
+3. para o processo de Poisson homogêneo, a função de distribuição
+   da distância $u$ de um ponto arbitrário ao evento mais próximo é
+   \[
+   F(u) = 1 - \exp(-\lambda \pi u^2): u>0
+   \]
+   
+   
+Em nosso exemplo vamos considerar apenas processos em uma dimensão, por exemplo em um intervalo de tempo,  
+que sejam Poisson homogêneo ou não-homogêneo. Para este último consideramos uma função de densidade 
+ $\lambda(t)$ que seja apenas função do tempo.
+O objetivo é ilustrar como escrever a função de verossimilhança do processo
+e obter as estimativas.
+
+Inicialmente vamos definir funções para simular realizações dos processos.
+Para o processo de Poisson homogêneo  uma simulação pode ser obtida com os seguintes passos.
+
+1. definir o região para simulação;
+
+2. encontrar o número esperado de eventos na região $\lambda \Delta_t$;
+
+3. simular o número $N$ de eventos de uma Poisson com média $\lambda \Delta_t$;
+
+4. obter as localizações dos eventos simulando de uma distribuição uniforme sobre a região.1. 
+
+
+Estes passos estão implementados no código \@ref(lem:simPPH1) e a chamada da função
+simula um processo com $\lambda=0,8$ no intervalo $(0,100)$ e portanto
+com o número esperado de pontos igual a 80.
+
+
+```{lemma simPPH1}
+**Função para simular de um PPH em uma dimensão.**
+```
+
+```{r keep.source = FALSE}
+simPPH1 <- function(lambda, min, max){
+    Nexp <- lambda * (max - min)
+    N <- rpois(1, lambda=Nexp)
+    return(runif(N, min = min, max = max))
+}
+```
+
+```{r}
+set.seed(56)
+pp1 <- simPPH1(0.8, 0, 100)
+(n1 <- length(pp1))
+```
+
+
+Uma outra maneira de simular de um PPH 
+implementada no código \@ref(lem:simPPH2) é usar o fato de que 
+o intervalo  entre eventos possui distribuição exponencial.
+Desta forma, simula-se sequencialmente os tempos dos eventos
+e acumulam-se os valores
+até chegar ao limite do intervalo de tempo desejado.
+Esta forma pode parecer um pouco mais extensa mas
+a estratégia de simulações sequenciais é útil por
+poder ser mais facilmente expandida para
+outros tipos de processos.
+
+```{lemma simPPH2}
+**Função para simular de um PPH em uma dimensão.**
+```
+
+```{r keep.souce = FALSE}
+simPPH2 <- function(lambda, min, max){
+  x <- min
+  while(sum(x) <= max)
+  x <- c(x, rexp(1, rate=lambda))
+  x <- x[-c(1, length(x))]
+  return(cumsum(x))  
+}
+```
+
+
+```{r echo = FALSE, results = "hide"}
+set.seed(56)
+pp2 <- simPPH2(0.8, 0, 100)
+(n2 <- length(pp2))
+```
+
+
+Na figura \@ref(fig:simPPH) são mostradas duas simulações 
+uma com cada uma das funções apresentadas. Sob a suposição de PPH
+a densidade acumulada dos valores das posições dos eventos
+é a de uma distribuição uniforme. 
+Os gráficos na parte de baixo da figura 
+mostram as distribuições acumuladas e empíricas.
+
+```{r simPPH, fig.cap = "Simulações do PPH com as funções apresentadas (superiores) e densidades acumuladas.", fig.width = 7, fig.height = 5, fig.align = "center", echo = FALSE}
+par(mar=c(2.8, 2.8, 1.7, 1),mgp = c(1.8, 0.7, 0))
+layout(matrix(c(1,1,2,2,3,4), nc=2, byrow=T), heights=c(0.2, 0.2, 0.6))
+plot(c(0,100), c(0, 1.2), type="n", xlab="eventos", ylab="")
+arrows(pp1, rep(1, n1), pp1, rep(0, n1), length=0.1)
+
+plot(c(0,100), c(0, 1.2), type="n", xlab="eventos", ylab="")
+arrows(pp2, rep(1, n2), pp2, rep(0, n2), length=0.1)
+
+plot(sort(pp1), xlab="t", ylab=expression(F(t)));segments(0,0,n1,100)
+plot(sort(pp2), xlab="t", ylab=expression(F(t)));segments(0,0,n2,100)
+```
+
+Passamos agora de um processo de Poisson não-homogêneo a
+considerar um caso simples com ${x} = t$ e a função de intensidade 
+ $\lambda(t) = \exp(\beta_0 + \beta_1 t)$.
+Este poderia ser um caso no qual estaríamos interessados em avaliar se a taxa de eventos
+está aumentando com o passar do tempo.
+
+
+```{lemma intensidadePPI}
+**Função de intensidade de um PPI simples.**
+```
+
+
+```{r}
+lambda.x <- function(x, par, log=FALSE){
+    eta <- par[1] + par[2] * x
+    if(log) return(eta) else return(exp(eta))
+}
+```
+
+
+Para simular de um PPI podemos usar e estratégia de simulação por rejeição
+que ilustramos  no código \@ref(lem:simPPI).
+Para isto simulamos de um processo mais simples (PPH) e submetemos
+cada evento simulado a uma regra adequada de aceitação/rejeição 
+de tal forma que os eventos aceitos constituem uma simulação do PPI desejado. 
+Os passos são: 
+
+1. encontrar o valor ${\rm max}[\lambda(t)]$, o máximo de $\lambda(t)$ na região, 
+2. simular de um PPH na região com $\lambda = {\rm max}[\lambda(t)]$,
+3. aceitar cada evento simulado com probabilidade 
+$P[{\rm aceitar}] = \lambda(t_i)/{\rm max}[\lambda(t)]$.
+
+O último passo pode ser descrito como: simular uniformemente no retângulo
+definido pela região $\times$ ${\rm max}[\lambda(t)]$ e selecionar como eventos
+as abcissas dos pontos para os quais a ordenada é menor do que $\lambda(x)$.  
+No código, adotamos a solução mais geral de maximizar $\lambda(t)$ numericamente,
+embora para casos em que este valor pode ser encontrado analiticamente, o código pode ser simplificado.
+No exemplo temos 
+${\rm max}[\lambda(t)] = \lambda(100) = \exp\{-1 + 0,015 \cdot 100\}
+\approx `r round(exp(-1+0.015*100))`$.
+
+```{lemma simPPI}
+**Função para simular de um PPI simples.**
+```
+
+```{r}
+simPPI <- function(par, min, max){
+  nHPP <- round(optimize(lambda.x, c(min, max), par=par, 
+                maximum=TRUE)$objective * (max - min))
+  X <- runif(nHPP, min, max)
+  p.aceita <- lambda.x(X, par)*(max - min)/nHPP
+  ppI <- sort(X[runif(nHPP) <= p.aceita])
+  attributes(ppI) <- list(simulados=nHPP,aceitos=length(ppI),taxa=length(ppI)/nHPP)
+  return(ppI)
+}
+```
+
+A seguir geramos uma realização  processo com $\beta_0=-1$ e $\beta_0=0,015$ em um intervalo $(0, 100)$,
+portanto com um número esperado de pontos de `r round(integrate(lambda.x, 0, 100, par=c(-1, 0.015))$val)`.
+Na figura \@ref(fig:fsimPPI) a simulação a esquerda mostra claramente o aumento da densidade de
+pontos com o passar do tempo, o gráfico da direita mostra claramente que o padrão
+é incompatível com um PPH.
+
+```{r}
+set.seed(5665)
+pp3 <- simPPI(c(-1, 0.015), 0, 100)
+unlist(attributes(pp3))
+(n3 <- length(pp3))
+```
+
+
+```{r fsimPPI, echo = FALSE, fig.weight = 9, fig.height = 3, fig.cap = "Simulação de um PPI (esquerda)  e densidade acumuladas (direita).", fig.align = "center"}
+layout(t(c(1,2)), widths=c(0.75, 0.25))
+par(mar=c(5, 0.5, 5, 0.2),mgp = c(1.8, 0.7, 0))
+plot(c(0,100), c(0, 1.2), type="n", xlab="eventos", ylab="")
+arrows(pp3, rep(1, n3), pp3, rep(0, n3), length=0.1)
+par(mar=c(2.8, 2.8, 1.7, 1),mgp = c(1.8, 0.7, 0))
+plot(sort(pp3), xlab="t", ylab=expression(F(t)));segments(0,0,n3,100)
+```
+
+A função de verossimilhança de um processo pontual
+é obtida considerando as densidades das duas
+variáveis aleatórias observadas, 
+o número de eventos $N$ e as localizações $\{t\}$.
+Portanto, para um conjuntos de valores de parâmetros de um modelo considerado, 
+ o valor da verossimilhança é dada pela probabilidade de observar o número de eventos
+ de fato obtido no conjunto de localizações observadas.
+Para um processo de Poisson $N \sim P[\int_A \lambda(t) dt]$ e 
+para cada ponto pode ser atribuído $P[\{t_i\}] = \lambda(t_i)/\int_A \lambda(t) dt$.
+
+\begin{align*}
+L(\theta) &= \frac{e^{-(\int_A \lambda(t) dt)} (\int_A \lambda(t) dt)^N}{N!} 
+             \prod_{i=1}^N \frac{\lambda(t_i)}{\int_A \lambda(t) dt} 
+             \propto e^{-(\int_A \lambda(t) dt)} \; \prod_{i=1}^N \lambda(t_i) \\
+l(\theta) &\propto \sum_{i=1}^N \log(\lambda(t_i)) - \int_A \lambda(t) dt  
+\end{align*}
+
+Para o PPH o estimador de máxima verossimilhança é intuitivo, tem forma fechada e é
+dado pela taxa de eventos, ou seja, pelo número de pontos observados 
+dividido pela dimensão $||A||$ da região e a verossimilhança maximizada assume uma forma simples. 
+
+\begin{align*}
+\hat{\lambda}    &=       \frac{N(A)}{||A||} = \frac{\#({x}_i \in A)}{||A||} \\
+l(\hat{\lambda}) &\propto N \log(\hat{\lambda}) - \hat{\lambda} ||A||
+\end{align*}
+
+Para os dados da primeira simulação de um HPP temos:
+
+```{r}
+(lambda1.est <- n1/(100-0))
+(lambda1.ll <- n1 * log(lambda1.est) - lambda1.est * (100-0))
+```
+
+Para um PPI  a obtenção do estimador de máxima verossimilhança
+vai depender da forma de $\lambda(x)$. 
+Para o modelo usado anteriormente  para simular de um PPI temos
+que
+\[
+ l(\beta_0, \beta_1) \propto \sum_{i=1}^N \log(\beta_0 + \beta_1 t_i ) - \int_A \beta_0 + \beta_1 t \; dt . 
+\]
+Embora em certos casos seja possível encontrar expressões fechadas para os estimadores,  
+vamos considerar o caso mais geral no qual utilizamos maximização numérica.
+A expressão da verossimilhança do PPI considerado aqui 
+é definida no código \@ref(lem:likPPI). Neste código 
+ $\lambda(x)$ é integrado numericamente, 
+embora neste exemplo a expressão analítica da integral é facilmente obtida.  
+Se ocorrerem instabilidades numéricas pode-se
+ transformar os valores das localizações dos pontos
+para o intervalo $(0,1)$.
+Neste exemplo isto não foi necessário, mas
+em outras casos não reportados aqui, com diferentes valores dos parâmetros
+foi fundamental para 
+obtenção das estimativas corretas.
+
+```{lemma likPPI}
+**Função de log-verossimilhança para o PPI simples.**
+```
+
+```{r keep.souce = FALSE}
+nlikIPP <- function(par, PP, min, max){
+  intLx <- integrate(lambda.x, low=0, upp=100, par=par)$value	
+## Se necessário reescalonar usar:
+##  PP <- (PP - min)/(max-min)
+##  intLx <- integrate(lambda.x, low=0, upp=1, par=par)$value	
+  slxi <- sum(lambda.x(x=PP, par = par, log=T))
+  return(-(slxi - intLx))
+}
+```
+
+As estimativas para a simulação do PPI são obtidas a seguir.
+Caso seja usado o reescalonamento de coordenadas é necessário transformar os valores dos parâmetros adequadamente.
+O gráfico à esquerda da Figura \@ref(fig:veroPPI) mostra a superfície de verossimilhança para os dados simulados.
+Os contornos delimitam, de dentro para fora, regiões de confiança de 
+5, 10, 30, 50, 70, 90, 95 e 99\%.
+As linhas sólidas indicam o corte para obtenção das verossimilhanças perfilhadas e  
+as pontilhadas das condicionadas no MLE, para cada parâmetro. 
+Os demais gráficos mostram as verossimilhanças individuais perfilhadas e condicionada no MLE, 
+ficando claro que a última subestima dramaticamente a variabilidade 
+por desconsiderar a não ortogonalidade.   
+
+
+```{r}
+(ppI.est <- optim(c(0,0.01), nlikIPP, PP = pp3, min=0, max=100)[1:2])
+```
+
+```{r echo = FALSE, results = "hide"}
+devSurf <- Vectorize(function(b0, b1, ...) 
+             2*(nlikIPP(c(b0, b1), ...) - ppI.est[[2]]))
+b0s <- seq(-2.25, -0.45, l=100)
+b1s <- seq(0.006, 0.033, l=100)
+ll <- outer(b0s, b1s, devSurf, PP=pp3, min=0, max=100)
+##
+## perfil para beta_0
+pl.b0 <- function(b0, intb1, ...){
+  nll.b1 <- function(b1, b0, ...)
+     2*(nlikIPP(par=c(b0, b1), ...) - ppI.est[[2]])
+  as.vector(optimize(nll.b1, interval=intb1, b0=b0, ...)[1:2])
+}
+pl0 <- as.matrix(t(sapply(b0s, pl.b0, intb1=range(b1s) , PP = pp3, min=0, max=100)))
+##
+## perfil para beta_1
+pl.b1 <- function(b1, intb0, ...){
+  nll.b0 <- function(b0, b1, ...)
+     2*(nlikIPP(par=c(b0, b1), ...) - ppI.est[[2]])
+  as.vector(optimize(nll.b0, interval=intb0, b1=b1, ...)[1:2])
+}
+pl1 <- as.matrix(t(sapply(b1s, pl.b1, intb0=range(b0s), PP = pp3, min=0, max=100)))
+```
+
+
+```{r veroPPI, fig.width = 7.5, fig.height = 2.5, echo = FALSE, fig.align = "center", fig.cap = "Superfície de deviance (esquerda), e perfil de deviances para os parâmetros $\\beta_0$ (centro) e $\\beta_1$ (direita)  para dados de um PPI."}
+par(mfrow=c(1,3), mar=c(2.8, 2.8, 1.7, 1),mgp = c(1.8, 0.7, 0))
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(b0s,b1s, ll, levels=qchisq(LEVELS,df=2),
+        labels=LEVELS, xlab=expression(beta[0]),ylab=expression(beta[1]))
+points(t(ppI.est[[1]]), pch=20, col=2)
+#
+## adicionando no contorno:
+## perfilhada b0
+lines(b0s, pl0[,1], col=2)
+## condicional b0 no MLE de b1
+lines(b0s, rep(ppI.est[[1]][2], length(b0s)), col=2, lty=3)
+
+## perfilhada b1
+lines(pl1[,1], b1s, col=4)
+## condicional b1 no MLE de b0
+lines(rep(ppI.est[[1]][1], length(b1s)), b1s, col=4, lty=3)
+
+
+## Perfil de vero para beta_0
+plot(b0s, pl0[,2], ty="l", col=2, xlab=expression(beta[0]), ylab=expression(pl(beta[1])))
+lines(b0s, sapply(b0s, function(b0) -nlikIPP(c(b0, ppI.est[[1]][2]), PP = pp3, min=0, max=100)), 
+                  lty=1, col=2)
+## condiconal para beta0
+b0par <- cbind(b0s, ppI.est[[1]][2])
+b0cond <- -2*(ppI.est[[2]] - apply(b0par, 1, nlikIPP, PP=pp3, min=0, max=100)) 
+lines(b0s, b0cond, col=2, lty=3)
+legend("topright", c("Perfilhada","Condicional"), lty=c(1,3), col=2, cex=0.8)
+
+## Perfil de vero para beta_1
+plot(b1s, pl1[,2], ty="l", col=4, xlab=expression(beta[1]), ylab=expression(pl(beta[1])))
+lines(b1s, sapply(b1s, function(b1) -nlikIPP(c(ppI.est[[1]][1], b1), PP = pp3, min=0, max=100)), 
+                  lty=1, col=4)
+## condicional para beta1
+b1par <- cbind(ppI.est[[1]][1], b1s)
+b1cond <- -2*(ppI.est[[2]] - apply(b1par, 1, nlikIPP, PP=pp3, min=0, max=100)) 
+lines(b1s, b1cond, col=4, lty=3)
+legend("topright", c("Perfilhada","Condicional"), lty=c(1,3), col=4, cex=0.8)
+```
+
+Possíveis extensões incluem inferências usuais como intervalos de confiança e perfis de
+verossimilhança. Um resultado de particular interesse
+é testar se o padrão é homogêneo.
+Podemos comparar as verossimilhanças maximizadas do PPH e PPI para o mesmo conjunto de dados, 
+por exemplo, para fazer um 
+teste da razão de verossimilhança a fim de determinar se o modelo com taxa não contante é mais compatível com os dados.
+
+```{r}
+## PPH
+(lambda3.est <- n3/(100-0))
+(lambda3.ll <- n3 * log(lambda3.est) - lambda3.est * (100-0))
+-ppI.est$value   ## para PPI
+-2*(lambda3.ll - (-ppI.est$value))
+```
+
+Os modelos descritos aqui são básicos e podem ser 
+estendidos de diversas formas.
+A função $\lambda(t)$ pode  ter uma forma mais complexa como, por exemplo, um polinômio 
+ou um *spline* em $t$.
+A função intensidade pode ser função de uma outra variável (temperatura, altitude, etc)
+que não a posição $t$.
+Em problemas espaciais no plano as posições dos eventos são dadas pelas coordenadas
+e a função de intensidade pode ser de duas variáveis $\lambda(x,y)$ 
+e a integração é bidimensional.
+De forma mais genérica, a intensidade pode ser função de múltiplas coordenadas e/ou
+ variáveis auxiliares o que torna o problema computacionalmente mais complexo por exigir
+integrações múltiplas.
+Uma extensão possível é especificar uma função de intensidade que seja aleatória,
+o que torna o procedimento de inferência bem mais desafiador.
+Diversos outros processos pontuais que não assumem independência entre eventos 
+são discutidos na literatura.
+Tais processos podem acomodar interações, tais como atrações ou repulsões, entre eventos
+e estão além incluem na classe de processos de Poisson.
+
+Como referência inicial para processos pontuais espaciais
+citamos @diggle:2003. Há diversos pacotes no `R`
+\footnote{ver \textsl{http://cran.r-project.org/view=Spatial}} 
+implementando métodos 
+para processos pontuais e dentre eles citamos 
+o pacote `spatstat` @spatstat que além de funções para simular e analisar
+diversos tipos de processos pontuais possui uma extensa e detalhada documentação.

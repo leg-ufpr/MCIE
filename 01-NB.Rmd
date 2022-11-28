@@ -1,0 +1,114 @@
+## Exemplo - Distribuição Binomial Negativa
+
+Considere $Y_1, Y_2, \ldots, Y_n$ variáveis aleatórias independentes provenientes de uma distribuição Binomial Negativa de parâmetros $\phi \in \Re^+$ e $0 < p \leq 1$ e $y = 0,1, \ldots$. 
+Usamos dados de uma amostra $y_1, y_2, \ldots, y_n$ para estimar os parâmetros $\phi$ e $p$ 
+e possivelmente construir intervalos de confiança e testes de hipóteses. 
+Neste caso temos dois parâmetros, o que leva a uma superfície de verossimilhança. A função de distribuição da Binomial Negativa é dada por:
+\[
+  p(y) = \frac{\Gamma(y + \phi)}{\Gamma(\phi) y!} p^\phi (1 - p)^y, \quad \text{para} \quad 0 < p \leq 1 \quad \phi > 0 \quad \text{e} \quad y = 0, 1, 2 , \ldots  .
+\]
+
+Sendo $n$ amostras independentes a função de verossimilhança tem a seguinte forma,
+\begin{align*}
+  L(\phi,p) &= \prod_{i=1}^n \frac{\Gamma(y_i + \phi)}{\Gamma(\phi) y_i!} p^\phi (1 - p)^{y_{i}} \\
+  L(\phi,p) &= p^{n\phi} (1-p)^{\sum_{i=1}^n y_i} \prod_{i=1}^n \frac{\Gamma(y_i + \phi)}{\Gamma(\phi) y_i!}.
+\end{align*}
+Logo a função de log-verossimilhança pode ser escrita como,
+\[
+  l(\phi,p) = n \phi \log p + \sum_{i=1}^n y_i \log (1-p) + \sum_{i=1}^n \log \Gamma(y_i + \phi) - n \log \Gamma(\phi) - \sum_{i=1}^n \log y_i !.
+\]
+Derivando em relação aos parâmetros $\phi$ e $p$ obtém-se as equações escore:
+\begin{align*}
+	U(\phi) &= n \log p + \sum_{i=1}^n \Psi(y_i + \phi) - n \Psi(\phi) \\
+	U(p)    &= \frac{n \phi}{p} - \sum_{i=1}^n y_i / (1-p)  \;.
+\end{align*}
+A matriz de informação é obtida calculando-se as derivadas:
+\begin{align*}
+	\frac{\partial^2 l(\phi,p)}{\partial \phi^2} = \frac{\partial U(\phi)}{\partial \phi} & = \frac{\partial}{\partial \phi} \left[n \log p + \sum_{i=1}^n \Psi(y_i + \phi) - n \Psi(\phi)\right] \\   &= \sum_{i=1}^n \Psi'(y_i + \phi) - n \Psi'(\phi) \\
+	\frac{\partial^2 l(\phi, p)}{\partial p^2} = \frac{\partial U(p)}{\partial p} 
+	&= \frac{\partial}{\partial p} \left[\frac{n \phi}{p} - \sum_{i=1}^n y_i /(1-p) \right]\\
+	&= - \frac{n \phi}{p^2} -  \sum_{i=1}^n y_i /(1-p)^2 \\
+	\frac{\partial l(\phi, p)}{\partial \phi \partial p} = \frac{\partial U(\phi)}{\partial p} &= \frac{\partial}{\partial p}\left[ n \log p + \sum_{i=1}^n \Psi(y_i + \phi) - n \Psi(\phi)\right] \\
+	&= \frac{n}{p}.
+\end{align*}
+
+Com os resultados pode-se estimar $\phi$ e $p$ através do algoritmo de Newton-Raphson. 
+Note que pela equação $U(p)$ podemos obter a estimativa de $p$ em função do parâmetro desconhecido $\phi$ 
+de forma análoga ao que acontece no modelo Gama. 
+Entretanto, não vamos utiizar a verossimilhança concentrada 
+para poder exemplificar o uso do algoritmo de Newton-Raphson em duas dimensões. 
+
+A implementação do modelo começa sempre com a construção da função de log-verossimilhança, o que fazemos
+em código que inicialmente reflete a forma que "escrevemos no papel". 
+Adiante veremos como usar as funções residentes do $R$ para implementar um código mais eficiente. 
+Uma amostra simulada de tamanho $n=100$ e valores dos parâmetros $\phi = 100$ e $p = 0.8$
+fornece os dados utilizados.
+
+
+```{r}
+set.seed(123)
+y <- rnbinom(100, size=100, p = 0.8)
+```
+
+
+
+```{lemma}
+**Função de log-verossimilhança para a distribuição binomial negativa.**
+```
+
+
+```{r}
+ll.neg.binomial <- function(par, y){
+  phi <- par[1]
+  p <- par[2]
+  n <- length(y)
+  ll <- n*phi*log(p) + sum(y)*log(1-p) + sum(log(gamma(y+phi))) - 
+        n*log(gamma(phi)) - sum(log(factorial(y)))
+  return(ll)}
+```
+
+Pensando em otimizar a função de log-verossimilhança através do algoritmo de Newton-Raphson,
+ o próximo passo é implementar a função escore e, na sequência, a matriz de segundas derivadas ou Hessiana.
+
+```{lemma}
+Funções escore e hessiana para a distribuição binomial negativa.
+```
+
+```{r}
+escore <- function(par, y){
+  phi <- par[1]
+  p <- par[2]
+  n <- length(y)
+  U.phi <- n*log(p) + sum(digamma(y+phi)) - n*digamma(phi)
+  U.p <- (n*phi)/p - sum(y)/(1-p)
+  return(c(U.phi,U.p))}
+Hessiana <- function(par, y){
+  phi = par[1]
+  p = par[2]
+  n <- length(y)
+  II <- matrix(c(sum(trigamma(y+phi)) - n*trigamma(phi), 
+               n/p,n/p, -(n*phi)/p^2 - sum(y)/(1-p)^2),2,2)
+  return(II)}
+```
+
+```{r echo = FALSE}
+NewtonRaphson <- function(initial, escore, hessiano, tol=0.0001, max.iter, n.dim,...){
+  solucao <- matrix(NA, max.iter,n.dim)
+  solucao[1,] <- initial
+  for(i in 2:max.iter){
+    solucao[i,] <- initial - solve(hessiano(initial, ...),escore(initial,...))
+    initial <- solucao[i,]
+    tolera <- abs(solucao[i,] - solucao[i-1,])
+    #print(initial)
+    if(all(tolera < tol) == TRUE)break
+  }
+  return(initial)
+} 
+```
+
+```{r}
+NewtonRaphson(initial=c(50,0.5), escore=escore,hessiano=Hessiana,
+              max.iter=100, tol = 1e-10, n.dim=2, y=y)
+```
+
+Para construção do intervalo de confiança assintótico e/ou baseado em perfil de verossimilhança podemos proceder exatamente igual ao exemplo da distribuição Gama. Deixamos como exercício para o leitor obter estes intervalos e compará-los.

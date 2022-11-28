@@ -1,0 +1,192 @@
+## Modelo Beta longitudinal {#sec:betalongitudinal}
+
+Considere a situação onde uma variável resposta $Y_{it}$ restrita ao intervalo unitário, é observada em $i=1, \ldots, N$ unidades amostrais, em $t=1, \ldots, n_i$ tempos. A natureza da variável aleatória indica que a distribuição Beta é uma candidata natural para descrever os dados. 
+Um possível modelo para esta situação é o seguinte:
+\begin{align*}
+  Y_{it} &\sim B(\mu_{it}, \phi) \\
+  g(\mu_{it}) &= (\beta_0 + b_i) + (\beta_1 + b_1)t \\
+\begin{bmatrix} b_0\\ b_1 \end{bmatrix} &\sim 
+NM_2 \left ( \begin{bmatrix}
+0\\ 0 
+\end{bmatrix}, \begin{bmatrix}
+\sigma_I^2 & \rho\\ 
+\rho & \sigma_S^2
+\end{bmatrix} \right )
+\end{align*}
+
+A principal diferença deste modelo para os anteriores é que não supomos independência entre os efeitos aleatórios. Neste caso, temos um modelo com intercepto e inclinação aleatória e adicionamos um parâmetro de
+correlação entre os efeitos. 
+Para completar a especificação precisamos da função $g(\cdot)$ que liga o preditor a esperança da Beta
+que definimos pela função como a `logit`. A função `rbeta.model()` simula uma realização deste modelo.
+
+```{lemma rbeta-model}
+**Função para simular variáveis aleatórias do modelo de regressão Beta longitudinal.**
+```
+
+```{r}
+inv.logit <- function(x){exp(x)/(1+exp(x))}
+rbeta.model <- function(ID, tempo, beta.fixo, prec.pars){
+  dados = data.frame("ID" = rep(1:ID,each=tempo), 
+          "cov" = rep(seq(0, 1,l=tempo),ID))
+  dados.id <- split(dados,dados$ID)
+  cov.rho <- prec.pars[3]*sqrt(prec.pars[1])*sqrt(prec.pars[2])
+  Sigma<-matrix(c(prec.pars[1],cov.rho,cov.rho,prec.pars[2]),2,2)
+  y <- matrix(NA, ncol=ID, nrow=tempo)
+  for(i in 1:ID){
+    X <- model.matrix(~cov, data=dados.id[[i]])
+    Z <- model.matrix(~cov, data=dados.id[[i]])
+    b <- rmvnorm(n=1,mean=c(0,0),sigma=Sigma)
+    preditor <- X%*%as.numeric(beta.fixo) + Z%*%as.numeric(b)
+    mu <- inv.logit(preditor)
+    y[,i]<-rbeta(length(mu),mu*prec.pars[4],
+                 (1-mu)*prec.pars[4])
+  }
+  dados$y <- c(y)
+  return(dados)
+}
+```
+
+O modelo Beta tem vetor de parâmetros $\underline{\theta} = (\beta_0, \beta_1, \sigma_I, \sigma_S, \rho, \phi)$. São dois parâmetros de média e quatro de variabilidade, 
+sendo três deles associados à gaussiana bivariada atribuída aos efeitos aleatórios, 
+além do parâmetro de dispersão da Beta. 
+A Figura \@ref(fig:trajBetaLong) apresenta um gráfico das trajetórias 
+simuladas para cada unidade amostral ao longo do tempo.  
+Para simulação usamos uma chamada da função `rbeta.model()` do código (\@ref(lem:rbeta-model)).
+
+```{r include = FALSE}
+require(lattice)
+require(bbmle)
+require(mvtnorm)
+dados <- read.table("dadosBeta.txt")
+```
+
+```{r trajBetaLong, echo = FALSE, message = FALSE, fig.align = "center", fig.width = 9, fig.height = 4.55, fig.cap = "Trajetórias por unidade amostral - Modelo Beta longitudinal."}
+#write.table(dados,"dadosBeta.txt")
+#source("generic.integral.R")
+#set.seed(123)
+#dados <- rbeta.model(ID = 10, tempo = 15, beta.fixo = c(0.5, 0.8), prec.pars=c(1, 0.2, 0.3, 30))
+plot(xyplot(y ~ cov, groups=ID, data=dados, type="l"))
+```
+
+Escrever este modelo em `R` requer cuidado com os 
+parâmetros de variância envolvidos. Todos os parâmetros de variância/dispersão foram reparametrizados, para serem estimados em escala logarítmica. Para o parâmetro de correlação $\rho$, que assume valores no intervalo $(-1,1)$, utilizamos a transformação logística.
+
+```{lemma}
+**Integração da função de log-verossimilhança para o modelo de regressão Beta logitudinal.**
+```
+
+```{r}
+transf.rho <- function(rho){
+  -1+2*(exp(rho)/(exp(rho)+1))
+}
+vero.slope <- function(uv,beta.fixo, prec.pars, X, Z, Y,log=TRUE){
+  sigmaI <- exp(prec.pars[1])^2
+  sigmaS <- exp(prec.pars[2])^2
+  rho <- transf.rho(prec.pars[3])
+  phi <- exp(prec.pars[4])
+  cov.rho <- rho*(sqrt(sigmaI)*sqrt(sigmaS))
+  if(class(dim(uv)) == "NULL"){uv <- matrix(uv,1,2)}
+  ll = apply(uv,1,function(uvi){
+    preditor <- X%*%beta.fixo + Z%*%as.numeric(uvi)
+    mu <- inv.logit(preditor)
+    sigma <- matrix(c(sigmaI,cov.rho,cov.rho,sigmaS),2,2)
+    sum(dbeta(Y, mu*phi, (1-mu)*phi, log=TRUE)) + 
+        dmvnorm(uvi, c(0,0), sigma = sigma , log=TRUE)})
+  if(log == FALSE){ll <- exp(ll)}
+  return(ll)}
+```
+
+Usando a função `veroM()` definida no código \@ref(lem:veroM), 
+podemos colocar o modelo da forma apropriada para utilizar a função `mle2()`.
+
+```{r echo = FALSE}
+laplace <- function(funcao, otimizador,n.dim, ...){
+  integral <- -sqrt(.Machine$double.xmax)
+  inicial <- rep(0,n.dim)
+  temp <- try(optim(inicial,funcao,...,method=otimizador,hessian=TRUE,control=list(fnscale=-1)))
+  if(class(temp) != "try-error"){
+  integral <- exp(temp$value)* (exp(0.5*log(2*pi) - 0.5*determinant(-temp$hessian)$modulus))}
+  return(integral)
+}
+
+veroM <- function(modelo, formu.X, formu.Z, beta.fixo, prec.pars, integral, pontos, otimizador, n.dim, dados){
+  dados.id <- split(dados, dados$ID)
+  ll <- c()
+  for(i in 1:length(dados.id)){
+    X <- model.matrix(as.formula(formu.X),data=dados.id[[i]])
+    Z <- model.matrix(as.formula(formu.Z),data=dados.id[[i]])
+    ll[i] <- laplace(modelo,otimizador=otimizador,n.dim=n.dim, X=X, Z=Z , Y=dados.id[[i]]$y, beta.fixo=beta.fixo,
+                     prec.pars=prec.pars,log=TRUE)}
+    return(sum(log(ll)))
+}
+```
+
+
+```{lemma}
+**Função de log-verossimilhança marginal para o modelo de regressão Beta longitudinal.**
+```
+
+```{r keep.source = FALSE}
+model.Beta <- function(b0,b1,sigmaI,sigmaS,rho, phi, otimizador, 
+                       n.dim, dados){
+ ll = veroM(modelo = vero.slope, formu.X="~cov",
+            formu.Z="~cov", beta.fixo = c(b0,b1), 
+            prec.pars=c(sigmaI,sigmaS,rho,phi), 
+            integral=integral, pontos=pontos, 
+            otimizador=otimizador, n.dim=n.dim,dados=dados)
+  #print(round(c(b0,b1,sigmaI, sigmaS, rho, phi, ll),2))
+  return(-ll)}
+```
+
+Com o modelo no formato adequado podemos proceder com a inferência 
+realizando o ajuste com uma chamada da função `mle2()`.
+
+```{r eval = FALSE}
+ajuste = mle2(model.Beta, start=list(b0=0, b1=0,sigmaI=-0.5, 
+             sigmaS=-0.5, rho = 0.3, phi = log(25)), method="BFGS", 
+             data=list(integral="LAPLACE", pontos=1, otimizador="BFGS", 
+             n.dim=2,dados=dados))
+```
+
+```{r include = FALSE}
+ajuste = mle2(model.Beta, start=list(b0=0, b1=0,sigmaI=-0.5, 
+             sigmaS=-0.5, rho = 0.3, phi = log(25)), method="BFGS", 
+             data=list(integral="LAPLACE", pontos=1, otimizador="BFGS", 
+             n.dim=2,dados=dados))
+```
+
+```{r}
+summary(ajuste)
+```
+
+Os intervalos de confiança podem ser obtidos na escala reparametrizada. 
+Usamos os resultados dos Teoremas \@ref(delta) e \@ref(deltadist)
+para obter intervalos aproximados na escala original dos parâmetros.
+
+```{r}
+confint(ajuste, method="quad")
+```
+
+Outra forma alternativa é obter intervalos baseados em perfil de verossimilhança, 
+que em geral apresentam resultados melhores, porém são computacionalmente mais "caros" (demorados).
+Por outro lado, 
+a transformação para escala original é simples aplicando-se diretamente a função de reparametrização aos limites do intervalo. Isto é justificado pela propriedade de invariância da verossimilhança. A Figura \@ref(fig:perfilBetaLong) apresenta os perfis de verossimilhança dos parâmetros do modelo Beta longitudinal.
+
+```{r echo = FALSE}
+load("perfil.bo.RData")
+load("perfil.b1.RData")
+load("perfil.sI.RData")
+load("perfil.sS.RData")
+load("perfil.rho.RData")
+load("perfil.phi.RData")
+```
+
+```{r perfilBetaLong, echo = FALSE, fig.align = "center", fig.height = 6, fig.width = 9, fig.cap = "Perfil de verossimilhança - Modelo Beta longitudinal."}
+par(mfrow=c(2,3))
+plot(perfil.b0)
+plot(perfil.b1)
+plot(perfil.sI)
+plot(perfil.sS)
+plot(perfil.rho)
+plot(perfil.phi)
+```

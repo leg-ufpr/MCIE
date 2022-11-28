@@ -1,0 +1,417 @@
+## Modelo geoestatístico {#sec:efal-geo}
+
+O termo geoestatística, refere-se a um conjunto de modelos e métodos para dados 
+com as seguintes características: os valores $Y_i : i = 1, \ldots,n$ são observados 
+em um conjunto finito de localizações amostrais, $x_i$, em alguma região espacial $A$, 
+mas que, potencialmente, podem ser medidos em qualquer ponto arbitrário $x$ na área.
+Cada valor $Y_i = Y(x_i)$ pode ser visto como uma versão ruidosa de um fenômeno espacial 
+contínuo não observável (latente) $S(\cdot)$,
+ nas correspondentes localizações amostrais $x_i$. 
+ 
+ O objetivo mais comum neste tipo de análise é "recuperar" o processo latente $S(x)$ o que normalmente pode ser feito obtendo-se predições $\hat{E}[S(x)]$ da média do processo em cada localização.
+Este procedimento é genericamente conhecido pelo nome de *krigagem*.
+O modelo geoestatístico como apresentado, dentre diversos outros, em @diggle+ribeiro:2007 
+pode ser definido como um modelo de efeitos aleatórios na forma considerada aqui.
+Vamos considerar a especificação do modelo para respostas gaussianas,
+embora a mesma estrutura seja válida com outras distribuições para a variável observável $Y(\cdot)$.
+
+\begin{align}
+\nonumber  [Y|b, D] &\sim N(\underline{\mu}, {\rm I} \tau^2) \\
+           \underline{\mu} &= D \underline{\beta} + Z \underline{b} \\
+\nonumber  \underline{b} &\sim NMV(\underline{0}, \Sigma_b)
+(\#eq:modGeo)
+\end{align}
+em que, $D$ é uma matriz de covariáveis conhecidas com 
+ o vetor de parâmetros lineares $\underline{\beta}$ associados a elas, como em um modelo de regressão linear usual. 
+Associamos um efeito aleatório $S(\underline{x})$ a cada posição o que pode ser denotado
+definindo uma matriz identidade em $Z = {\rm diag}(1)$ e um vetor $\underline{b}$, ambos de dimensão igual a $n$, o número de observações. 
+Portanto o modelo geoestatístico desta forma pode ser interpretado como um modelo de intercepto aleatório com um valor em cada localização. 
+A parte deste modelo que merece mais atenção é a matriz $\Sigma_b$ que descreve a estrutura da dependência espacial entre as observações. 
+Tipicamente, os elementos desta matriz são dados por  uma função
+de correlação cujo argumento é a distância entre cada par de observações.
+A literatura especializada apresenta diversas opções para escolha da função de correlação. 
+Na sequência vamos usar a função de correlação exponencial $\rho(||x_i - x_j||) = \exp\{-||x_i - x_j||/\phi\}$
+em que o parâmetro $\phi$ controla a velocidade do decaimento da correlação com o aumento da distância
+entre localizações.  Por exemplo, 
+a matriz considerando apenas três localizações espaciais, toma a seguinte forma:
+\[
+\Sigma_b = \sigma^2 \cdot \begin{bmatrix}
+1                  & \exp(-u_{12}/\phi)          & \exp(-u_{13}/\phi) \\ 
+\exp(-u_{21}/\phi) & 1                           & \sigma^2 \exp(-u_{23}/\phi) \\
+\exp(-u_{31}/\phi) & \sigma^2 \exp(-u_{32}/\phi) & 1 
+ \end{bmatrix}
+\]
+em que $u_{ij}=||x_i - x_j||$ é a distância euclidiana entre as posições espaciais das variáveis $Y(x_i)$ e $Y(x_j)$. 
+Portanto, a matriz de covariância completa 
+parametrizada por $\sigma^2$ e $\phi$ é obtida a partir da 
+matriz de distância entre todas as posições espaciais observadas na amostra. 
+O parâmetro $\phi$ controla a extensão da dependência espacial entre as observações (alcance), 
+enquanto que o parâmetro $\sigma^2$ é a variância dos efeitos aleatórios, nesta caso, o termo espacial do modelo. 
+Em \@ref(eq:modGeo) é especificado um outro efeito aleatório 
+não correlacionado tal que $\epsilon_i \sim {\rm N}(0, \tau^2)$, como o termo de erro no modelo
+de regressão linear usual.
+Este último parâmetro de variância ao modelo, por vezes chamado de *efeito de pepita*,
+e pode ser interpretado como a soma de variações não especiais e de micro escala.
+
+A inferência para os parâmetros envolvidos no modelo 
+$\underline{\theta} = (\underline{\beta}, \underline{\theta}^*)$ com 
+$\underline{\theta}^* =  (\sigma^2, \tau^2, \phi)$, 
+pode ser baseada na função de verossimilhança
+dada pela densidade da distribuição normal multivariada 
+e portanto $Y \sim NMV (D\underline{\beta} , \Sigma)$,
+com $\Sigma = \Sigma_b + {\rm I}\tau^2$.
+Para ilustrar, a matriz para três observações fica:
+\[
+\Sigma = \begin{bmatrix}
+\sigma^2 + \tau^2 & \sigma^2 \exp(-\frac{u_{12}}{\phi}) & \sigma^2 \exp(-\frac{u_{13}}{\phi}) \\ 
+\sigma^2 \exp(-\frac{u_{21}}{\phi})  &  \sigma^2 + \tau^2 & \sigma^2 \exp(-\frac{u_{23}}{\phi}) \\ 
+\sigma^2 \exp(-\frac{u_{31}}{\phi})  & \sigma^2 \exp(-\frac{u_{32}}{\phi}) &  \sigma^2 + \tau^2
+\end{bmatrix}.
+\]
+Com isso, tem-se seguinte expressão para a função de verossimilhança,
+\[
+  L(\underline{\theta}) = (2\pi)^{-\frac{n}{2}} |\Sigma|^{-\frac{1}{2}} \exp\{ -\frac{1}{2} (Y - D\underline{\beta})^\top \Sigma^{-1} (Y - D \underline{\beta})\} .
+\]
+A função de log-verossimilhança fica,
+
+\begin{equation}
+  l(\underline{\theta}) = -\frac{n}{2} \log(2\pi) -\frac{1}{2} \log |\Sigma| - \frac{1}{2} (Y - D \underline{\beta})^\top \Sigma^{-1}(Y - D \underline{\beta}).
+(\#eq:verogeo)
+\end{equation}
+
+Para estimação dos parâmetros maximizamos \@ref(eq:verogeo) em 
+relação a $\underline{\theta}$. 
+Temos em $\underline{\theta}$ dois conjuntos de parâmetros, 
+os associados à média ($\underline{\beta}$) e os associados a estrutura de variância e covariância ($\sigma^2, \tau^2, \phi$). 
+A log-verossimilhança pode facilmente ser derivada em função de $\underline{\beta}$. 
+Já para o caso dos parâmetros que indexam a matriz $\Sigma$, exceto por um parâmetro de escala,  
+a derivação não é tão trivial ou mesmo pode não ter expressão analítica fechada
+ e vai depender do modelo da função de correlação.
+Derivando a função \@ref(eq:verogeo) em relação aos $\underline{\beta}$ e igualando a zero, 
+chegamos ao estimador de máxima verossimilhança:
+
+\begin{equation}
+  \hat{\underline{\beta}} = (D^\top \Sigma^{-1} D)^{-1} ( D^\top \Sigma^{-1}Y)
+(\#eq:emvBeta)
+\end{equation}
+Substituindo \@ref(eq:emvBeta) em \@ref(eq:verogeo) 
+obtemos a função de log-verossimilhança concentrada apenas 
+nos parâmetros que definem a estrutura de variância e covariância do modelo.
+\begin{equation}
+  l^*(\underline{\theta}^*) = -\frac{n}{2} \log ( 2\pi) - \frac{1}{2} \log | \Sigma | - \frac{1}{2} \hat{e}^\top \Sigma^{-1} \hat{e}
+(\#eq:veroGeoC)
+\end{equation}
+com $\hat{e} = (Y - D \hat{\underline{\beta}})$. 
+Os três parâmetros em $\underline{\theta}^*$ indexam a matriz $\Sigma$, 
+logo é necessário derivá-los usando cálculo matricial. 
+É possível mostrar que a função escore é dada por,
+\begin{equation}
+\dfrac{ \partial l^*(\underline{\theta}^*; \underline{Y})}{ \partial \theta^*_i} = -\frac{1}{2} Tr \left[ \Sigma^{-1} \dfrac{ \partial \Sigma}{ \partial \theta_i^*} \right] -
+	\frac{1}{2} \hat{\underline{e}}^\top \left[ - \Sigma^{-1} \dfrac{ \partial \Sigma}{ \partial \theta_i^*} \Sigma^{-1}\right] \hat{\underline{e}}, \quad i = 1, \ldots,3.
+(\#eq:escoreGeo)
+\end{equation}
+em que as matrizes $\dfrac{ \partial \Sigma}{ \partial \theta_i^*}$ são obtidas derivando cada elemento a matriz $\Sigma$ em relação ao respectivo parâmetro. 
+Para exemplificar, com duas observações. 
+a derivada de $\Sigma$ em relação ao parâmetro $\sigma$ é a matriz:
+\[
+\frac{\partial \Sigma}{\partial \sigma} = 
+2 \sigma \begin{bmatrix}
+1 & \exp(-\frac{u_{12}}{\phi}) \\ 
+\exp(-\frac{u_{21}}{\phi}) &  1 
+\end{bmatrix}.
+\]
+Para o parâmetro $\tau$ obtemos:
+\[
+\frac{\partial \Sigma}{\partial \tau} = 
+2 \tau \begin{bmatrix}
+1 & 0 \\ 
+0 &  1 
+\end{bmatrix} ,
+\]
+finalmente em relação ao parâmetro $\phi$
+\[
+\frac{\partial \Sigma}{\partial \phi} = 
+\frac{\sigma^2}{\phi^2} \begin{bmatrix}
+0 &  u_{12} \exp(-\frac{u_{12}}{\phi}) \\ 
+u_{21} \exp(-\frac{u_{21}}{\phi}) &  0  
+\end{bmatrix}.
+\]
+
+Utilizamos esses resultados para implementação do modelo geoestatístico gaussiano. 
+Iniciamos definindo a função `montaSigma()`
+que constrói a matriz $\Sigma$ do modelo geoestatístico a partir dos parâmetros e da matriz de distâncias
+euclidianas entre as localizações.
+
+```{lemma}
+**Função para construir a matriz de variância-covariância para o modelo geoestatístico com função de correlação exponencial.**
+```
+
+
+```{r}
+ montaSigma <- function(s, t, phi, Umat){
+   Sigma <- as.matrix(s^2 * exp(-Umat/phi))
+   diag(Sigma) <- s^2 + t^2
+   return(Sigma)
+ }
+```
+
+No código \@ref(lem:simulaGeo) definimos uma função para simular dados
+segundo o modelo considerado. 
+Na função `simula.geo()` começamos simulando as coordenadas $x$ com localizações
+no quadrado unitário. 
+
+Com as coordenadas, calculamos a matriz $U$ de distância entre todos os pontos
+a partir da qual montamos a matriz $\Sigma$ de covariância.
+Obtemos uma simulação da distribuição normal multivariada por $Y = D \underline{\beta} + \Sigma^{1/2} z$
+em que $\underline{z}$ são escores da normal padrão $N(0,1)$ e $\Sigma^{1/2}$ é alguma raiz da matriz de covariâncias.
+Utilizamos aqui $\Sigma^{1/2} = R'$ tal que ${\rm Var(R'\underline{z}) = R'{\rm Var}(z)}R = R'R = \Sigma$ 
+em que $R$ é a parte superior da decomposição de Cholesky calculada no `R` por `chol()`.
+Desta forma, geramos dados do modelo geoestatístico com função de correlação exponencial.
+
+
+```{lemma simulaGeo}
+**Função para simular do modelo geoestatístico.**
+```
+
+```{r}
+ simula.geo <- function(beta, s, t, phi, n){
+   locs <- data.frame(cX = runif(n), cY = runif(n))
+   U <- dist(locs, diag=TRUE, upper=TRUE)
+   Sigma <- montaSigma(s=s, t=t, phi=phi, Umat=U)
+   z <- rnorm(n)
+   Y = beta + crossprod(chol(Sigma), z) 
+   return(cbind(locs, Y=Y))
+ }
+```
+
+Vamos obter uma simulação supondo que a estrutura de média é composta por apenas um parâmetro $\beta_0 = 50$ e
+ definimos $\sigma^2 = 2^2$, $\tau^2 = 1^2$ e $\phi = 0.25$. 
+A seguinte chamada simula $125$ amostras do modelo geoestatístico usando o código \@ref(lem:simulaGeo).
+
+```{r}
+ set.seed(12)
+ dt <- simula.geo(b=50, s=2, t=1, phi=0.25, n=125)
+```
+
+O próximo passo para inferência é a definição da função de log-verossimilhança concentrada
+como no código \@ref(lem:veroGeo1).
+Com isto podemos maximizar a log-verossimilhança diretamente 
+através da `optim()` ou qualquer outra forma de maximização numérica. 
+
+```{lemma veroGeo1}
+**Função de log-verossimilhança para o modelo geoestatístico.**
+```
+
+```{r message = FALSE}
+ ll.geo <- function(s, t, phi, dados){
+  U <- dist(dados[,1:2], diag=TRUE, upper=TRUE)
+  Sigma <- montaSigma(s=s, t=t, phi=phi, Umat=U)
+  D <- as.vector(rep(1,length=nrow(dados)))
+  invSD <- solve(Sigma, D)
+  bhat <- solve(crossprod(invSD, D),crossprod(invSD,dados$Y))
+  require(mvtnorm)
+  ll = dmvnorm(dados$Y, mean=D%*%bhat, sigma=Sigma, log=TRUE)
+  return(-ll)
+ }
+```
+
+Este código ilustra passo a passo e didaticamente
+os cálculos envolvidos na expressão \@ref(eq:veroGeoC).
+Entretanto, o código é pouco eficiente computacionalmente por fazer algumas operações desnecessariamente 
+e/ou de maneira pouco eficiente.
+Tipicamente a função de verossimilhança é avaliada diversas vezes em algum procedimento numérico.
+Como a matriz $U$ é constante deve ser informada como argumento, 
+evitando ser recalculada desnecessariamente a cada iteração.
+A obtenção de $\hat{\beta}$ por \@ref(eq:emvBeta) requer a inversão da matriz de covariância
+que pode ser escrita na forma da solução de um sistema. No código acima
+$\Sigma^{-1} D$ é computado por `solve(Sigma, D)`. 
+Ainda sim há computações
+desnecessárias pois para resolver este sistema é feita uma decomposição de \code{Sigma}
+que é repetida dentro da chamada `dmvnorm()`.
+Isto é relevante uma vez que as operações com $\Sigma$ são as mais caras na computação deste modelo.
+Desta forma, reescrevemos a função no código \@ref(lem:veroGeo2) fazendo ainda generalizações 
+para nomes de variáveis e definição da matriz $D$ e incluindo a opção para estimar os parâmetros
+na escala logarítmica.
+
+```{lemma veroGeo2}
+**Redefinição da função de log-verossimilhança para o modelo geoestatístico.**
+```
+
+```{r}
+ ll.geo <- function(s, t, phi, modelo, Umat, dados, logpars = F) {
+     if (logpars) {
+         s <- exp(s)
+         t <- exp(t)
+         phi <- exp(phi)
+     }
+     mf <- model.frame(modelo, dados)
+     y <- model.response(mf)
+     D <- model.matrix(modelo, mf)
+     Sigma <- montaSigma(s = s, t = t, phi = phi, Umat = Umat)
+     R <- chol(Sigma)
+     invRD <- backsolve(R, D, transpose = TRUE)
+     invRy <- backsolve(R, y, transpose = TRUE)
+     bhat <- solve(crossprod(invRD), crossprod(invRD, invRy))
+     invRe <- invRy - invRD %*% bhat
+     nll <- drop(length(y) * log(2 * pi)/2 + sum(log(diag(R))) + 
+         crossprod(invRe)/2)
+     return(nll)
+}
+```
+
+Como temos as expressões \@ref(eq:escoreGeo) dos gradientes analíticos, vamos implementá-las para melhorar o desempenho do 
+algoritmo de maximização numérica.
+Veremos o efeito na comparação dos tempos computacionais 
+para convergência com e sem o uso do gradiente analítico.
+Para utilizar o gradiente precisamos primeiro implementar três funções 
+com as matrizes de derivadas em relação a cada um dos parâmetros em $\underline{\theta}^*$.
+
+```{lemma}
+**Funções para definição dos gradientes do modelo geoestatístico.**
+```
+
+```{r}
+ ## Derivada de sigma, tau e phi
+ deriv.s <- function(s, t, phi, Umat){
+   Sigma.s <- 2*s*as.matrix(exp(-Umat/phi))
+   diag(Sigma.s) <- 2*s
+   return(Sigma.s)}
+ deriv.t <- function(s, t, phi, Umat){
+   return(diag(2*t, nrow(as.matrix(Umat))))}
+ deriv.phi <- function(s, t, phi, Umat){
+   return(s^2 * as.matrix(Umat) * exp(-as.matrix(Umat)/phi)/phi^2)}
+```
+
+Implementamos a função escore completa em \@ref(lem:escoreGeo).
+
+```{lemma escoreGeo}
+**Função escore para o modelo geoestatístico.**
+```
+
+```{r}
+ escore <- function(s, t, phi, modelo, Umat, dados, logpars = F) {
+     if (logpars) {
+         s <- exp(s)
+         t <- exp(t)
+         phi <- exp(phi)
+     }
+     mf <- model.frame(modelo, dados)
+     y <- model.response(mf)
+     D <- model.matrix(modelo, mf)
+     Sigma <- montaSigma(s = s, t = t, phi = phi, U = Umat)
+     R <- chol(Sigma)
+     invRD <- backsolve(R, D, transpose = TRUE)
+     invRy <- backsolve(R, y, transpose = TRUE)
+     bhat <- solve(crossprod(invRD), crossprod(invRD, invRy))
+     invRe <- invRy - invRD %*% bhat
+     e.hat <- y - D %*% bhat
+     Sigma1 <- chol2inv(R)
+     S1D <- Sigma1 %*% deriv.s(s = s, t = t, phi = phi, U = Umat)
+     U.s <- 0.5 * (sum(diag(S1D)) - crossprod(e.hat, S1D %*% 
+         Sigma1) %*% e.hat)
+     T1D <- Sigma1 %*% deriv.t(s = s, t = t, phi = phi, U = Umat)
+     U.t <- 0.5 * (sum(diag(T1D)) - crossprod(e.hat, T1D %*% 
+         Sigma1) %*% e.hat)
+     P1D <- Sigma1 %*% deriv.phi(s = s, t = t, phi = phi, 
+         U = Umat)
+     U.phi <- 0.5 * (sum(diag(P1D)) - crossprod(e.hat, P1D %*% 
+         Sigma1) %*% e.hat)
+     return(c(U.s, U.t, U.phi))
+ }
+```
+
+Tanto na função escore como na log-verossimilhança concentrada 
+ retornamos o negativo da função para compatibilidade com a função
+`mle2()` que por *default* minimiza a função objetivo.
+
+Com tudo implementado utilizamos o conjunto de dados simulados 
+e ajustamos o modelo usando a função `mle2()` do pacote `bbmle` por conveniência. 
+Alternativamente, poderíamos usar diretamente a função `optim()` com qualquer um de seus algoritmos, 
+ou mesmo outros maximizadores disponíveis no `R`.
+Nos comandos a seguir, estimamos os parâmetros sem e depois com  o uso do gradiente analítico pelo algoritmo `L-BFGS-B`
+e comparamos os tempos computacionais.
+
+```{r}
+ require(bbmle)
+ system.time(est1 <- mle2(ll.geo, start = list(s = 1, t = 0.1, 
+     phi = 0.1), method = "L-BFGS-B", lower = list(s = 0, 
+     t = 0, phi = 0), data = list(dados = dt, modelo = Y ~ 
+     1, Umat = dist(dt[, 1:2], upper = T, diag = T))))
+```
+
+```{r}
+ system.time(est2 <- mle2(ll.geo, gr = escore, start = list(s = 1, 
+     t = 0.1, phi = 0.1), method = "L-BFGS-B", lower = list(s = 0, 
+     t = 0, phi = 0), data = list(dados = dt, modelo = Y ~ 
+     1, Umat = dist(dt[, 1:2], upper = T, diag = T))))
+```
+
+Neste caso, o uso do gradiente analítico 
+diminuiu o tempo para a maximização da log-verossimilhança. 
+Este ganho pode ser expressivo, 
+principalmente com grandes bases de dados e/ou procedimentos
+computacionalmente intensivos.
+Entretanto, o uso do gradiente nem sempre é vantajoso ou proporciona um 
+incremento de velocidade da mesma ordem deste exemplo,
+pois a avaliação da função escore também exige cálculos matriciais.
+Para um melhor desempenho o código 
+das funções de verossimilhança e escore podem (e devem!) 
+ser reescritos para aproveitar na escore os cálculos já realizados na 
+avaliação função de verossimilhança. 
+O mecanismos do `R` de criar e acessar dados de **ambiente** (*environments*)
+podem ser usados aqui. 
+Fazemos esta implementação nos complementos *online*.
+
+Informações do ajuste são resumidas a seguir.
+
+```{r}
+ summary(est1)
+```
+
+Com as estimativas dos parâmetros de covariância pode-se 
+obter a estimativa de $\underline{\beta}$ (neste caso um escalar)
+por \@ref(eq:emvBeta) e sua variância ${\rm Var}(\hat{\beta}) = (D^\top \Sigma^{-1} D)^{-1}$
+como mostrado a seguir.
+Note que este cálculo já é feito internamente na função
+que avalia a verossimilhança.
+
+```{r}
+ D <- model.matrix(Y ~ 1, data=dt)
+ Dmat <- as.matrix(dist(dt[,1:2], upper=T, diag=T))
+ Sigma <- montaSigma(s=coef(est1)[1], t=coef(est1)[1], 
+                      phi=coef(est1)[1], Umat=Dmat)
+ R <- chol(Sigma)
+ invRD <- backsolve(R, D, transpose=TRUE)
+ invRy <- backsolve(R, dt[,3], transpose=TRUE)
+ (drop(beta.est <- solve(crossprod(invRD),crossprod(invRD, invRy))))
+ (drop(var.beta.est <- solve(crossprod(invRD))))
+```
+
+Para finalizar o procedimento de inferência no modelo geoestatístico a 
+Figura \@ref(fig:perfilGEO) apresenta os perfis de verossimilhança para os parâmetros que indexam a matriz de variância/covariância do modelo. 
+Observa-se assimetria em $\phi$ e $\sigma$.
+Estes parâmetros são não ortogonais na parametrização usada
+o que pode ser visto em verossimilhanças conjuntas (não mostradas aqui).
+Parametrizações alternativas são sugeridas na literatura e usualmente
+utilizam um novo parâmetro definido pelo quociente entre $\phi$ e $\sigma$.
+O parâmetro é usualmente ortogonal aos demais $\tau$
+e por vezes a estimativa está próxima ao limite do espaço paramétrico.
+Mais notadamente o perfil de verossimilhança para $\phi$
+cresce muito lentamente ou
+deixa de crescer para valores a direita. Isto reflete o fato
+deste parâmetro estar relacionado às distâncias entre localizações na área 
+e não há informação estatística para distâncias além dos limites da área.
+
+Verossimilhanças com aspecto distante do quadrático são 
+comuns para alguns parâmetros de modelos com efeitos espaciais. 
+Pode-se tentar atenuar os efeitos fazendo reparametrizações, 
+por exemplo, estimar o $\log(\tau)$ ou alguma outra função adequada,
+mas em geral há pouca informação na amostra sobre certos parâmetros do modelo.  
+Não há uma "receita" geral para todos os modelos, 
+mas a inspeção de superfícies e verossimilhanças perfilhadas podem sugerir
+as melhores parametrizações.
+
+
+```{r perfilGEO, echo = FALSE, fig.align = "center", fig.cap = "Perfis de verossimilhança para o modelo geoestatístico."}
+knitr::include_graphics("figs/efal-geo-014.pdf")
+```

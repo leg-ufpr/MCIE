@@ -1,0 +1,650 @@
+## Modelo linear dinâmico {#sec:dlm-mle}
+
+Os modelos dinâmicos são uma classe de modelos de regressão usualmente aplicados a séries temporais. 
+Nesses modelos, os coeficientes de regressão variam no tempo. 
+A evolução dos coeficientes é parametrizada de forma a ser suave e dinâmica, 
+originando esse nome. 
+O modelo dinâmico mais simples é o modelo com apenas um intercepto, 
+\begin{eqnarray}
+y_t & = & \theta_t + v_t,\;\;\; v_t \sim N(0, V) \nonumber \\
+\theta_t - \mu & = & \phi (\theta_{t-1}-\mu) + w_t, \;\;\; w_t \sim N(0, W) 
+(\#eq:dlm1)
+\end{eqnarray}
+em que $V$, $W$ e $\phi$ são parâmetros de variância,
+$\mu$ é a média do intercepto $\theta_t$. 
+
+O maior interesse é a modelagem de $\theta_t$, 
+considerando sua estrutura de evolução e de erro. 
+Pode-se considerar que $\theta_t$  é um estado latente (não observável) 
+subjacente ao que se observa. 
+Desta forma, os modelos dinâmicos também são chamados de modelos de *espaço de estados*. 
+
+Nesse modelo $V$ mede o erro das observações;
+$\mu$ está associada à média de $y$, $\phi$ e $W$ controlam a suavidade 
+da evolução de $\theta_t$. 
+Com $0 \leq \phi \leq 1$ temos um modelo autoregressivo de ordem 1 para $\theta$. 
+Com $\phi=1$ temos um passeio aleatório para $\theta$ e $y$ é um passeio aleatório mais um ruído. 
+Com $\phi=1$ e $W$ pequeno em relação a $V$, $y_t$ será parecido com $y_{t-1}$. 
+@west1997 e @petris2009
+apresentam mais detalhes e estruturas mais gerais de modelos dinâmicos.
+Uma generalização da expressão acima é dada por 
+
+\begin{eqnarray}
+y_t & = & F_t \theta_t + v_t  \nonumber  \\
+(\theta_t - \mu) & = & G_t (\theta_t - \mu) + w_t .
+(\#eq:dlmg)
+\end{eqnarray}
+
+Aqui, vamos considerar essa especificação geral no contexto de regressão dinâmica. 
+Então, nomeamos os elementos da seguinte forma: 
+
++ $y_t$ vetor resposta de dimensão $m$,
+
++ $F_t$ pode ser uma matriz de covariáveis, 
+
++ $\theta_t$ vetor de coeficientes de regressão, 
+
++ $v_t$ vetor de erros das observações, $v_t \sim N(0, V_t)$, 
+
++ $\mu$ média dos coeficientes de regressão, 
+
++ $w_t$ vetor de erros dos estados, $w_t \sim N(0, W_t)$, 
+
++ $G_t$ matriz de evolução dos estados. 
+
+São feitas as seguintes suposições de independência condicional: 
+\begin{align*}
+[y_t | y_{0:t}, \theta_{0:t}] &= [y_t|\theta_t]  \\
+[\theta_t | \theta_{0:t}, y_{0:t}] &= [\theta_t|\theta_{t-1}] . 
+\end{align*}
+Para o modelo linear gaussiano, temos 
+\begin{align*}
+[y_t|\theta_t] &= N(F_t\theta_t, V_t) \\ 
+[\theta_t|y] &= N(G_t\theta_t, W_t) . 
+\end{align*}
+
+É comum considerar que $V_t = V$, $W_t = W$ e $G_t = G$, isto é, constantes no tempo. 
+Notemos que, além dessas condições, com $G=I$ e $w_t=0$ para todo $t$, 
+temos um modelo de regressão linear usual. 
+
+### Filtro de Kalman e verossimilhança
+
+Vamos considerar que $\psi_t$ = $\{V_t, W_t, G_t\}$
+é o conjunto de parâmetros desconhecidos. 
+Também, vamos considerar que $\psi_t = \psi$, 
+ou seja, os parâmetros são fixos no tempo. 
+Podemos estimar $\psi$ via máxima verossimilhança. 
+A verossimilhança para os modelos lineares 
+dinâmicos leva em conta que 
+\[ [Y] = [Y_1] [Y_2|Y_1] \ldots [Y_n|Y_{n-1}, \ldots,Y_1]. \]
+Considerando, $v_t$ um erro gaussiano, $[y_t|\ldots]$ 
+também é gaussiano.  Para obter a verossimilhança, 
+basta conhecer as médias e variâncias condicionais de $[y_t|\ldots]$, 
+que dependem de $\psi$ (@schweppe1965). 
+O filtro de Kalman (@kalman1960) fornece um algoritmo para o cálculo 
+dessas médias e variâncias condicionais. 
+Portanto, o filtro de Kalman pode ser usado para calcular a verossimilhança, que 
+é o produto dessas densidades condicionais. Esta abordagem é explorada por diversos autores como,  
+por exemplo, @akaike1978, @harveyp1979, @jones1980, @gardnerhp1980 e @harvey1981. 
+
+
+O filtro de Kalman, foi proposto originalmente para correção 
+e filtragem de sinais eletrônicos. Nesse contexto, considera-se que o estado 
+latente é o verdadeiro sinal e o que se observa é o sinal mais um ruído. 
+Este algoritmo esta baseado na distribuição condicional de $y_t$ e $\theta_t$,
+obtidas, respectivamente, num passo de filtragem e num passo de suavização. 
+Assim, o primeiro passo é usado para calcular a verossimilhança e o segundo 
+para fazer inferência sobre $\theta_t$. 
+
+Na filtragem, usam-se as equações para a predição de $\theta_t$, isto é, 
+$\theta_t|\theta_{t-1} = \theta_t^{t-1}$ e para obter $\theta_t$ filtrado: $\theta_t^t$. 
+Também, obtêm-se $P_t^{t-1}$ e $P_t^t$, que é, respectivamente, $P_t$ predito e filtrado. 
+E na suavização obtêm-se $\theta_t^n$ 
+e $P_t^n$, que são estimativas da média e variância de $\theta_t$. 
+
+As equações de predição, para $t=1,2,\ldots,n$, são: 
+\begin{eqnarray}
+\theta_t^{t-1} & = & G \theta_{t-1}^{t-1}\\
+P_t^{t-1} & = & G P_{t-1}^{t-1} G^{'}  + W 
+(\#eq:kpred)
+\end{eqnarray}
+com  $\theta_0^0=\mu_0$ e $P_0^0 = C_0$. 
+$\mu_0$ e $C_0$ são, respectivamente, a média e a variância de $\theta_0$. 
+Para considerações sobre $\mu_0$ e $C_0$ ver @dejong1988. 
+
+As equações de filtragem, para $t=1,2,\ldots,n$, são:
+\begin{eqnarray*}
+e_t & = & y_t - F_t \theta_t^{t-1} \\
+Q_t & = & F_t P_t^{t-1} F_t^{'}  + V \\
+K_t & = & P_t^{t-1} F_t^{'}  Q_t^{-1} \\\
+\theta_t^t & = & \theta_t^{t-1} + K_t e_t \\
+P_t^t & = & P_t^{t-1} - K_t F_t P_t^{t-1} 
+(\#eq:kfilt)
+\end{eqnarray*}
+
+Na suavização, obtém-se os valores suavizados de $\theta_t$, isto é, 
+$\theta_t^n=\hat{\theta}$, a estimativa de $\theta_t$.
+Também, obtêm-se $P_t^n$, o valor suavizado de $P_t$. 
+$P_t^n$ quantifica a incerteza de $\hat{\theta_t}$. 
+Inicialmente, para $t=n$ têm-se:
+$\theta_{n}^{n} = \theta_{t}^{t}$, $P_n^n = P_t^t$, apenas para $t=n$  
+Para $t=n, n-1, \ldots, 1$, têm-se:
+\begin{eqnarray}
+J_{t-1} & = & P_{t-1}^{t-1} G^{'}  (P_t^{t-1})^{-1} \\
+\theta_{t-1}^n & = & \theta_{t-1}^{t-1} + J_{t-1} (\theta_t^n - \theta_t^{t-1}) \\
+P_{t-1}^n & = & P_{t-1}^{t-1} + J_{t-1} (P_t^n - P_t^{t-1})J_{t-1}^{'}  
+(\#eq:ksmooth)
+\end{eqnarray}
+
+Com $e_t$ e $Q_t$ obtidos no passo de filtragem do filtro de Kalman e considerando 
+que ambos dependem de $\psi$, temos 
+\begin{equation}
+l(\psi) = -\frac{1}{2}\sum_{t=1}^n{\log | Q_t |} 
+-\frac{1}{2}\sum_{t=1}^n{e_t^{'} Q_t^{-1}e_t} .
+(\#eq:lldlm)
+\end{equation}
+
+### Um exemplo simples
+
+Vamos considerar o caso mais simples, descrito no início desta seção, 
+considerando $\mu=0$. Neste caso, temos um intercepto que 
+evolui dinamicamente. São três os parâmetros deste modelo: 
+ variância do erro das observações, variância do erro dos estados e parâmetro 
+de evolução dos estados. 
+Inicialmente, vamos simular um conjunto de dados. 
+
+```{r simuladlm1}
+n <- 100
+V <- .2; W <- .3; rho <- 0.9
+set.seed(1)
+w <- rnorm(n, 0, sqrt(W))
+v <- rnorm(n, 0, sqrt(V))
+x <- w[1]
+for (i in 2:n)
+  x[i] <- rho*x[i-1] + w[i]
+y <- x + v
+```
+
+Vamos definir uma função que crie uma lista em `R`
+contendo:
+(i) as informações básicas sobre a dimensão da série $n$, $m$ e $k$, 
+(ii) elementos  $y$, $F$, $x$, $V$, $W$ e $G$, que representam
+os componentes do modelo
+$y_t$, $F_t$, $\theta_t$, $V$, $W$ e $G$, respectivamente. 
+Além disso, essa lista também incluirá os 
+elementos $x.p$, $x.f$, $x.s$, $P.p$, $P.f$ e $P.s$, 
+para representar os estados e variâncias 
+preditos, filtrados e suavizados, respectivamente; 
+e os elementos $e$ e $Q$, para representar 
+os elementos usados no cálculo da verossimilhança. 
+Também, armazenamos os elementos `m0` 
+e `c0`, para representar $\mu_0$ e $C_0$.
+
+Esta função é particular para este exemplo, 
+com $V$, $G$ e $W$ escalares: 
+
+```{lemma}
+**Estrutura para o modelo com intercepto dinâmico.**
+```
+
+```{r makedlm1f}
+ddlm1 <- function(y, G, V, W, m0=0, c0=1e5) { 
+  ## y: vetor de dados 
+  ## G: coeficiente autoregressivo 
+  ## V: variância dos erros de observação 
+  ## W: variância dos erros do estado 
+  ## m0, c0: media e variância de theta.0
+  dlm <- mget(ls(), environment()) ## lista com argumentos
+  n <- length(y)
+  dlm[c("n","F","e","S")] <- list(n,rep(1,n),rep(0,n),rep(V,n))
+  dlm[c("x.s", "x.f", "x.p")] <- rep(list(rep(m0, n+1)), 3)
+  dlm[c("P.s", "P.f", "P.p")] <- rep(list(rep(W,  n+1)), 3)
+  ## retorna uma lista (nomeada) com argumentos e os elementos:
+  ## n: tamanho da serie
+  ## F: vetor de 1's
+  ### elementos predefinidos para armazenar resultados: 
+  ## x.p, x.f e x.s; P.p, P.f, P.s e P.t; e, S 
+  return(dlm)
+}
+```
+
+Usando essa função para criar a estrutura de modelo dinâmico para os dados simulados 
+
+```{r}
+mod1 <- ddlm1(y, 0, 100, 100)
+```
+
+Agora, definimos uma função para a filtragem específica
+para este exemplo, com $V$, $G$ e $W$ escalares: 
+
+```{lemma}
+**Filtragem para o modelo dinâmico simples: intercepto dinâmico.**
+```
+
+```{r}
+kfilter1 <- function(dlm) {
+  ## dlm: saída de funcao ddlm1() com componentes do modelo
+  for (i in 1:dlm$n+1) {
+    dlm <- within(dlm, {
+      x.p[i] <- G*x.f[i-1]
+      P.p[i] <- G*P.f[i-1]*t(G) + W
+      e[i-1] <- y[i-1] - F[i-1]*x.p[i]
+      S[i-1] <- F[i-1]*P.p[i]*F[i-1] + V
+      K <- (P.p[i]*F[i-1])/S[i-1]
+      x.f[i] <- x.p[i] + K*e[i-1]
+      P.f[i] <- P.p[i] - K*F[i-1]*P.p[i]
+    })
+  }
+  ## retorna objeto lista com valores atualizados dos
+  ## componentes x.p, P.p e, S, x.f e P.f definidos em dlm1()
+  return(dlm[1:16])
+}
+```
+
+Considerando que temos $y_t$ univariado, a função para calcular o negativo da 
+log-verossimilhança pode ser simplesmente:
+
+```{r}
+nlldlm1 <- function(dlm) -sum(dnorm(dlm$e, 0.0, sqrt(dlm$S), log=TRUE))
+```
+
+A maximização da função de verossimilhança pode ser feita usando a função `optim()`. 
+Vamos definir, então, uma função que recebe os parâmetros de interesse e retorna o negativo 
+da log-verossimilhança do modelo. 
+
+```{lemma}
+**Função de verossimilhança do modelo com intercepto dinâmico.**
+```
+
+```{r}
+opfun1 <- function(pars, dlm) {
+  ## pars: vetor valores dos três parâmetros do modelo simples
+  ## dlm: objeto com componentes do modelo simples
+  dlm[c("V", "W", "G")] <- pars  
+  dlm <- kfilter1(dlm)
+  return(nlldlm1(dlm))
+}
+```
+
+Agora, vamos definir iniciais e usar a função `optim()` para 
+encontrar as estimativas. 
+Vamos usar o método `L-BFGS-B` que considera restrição no espaço 
+paramétrico definida pelos argumentos `lower` e `upper`. 
+
+```{r}
+op1 <- optim(c(1,1,.5), opfun1, dlm=mod1, 
+             hessian=TRUE, method="L-BFGS-B",
+             lower=rep(1e-7,3), upper=c(Inf, Inf, 1))
+op1$par                     # estimativas
+sqrt(diag(solve(op1$hess))) # erros padrão
+```
+
+Com a estimativa desses parâmetros, podemos obter a estimativa de $\theta_t$. 
+Para isso, precisamos implementar também o passo de suavização. 
+Vamos definir uma função para isso. 
+
+```{lemma}
+**Suavização para o modelo com intercepto dinâmico.**
+```
+
+```{r}
+ksmooth1 <- function(dlm) { 
+  ## dlm: lista com componentes do modelo dinamico simples, 
+  ##      suavizada com a funcao kfilter1(). 
+  dlm <- within(dlm, {
+    x.s[n+1] <- x.f[n+1] 
+    P.s[n+1] <- P.f[n+1]
+  })
+  for (i in dlm$n:2) { 
+    J <- with(dlm, P.f[i]*G/P.p[i+1])
+    dlm <- within(dlm, {
+      x.s[i] <- x.f[i] + J*(x.s[i+1]-x.p[i+1])
+      P.s[i] <- P.f[i] + J*(P.s[i+1]-P.p[i+1])*J })
+  }
+  return(dlm) # retorna componentes x.s e P.s atualizados 
+
+}
+```
+
+Definindo a série com os valores estimados, aplicamos o filtro 
+e a suavização à série filtrada.
+
+```{r}
+fit1 <- ddlm1(y, op1$par[3], op1$par[1], op1$par[2])
+fit1f <- kfilter1(fit1)
+fit1s <- ksmooth1(fit1f)
+```
+
+Em `R` a estimação via máxima verossimilhança pode ser feita utilizando o
+pacote `dlm` (@petris2009). 
+O pacote é voltado para estimação bayesiana. 
+É possível obter estimativas de máxima verossimilhança, 
+considerando-se que a matriz $G$ é conhecida. 
+Para ilustração fazemos uma comparação dos resultados 
+obtidos e com resultados obtidos com o pacote 
+`dlm`. Neste caso, vamos considerar $G=1$.
+
+```{r message = FALSE, keep.source = FALSE}
+require(dlm)
+### define função para criar objeto dlm a 
+### partir do vetor de parâmetros do modelo
+m.build <- function(pars) {
+  ## pars: vetor de três parâmetros do modelo simples 
+  m <- dlmModPoly(1, dV=pars[1], dW=pars[2])
+  m["GG"] <- pars[3]
+  ## retorna objeto dlm com parâmetros dV, dW e GG 
+  ## alterados 
+  m
+}
+y.mle <- dlmMLE(y, rep(1,3), m.build, hessian=TRUE, 
+                lower=rep(1e-7, 3), upper=c(Inf, Inf, 1))
+## compara estimativas obtidas pelas funções definidas 
+## com as estimativas obtidas pelas funções do pacote 'dlm'
+## estimativas:
+rbind(op1$par, y.mle$par)
+## erros padrão:
+round(rbind(sqrt(diag(solve(op1$hess))), 
+            sqrt(diag(solve(y.mle$hess)))), 4)
+### monta modelo com estimativas obtidas
+y.mod <- m.build(y.mle$par)
+### filtragem e suavização
+y.filt <- dlmFilter(y, y.mod)
+y.smoo <- dlmSmooth(y.filt)
+### extrai erros dos estados 
+xm.se <- sqrt(unlist(dlmSvd2var(y.smoo$U.S, y.smoo$D.S)))
+```
+
+Na Figura \@ref(fig:thetasdlm1) podemos visualizar os valores de $\theta_t$ 
+simulados e estimados pelas funções que definimos e 
+as do pacote `dlm`. 
+
+
+```{r thetasdlm1, echo = FALSE, fig.align = "center", fig.cap = "Estado latente simulado e estimado e respectivos intervalos de confiança  obtidos pelas funções implementadas e as do pacote dlm."}
+par(mar=c(4,4,.5,.1), mgp=c(2.5, 1, 0), las=1)
+ps.options(horizontal=FALSE)
+ylm <- range(y.smoo$s[-1] -2*xm.se[-1], 
+             y.smoo$s[-2] +2*xm.se[-1])
+plot.ts(x, ylim=ylm, lwd=3, 
+        ylab=expression(theta), xlab="")
+lines(fit1s$x.s[-1], lty=2, lwd=2, col="gray")
+er1 <- sqrt(fit1s$P.s[-1])
+lines(fit1s$x.s[-1] - 1.96*er1, lty=2, lwd=2, col="gray")
+lines(fit1s$x.s[-1] + 1.96*er1, lty=2, lwd=2, col="gray")
+lines(y.smoo$s[-1], lty=3, lwd=3)
+lines(y.smoo$s[-1] - 1.96*xm.se[-1], lty=3, lwd=3)
+lines(y.smoo$s[-1] + 1.96*xm.se[-1], lty=3, lwd=3)
+legend("topleft", c("Real", "Implementado", "Pacote 'dlm'"), 
+       lty=1:3, lwd=1:3, bty="n", col=c(1,"gray",1))
+```
+
+### Exemplo de regressão dinâmica
+
+Vamos agora considerar um modelo dinâmico de regressão com uma covariável. 
+Neste exemplo, as equações de filtragem são bastante simplificadas. 
+Nesse modelo, temos como parâmetros: 
+a variância das observações $V$, a variância $W$ de $w_t$ 
+e a matriz $G$.
+Vamos considerar $W$ e $G$ diagonais. 
+Portanto, temos cinco parâmetros a serem estimados. 
+
+Inicialmente, vamos simular um conjunto de dados que contém agora uma covariável. 
+
+```{r}
+n <- 100    # define tamanho da série
+set.seed(1) # simula covariável
+x <- rbind(1, 3*runif(n), rexp(n,1))  
+W <- diag(c(0.3, 0.2, 0.1))
+### simula erros dos estados 
+w <- rbind(rnorm(n, 0, sqrt(W[1,1])),
+           rnorm(n, 0, sqrt(W[2,2])), 
+           rnorm(n, 0, sqrt(W[3,3])))
+V <- 0.1 # variância do erro nas observações 
+v <- rnorm(n, 0, sqrt(V)) # erro nas observações 
+G <- diag(c(0.7, 0.8, 0.9)) # matriz de evolução dos estados 
+### simula estados e observações 
+theta <- matrix(NA, nrow(W), n)
+theta[,1] <- w[,1]
+y <- rep(NA, n)
+y[1] <- x[,1]%*%theta[,1] + v[1]
+for (i in 2:n) {
+  theta[,i] <- G%*%theta[,i-1] + w[,i]
+  y[i] <- x[,i]%*%theta[,i] + v[i]
+}
+```
+
+Vamos definir no código \@ref(lem:str-reg-din) uma função que crie uma lista contendo as componentes do modelo.
+Esta lista é semelhante à criada no exemplo anterior, 
+porém, para o contexto de regressão dinâmica. 
+No código \@ref(lem:filtro-reg-din)  definimos uma função para a filtragem.
+
+```{lemma str-reg-din}
+**Estrutura para o modelo de regressão dinâmica.**
+```
+
+```{r}
+ddlm1r <- function(y, F, G, V, W, 
+             m0=rep(0,ncol(W)), V0=diag(ncol(W))*1000) {
+  ## y: vetor de dados , F: matriz de covariaveis
+  ## G: matriz diagonal com coeficientes autoregressivos 
+  ## V: variância dos erros de observação 
+  ## W: matriz diagonal de variância dos erros dos estados 
+  ## m0 e c0: vetor media e matrix variancia de theta.0
+  dlm <- mget(ls(), environment())
+  n=length(y)  ;  k=nrow(W)
+  dlm[c("n", "k")] <- c(n, k)
+  dlm[c("x.s","x.f","x.p")] <- rep(list(matrix(m0, k, n+1)), 3)
+  dlm[c("P.s","P.f","P.p")] <- rep(list(array(V0,c(dim(W),n+1))),3)
+  dlm[c("e", "S")] <- list(rep(0, n), rep(V, n))
+  ## retorna uma lista com os adicionais elementos:
+  ## n: tamanho da serie ;  k: dimensão dos estados 
+  ## e elementos predefinidos armazenar resultados 
+  return(dlm)
+}
+```
+
+```{lemma filtro-reg-din}
+**Filtragem para o modelo de regressão dinâmica.**
+```
+
+```{r}
+kfilter1r <- function(dlm) { 
+  ## dlm: lista criada com funcao ddlm1r()
+  for (i in 1:dlm$n+1) {
+    dlm <- within(dlm, {
+      x.p[,i] <- G%*%x.f[,i-1]
+      aux <- tcrossprod(P.f[,,i-1], G)
+      P.p[,,i] <- G%*%aux + W
+      e[i-1] <- y[i-1] - F[,i-1]%*%x.p[,i]
+      aux <- crossprod(P.p[,,i], F[,i-1])
+      S[i-1] <- F[,i-1]%*%aux + V
+      K <- (P.p[,,i]%*%F[,i-1])/S[i-1]
+      x.f[,i] <- x.p[,i] + K*e[i-1]
+      aux <- K%*%F[,i-1]
+      P.f[,,i] <- P.p[,,i] - aux%*%P.p[,,i]
+    })
+  }
+  ## retorna objeto lista com valores atualizados dos
+  ## componentes x.p, P.p e, S, x.f e P.f definidos em dlm1r()
+  return(dlm[1:17])
+}
+```
+
+Considerando que temos $y_t$ univariado, 
+a função para calcular o negativo da log-verossimilhança é a mesma do exemplo anterior.
+Precisamos, apenas, definir outra função que recebe 
+os parâmetros de interesse e retorna o negativo 
+da log-verossimilhança do modelo. 
+
+```{lemma}
+**Função dos parâmetros do modelo de regressão dinâmica para minimizar.**
+```
+
+```{r}
+opfun1r <- function(pars, dlm) {
+  ## pars: vetor com 2*k + 1 parâmetros 
+  ## dlm: lista com componentes do modelo de regressao 
+  ##     dinamica (k=numero de covariaveis/estados)
+  k <- (length(pars)-1)/2
+  dlm[c("V", "W", "G")] <- 
+      list(pars[1], diag(pars[1+1:k]), diag(pars[1+k+1:k]))
+  dlm <- kfilter1r(dlm)
+  return(nlldlm1(dlm))
+}
+```
+
+Agora, vamos considerar valores iniciais  e usar a função `optim()` para 
+encontrar as estimativas. 
+
+```{r}
+mod1r <- ddlm1r(y=y, F=x, G=0.5*diag(3), V=1, W=diag(3))
+op1r <- optim(rep(.5, 7), opfun1r, dlm=mod1r, method="L-BFGS-B",
+              lower=rep(1e-5,7), upper=rep(c(Inf, 1), c(4,3)), 
+              hessian=TRUE)
+### estimativas obtidas 
+round(op1r$par, 4)
+### calculando os erros padroes das estimativas 
+round(sqrt(diag(solve(op1r$hess))), 4)
+```
+
+Agora, precisamos implementar a suavização. 
+Neste caso, observando as equações \@ref(eq:ksmooth), 
+observamos que, quando $\theta_t$ é vetor 
+($W$ é matriz), temos que fazer a conta 
+$P_{t-1}^{t-1}G^{'}(P_t^{t-1})^{-1}$ em cada passo. 
+Aqui é bom considerar que essa matriz é 
+simétrica para ter um ganho computacional. 
+Uma opção para isso, é fazer a 
+decomposição de Choleski, que é uma matriz triangular, 
+e fazer a inversão dessa matriz, considerando sua estrutura. 
+Em `R` usamos `chol2inv(chol(M))`, 
+para inverter uma matriz quadrada 
+simétrica e positiva definida `M`. 
+
+Outra consideração sobre contas matriciais 
+é sobre o cálculo de `A'B`. 
+Em `R` é mais rápido fazer `crossprod(A, B)` 
+que fazer simplesmente `|t(A) %*% B|`
+para esse cálculo. 
+Porém, se precisamos calcular `AB` (sem transpor qualquer 
+das duas matrizes), é melhor usar `|A %*% B|`
+que usar `crossprod(t(A),B)`, se as matrizes são de dimensões pequenas. 
+Desta forma, definimos a função no código \@ref(lem:suav-reg-dinam).
+
+
+```{lemma suav-reg-dinam}
+**Suavização para o modelo de regressão dinâmica.**
+```
+
+```{r}
+ksmooth1r <- function(dlm) {
+  ## dlm: lista com componentes do modelo de regressão dinâmica. 
+  ##      suavizada com a funcao kfilter1r().
+  dlm <- within(dlm, {
+    x.s[,n+1] <- x.f[,n+1]
+    P.s[,,n+1] <- P.f[,,n+1]
+  })
+  for (i in dlm$n:1) {
+    dlm <- within(dlm, {
+      aux <- crossprod(G,chol2inv(chol(P.p[,,i+1])))
+      J <- P.f[,,i]%*%aux
+      x.s[,i] <- x.f[,i] + J%*%(x.s[,i+1]-x.p[,i+1]) 
+      aux <- tcrossprod(P.s[,,i+1]-P.p[,,i+1], J)
+      P.s[,,i] <- P.f[,,i] + J%*%aux
+    })
+  }
+  ## retorna objeto lista com valores atualizados dos
+  ## componentes x.s e P.s definidos em dlm1r()
+  return(dlm[1:17])
+}
+```
+
+Definindo a série com os valores estimados 
+
+```{r}
+fit1r <- ddlm1r(y, x, diag(op1r$par[5:7]), op1r$par[1],
+                diag(op1r$par[2:4]))
+```
+
+Aplicando o filtro e a suavização à série filtrada.
+
+```{r}
+kf1r <- kfilter1r(fit1r)
+ks1r <- ksmooth1r(kf1r)
+```
+
+Extraindo a variância dos estados (diagonal de $P_t^n$), para facilitar 
+o cálculo e visualização dos intervalos de confiança para $\theta_t$:
+
+```{r}
+th.se <- sqrt(apply(ks1r$P.s[,,-1], 3, diag))
+```
+
+Vamos implementar o mesmo modelo usando funções do pacote `dlm`.
+
+```{r}
+k <- nrow(x)
+mr.bf <- function(pars) {
+  ## pars: vetor de 2*k+1 parametros do modelo regressao 
+  ##     dinamica (k=numero de covariaveis/estados)
+  m <- dlmModReg(t(x[-1,]), dV=pars[1], dW=pars[1+1:k])
+  m$GG <- diag(pars[1+k+1:k])
+  ## retorna objeto dlm com dV, dW e GG atualizados 
+  m
+}
+opd1r <- dlmMLE(y, rep(1, 1+2*k), mr.bf, 
+                lower=rep(1e-7, 1+2*k), hessian=TRUE)
+### estimativas:
+round(rbind(op1r$par, opd1r$par), 4)
+### erros padrões 
+round(rbind(sqrt(diag(solve(op1r$hess))), 
+            sqrt(diag(solve(opd1r$hess)))), 4)
+### monta modelo com estimativas obtidas
+modd1r <- mr.bf(opd1r$par)
+### filtragem e  suavização
+kfd1r <- dlmFilter(y, modd1r)
+ksd1r <- dlmSmooth(kfd1r)
+### extrai erros dos estados 
+xm.se1r <- sqrt(sapply(dlmSvd2var(ksd1r$U.S, ksd1r$D.S), diag))
+```
+
+Notamos algumas diferenças nos valores das 
+estimativas e respectivos erros padrões. As funções do 
+pacote `dlm` usam a decomposição 
+em valores singulares em vez da decomposição de Choleski. 
+Na Figura \@ref(fig:thetasdlm1r), podemos visualizar $\theta_t$ 
+simulados e estimados:
+
+```{r thetasdlm1r, echo = FALSE, fig.align = "center", fig.cap = "Coeficientes de regressão simulados, e estimados (e respectivos intervalos de confiança) via funções implementadas e via funções do pacote 'dlm'."}
+par(mfrow=c(3,1), mar=c(2,2,1,.1), mgp=c(1, .3, 0), las=1)
+for (i in 1:3) {
+  er1 <- 1.96*th.se[i,]
+  er2 <- 1.96*xm.se1r[i,-1]
+  ylm <- range(ks1r$x.s[i,-1]-er1, ks1r$x.s[i,-1]+er1)
+  plot.ts(theta[i,], ylab="", ylim=ylm)
+  lines(ks1r$x.s[i,-1], lwd=2, lty=2, col="gray")
+  lines(ks1r$x.s[i,-1] - er1, lwd=2, lty=2, col="gray")
+  lines(ks1r$x.s[i,-1] + er1, lwd=2, lty=2, col="gray")
+  lines(ksd1r$s[-1,i], lwd=3, lty=3)
+  lines(ksd1r$s[-1,i] - er2, lwd=3, lty=3)
+  lines(ksd1r$s[-1,i] + er2, lwd=3, lty=3)
+}
+legend("bottomright", c("Real", "Implementado", "Pacote 'dlm'"), 
+       lty=1:3, col=c(1,"gray", 1), lwd=1:3, bty="n")
+```
+
+Na estimação de $\theta_t$, e sua variância, em ambos 
+os exemplos de modelos dinâmicos, foi considerado a 
+estimativa de máxima verossimilhança de $\psi$ obtida. 
+Ou seja, não está sendo considerada a incerteza dessa 
+estimativa na inferência sobre $\theta_t$. 
+Uma opção para isso é considerar um método baseado 
+no algoritmo EM, no qual $\psi$ e $\theta$ são 
+estimados conjuntamente. 
+Nos complementos online deste livro 
+acrescentaremos exemplos com essa abordagem. 
+
+Uma solução natural para esse tipo de problema 
+é a abordagem de inferência bayesiana. 
+Essa abordagem é bastante comum na literatura 
+de modelos dinâmicos. 
+Isto será ilustrado em versões futuras deste material.

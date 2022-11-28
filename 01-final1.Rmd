@@ -1,0 +1,200 @@
+## Tratando tudo numericamente
+
+
+Vimos nos exemplos anteriores que métodos numéricos são essenciais em inferência
+baseada em verossimilhança. Mesmo em exemplos simples com apenas dois parâmetros
+soluções analíticas não podem ser obtidas. Vimos também que o algoritmo de
+Newton-Raphson é muito poderoso para resolver sistemas do tipo $f(x)=0$, porém
+ele necessita do vetor escore e da matriz de derivadas segundas (Hessiana), o
+que nem sempre pode ser fácil de ser obtido e mesmo em exemplos simples pode
+demandar trabalho computacional e/ou analítico considerável.
+
+Além disso, vimos que a implementação de intervalos baseados em perfil de
+verossimilhança é um tanto quanto tediosa, mesmo os intervalos de Wald que são
+simples exigem de um tempo razoável de programação que precisa ser muito
+cuidadosa para evitar problemas e exceções numéricas.  Nesta seção nos vamos
+abordar os mesmos três problemas a dois parâmetros já apresentados porém
+tratando eles de forma inteiramente numérica, o que pode ser útil para
+investigar, ainda que preliminarmente, o comportamento de modelos existentes ou
+em desenvolvimento.  Para isto, vamos usar a função `optim()` que
+implementa quatro poderosos algoritmos de otimização numérica, são eles
+`Nelder-Mead`, *Gradiente Conjugado*, *Simulating Annealing* e *BFGS*.
+
+Porém, só esta função não resolve o problema da construção dos intervalos de
+confiança e testes de hipóteses. Para isto, vamos introduzir o pacote
+`bbmle` que traz uma verdadeira "caixa de ferramentas" para inferência
+baseada em verossimilhança.  Ilustramos o uso mostrando que com pouca
+programação conseguiremos estimar os parâmetros, construir intervalos de
+confiança assintóticos e perfilhados, obter testes de hipóteses, além de obter
+os resultados apresentados como no padrão de funções centrais do `R` como a
+`lm()` e `glm()`.
+
+Veremos também como os resultados analíticos já obtidos, principalmente o vetor
+escore, podem ser usados para acelerar e melhorar a performance dos otimizadores
+numéricos. Relembre que no Exemplo \@ref(sec:vero-normal), tratamos o modelo
+gaussiano com média $\mu$ e variância $\sigma^2$. Podemos escrever o
+**negativo** da log-verossimilhança deste modelo em `R` da seguinte forma:
+
+```{lemma}
+**Função de log-verossimilhança para a distribuição gaussiana.**
+```
+
+```{r}
+ll.gauss <- function(par, dados){
+    return(-sum(dnorm(dados, par[1], sd=par[2], log=TRUE)))}
+```
+
+Note que retornamos o negativo da log-verossimilhança simplesmente porque, por
+padrão, a função `optim()` minimiza a função objetivo.  Informamos um vetor
+em que cada posição corresponde a cada parâmetro a ser estimado.  Para proceder
+o processo de estimação precisamos de uma amostra, vamos simular uma amostra de
+tamanho $n=100$ do modelo gaussiano com $\mu=10$ e $\sigma=2$ apenas para
+ilustrar o procedimento estimação via a função `optim()`.  Na maioria dos
+algoritmos de otimização numérica será necessário o uso de valores iniciais,
+para isto é comum utilizar alguma estimativa grosseira ou mesmo fazer várias
+tentativas e avaliar a sensibilidade do algoritmo as condições iniciais.
+
+Um cuidado que se deve ter quando se usa este tipo de algoritmo numérico é o
+espaço de busca, que no caso de inferência estatística corresponde ao espaço
+paramétrico.  Para o parâmetro $\mu$ a busca deve ser em toda a reta real, porém
+para $\sigma$ apenas nos reais positivos.  A maioria dos algoritmos da
+`optim()` não leva isso em consideração, fazendo com que se tente avaliar a
+função de verossimilhança em pontos não válidos.  Este problema pode gerar desde
+simples mensagens de *warnings* até a falha total do algoritmo.  O único
+algoritmo dentro da `optim()` que permite busca em espaços determinados é o
+`L-BFGS-B` é o que vamos usar neste exemplo.  Reparametrizações são muito
+úteis neste ponto para permitir o uso de outros algorítmos que busquem solução
+no espaço paramétrico irrestrito. No exemplo de estimação da normal $\sigma \in \Re^*_{+}$
+uma reparametrização conveniente seria $\tau = \log(\sigma) \in \Re$.
+Recomendamos que o leitor leia a documentação da função e experimente os outros
+algoritmos.
+
+
+```{r message = FALSE, warnings = FALSE}
+set.seed(123)
+dados <- rnorm(100, m=10, s=2)
+unlist(est.gauss <- optim(par=c(5, 1), fn = ll.gauss, dados=dados, 
+             method="L-BFGS-B", lower=c(-Inf, 0.1),
+             upper=c(Inf,Inf), hessian=TRUE)[1:2])
+```
+
+A saída da `optim()` retorna uma lista. 
+O primeiro elemento é o valor que maximiza o negativo da log-verossimilhança.
+Em seguida o valor maximizado que a função toma neste ponto.
+Tal valor é muito importante para a construção de testes de hipóteses e comparações de modelos.
+Na sequência diversas informações sobre o procedimento e, por fim, a matriz hessiana é obtida numericamente, 
+a qual é importante para a construção dos intervalos de confiança assintóticos. 
+Deste ponto, ainda é preciso uma quantidade razoável de programação para obtenção de intervalos baseados na verossimilhança perfilhada. 
+Uma forma mais rápida de obter praticamente tudo que se deseja do processo de inferência é usar
+funções disponíveis em pacotes tais como o `bbmle`, que implementam os procedimentos de forma genérica
+e facilitam todo o procedimento. 
+
+
+Para usar as funcionalidades do  pacote `bbmle` precisamos escrever a função de log-verossimilhança de forma ligeiramente diferente. 
+O código abaixo apresenta as funções de log-verossimilhança para os casos Gaussianos, Gama e Binomial Negativo discutidos anteriormente
+neste Capítulo.
+
+```{lemma}
+**Funções de log-verossimilhança escritas em formato compatível para estimação com a função mle2()**.
+```
+
+
+```{r}
+ll.gauss <- function(mu, sigma, dados){
+    return(-sum(dnorm(dados, mu, sigma, log=TRUE)))
+}
+
+ll.gamma <- function(a,s, dados){
+  return(-sum(dgamma(dados,shape=a,scale=s, log=TRUE)))}
+
+ll.negbin <- function(phi, p, dados){
+  return(-sum(dnbinom(dados,size=phi, p=p, log=TRUE)))}
+```
+
+A estimação via o pacote `bbmle` é feita através da função `mle2()`, 
+que é apenas uma "casca"\ para a `optim()` mas facilita a entrada de dados e
+formata os resultados de forma conveniente.
+Para o modelo gaussiano teríamos o código a seguir.
+
+```{r message = FALSE, warnings = FALSE}
+require(bbmle)
+est.gauss <- mle2(ll.gauss, start=list(mu=8, sigma=3), 
+                  data=list(dados=dados), method="L-BFGS-B", 
+                  lower=list(mu=-Inf, sigma=0.1), 
+                  upper=list(mu=Inf, sigma=Inf))
+```
+
+Neste formato os resultados podem ser explorados desde 
+um simples resumo do modelo ajustado via função summary(),
+
+```{r}
+summary(est.gauss)
+```
+
+construção de intervalos de confiança assintóticos,
+
+
+```{r}
+confint(est.gauss,method="quad")
+```
+
+
+ou construção de intervalos de confiança perfilhados.
+
+```{r message = FALSE, warnings = FALSE}
+confint(est.gauss)
+```
+
+O código a seguir mostra o procedimento para o caso Gama. 
+Note a definição dos intervalos de busca para o algoritmo `L-BFGS-B`.
+
+
+```{r}
+set.seed(123)
+dados.gama <- rgamma(100, shape=10, scale=1)
+est.gamma <- mle2(ll.gamma, start=list(a=2,s=10), 
+              data=list(dados=dados.gama), method="L-BFGS-B", 
+              lower=list(a=1e-32,s=1e-32), upper=list(a=Inf,s=Inf))
+summary(est.gamma)
+confint(est.gamma)
+confint(est.gamma,method="quad")
+```
+
+```{r echo = FALSE, results = "hide", message = FALSE, warnings = FALSE}
+options(warn=-2)
+```
+
+De forma análoga pode-se obter resultados para o modelo Binomial Negativo.
+
+```{r message = FALSE}
+set.seed(123)
+dados.nbin <- rnbinom(1000, size=10, p=0.8)
+est.nbin <- mle2(ll.negbin,start=list(phi=2, p=0.5), 
+                 data=list(dados=dados.nbin), method="L-BFGS-B", 
+                 lower=list(phi=1e-32, p= 1e-32), 
+                 upper=list(phi=Inf,p=0.99999))
+summary(est.nbin)
+confint(est.nbin,method="quad")  # assintotico
+confint(est.nbin)                # perfilhada
+```
+
+O esforço de programação quando tratamos tudo numericamente, sem utilizar resultados analíticos parciais é menor
+e adequado em explorações preliminares de modelos. 
+Entretanto, note-se que isto torna a inferência computacionalmente mais cara e potencialmente mais instável.
+O uso das funções do pacote `bbmle` facilita muito o trabalho de inferência, 
+pois já implementa métodos genéricos, além de 
+formatar adequadamente a saída na forma de outras funções padrão do `R`. 
+Implementações para uso intensivo podem, em algumas situações, ser porteriormente ajustadas para 
+um melhor desempenho, se necessário.
+
+Finalmente, é importante dizer que as implementações feitas neste Capítulo visam primariamente
+ilustrar conceitos de inferência e o uso da linguagem.
+Algorítmos e funções mais gerais e eficientes podem ser escritos ou, pode-se ainda em muitos casos, 
+utilizar funções já prontas dsiponibilizadas em pacotes específicos.
+Por exemplo, para a classe de modelos na família exponencial, que engloba todas as distribuições usadas aqui,
+é possível escrever expressões gerais, válidas para todas estas distribuições.
+Neste caso, as expressões no Método de Newton-Raphson
+podem ser escritas na forma de um procedimento iterativo de minímos quadrados que são reponderados a cada iteração
+(*IRWLS - iteractive reweighted least squares*).
+Por outro lado os códigos ilustram implementações que podem seguir de guia para programação de modelos de interesse que não estejam
+já implementados.

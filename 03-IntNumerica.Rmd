@@ -1,0 +1,460 @@
+## Técnicas de integração numérica
+
+A necessidade de resolver uma integral numericamente aparece com bastante frequência quando ajustamos modelos de regressão com efeitos aleatórios. Como exemplo ilustrativo, escolhemos o modelo de regressão Poisson com intercepto aleatório, por ser um modelo simples, contendo apenas dois parâmetros
+o que permite construir gráficos de contornos da verossimilhança e sua aproximação quadrática.
+Este modelo pode ser usado para dados que apresentem uma
+  variância maior do que a prevista no modelo de Poisson, ou seja, dados sobredispersos.
+O modelo tem a seguinte forma:
+
+\begin{align}
+Y_{ij}|b_i &\sim P(\lambda_{i}) \\ 
+\nonumber \log(\lambda_{i}) &= \beta_0 + b_i \\  
+\nonumber b_i &\sim N(0, 1/\tau^2) ,
+(\#eq:modPoisIntercepto)
+\end{align}
+
+em que $\beta_0$ é o intercepto, $b_i$ o efeito aleatório e $\tau^2$ o parâmetro de precisão. Lembre-se que $i = 1, \ldots, N$ indica o número de unidades amostrais e $j=1,\ldots,n_i$ indica o número de medidas feitas na unidade amostral $i$. Neste caso, a contribuição para a verossimilhança de cada unidade amostral é dada por:
+
+\begin{align}
+\nonumber f_i( y_{ij} | b_i , \beta_0) &= \int_{-\infty}^{\infty} \frac{ \exp\{-\lambda_{i}\} \lambda_{i}^{ y_{ij}}}{y_{ij} !} \left( \frac{\tau}{2 \pi} \right)^{1/2} 
+			\exp\{- \frac{\tau^2}{2} b_i^2\} d b_i \\ 
+\nonumber			&= \int_{-\infty}^{\infty} \frac{\exp\{-\exp(\beta_0 + b_i)\} \exp\{(\beta_0 + b_i)^{y_{ij}}\}}{y_{ij} !}  \\
+ & \hspace{2cm} \left( \frac{\tau}{2 \pi} \right)^{1/2} 
+			\exp\{- \frac{\tau^2}{2} b_i^2\} d b_i.
+(\#eq:integral)
+\end{align}
+
+A integral em \@ref(eq:integral) tem apenas uma dimensão e precisa ser resolvida para cada uma das $N$ unidades amostrais, 
+e isto é repetido em cada passo de algum algoritmo de maximização numérica. 
+Vamos usar esta integral para ilustrar diversos métodos de integração numérica e 
+posteriormente utiliza-los para estimar os parâmetros do modelo de Poisson com intercepto aleatório.
+
+Diversos métodos de integração numérica podem ser encontrados em textos clássicos de cálculo numérico. 
+O método do retângulo, dos trapézios, do ponto central e suas diversas variações, são métodos simples de serem implementados. Porém, na situação de modelos de regressão com efeitos aleatórios são de pouca valia,  devido a restrição de que a integral a ser resolvida deve ser própria com limites finitos e fixados. 
+Este não é o caso na equação \@ref(eq:integral). 
+No uso destes métodos não resolvemos a integral na reta real, 
+mas sim em um domínio finito adequado da função no integrando. 
+Por exemplo, se é razoável assumir que quase toda a massa da distribuição está contida
+em $[-10, 10]$, avaliamos a integral neste intervalo.
+
+Dentre os diversos métodos possíveis optamos por descrever o método trapezoidal de Simpson, a Quadratura Gaussiana usando os polinômios de Hermite, próprios para a integração na reta real, os Métodos baseados em simulação, integração Monte Carlo e Quase Monte Carlo, além da aproximação de Laplace. Combinando o método da Quadratura Gaussiana com a aproximação de Laplace, chegamos à Quadratura Adaptativa e o mesmo pode ser feito combinando Quase Monte Carlo com Laplace para obter um Quase Monte Carlo adaptativo.
+
+### Método Trapezoidal
+
+O método trapezoidal consiste no uso de uma função linear para aproximar o integrando ao longo do intervalo de integração. O uso do polinômio de Newton entre os pontos $x = a$ e $x = b$ resulta em:
+\[
+    f(x) \approx f(a) + (x - a) \left[ \frac{f(b) - f(a)}{ b - a} \right].
+\]
+Com a integração analítica, obtém-se:
+\begin{eqnarray*}
+  I(f) &\approx& \int_a^b f(a) + (x - a)\left[ \frac{f(b) - f(a)}{ b - a} \right] dx \\
+       &=& f(a) (b - a) + \frac{1}{2}[f(b) - f(a)](b - a)
+\end{eqnarray*}
+Simplificando o resultado, obtém-se uma fórmula aproximada popularmente conhecida como regra ou método trapezoidal.
+\begin{equation}
+  I(f) \approx \frac{[f(a) + f(b)]}{2} (b - a)
+(\#eq:trapezio)
+\end{equation}
+
+A expressão em \@ref(eq:trapezio) é extremamente simples de ser usada, requer apenas duas avaliações da função integrando. Sua versão em `R` pode ser escrita como se segue.
+
+```{lemma}
+**Função para integração numérica por meio do método dos trapézios.**
+```
+
+```{r}
+ trapezio <- function(integrando, a, b, ...){
+   Int <- ((integrando(a, ...) + integrando(b, ...))/2)*(b-a)
+   return(Int)
+ }
+```
+
+Podemos agora usar o método trapezoidal para avaliar a integral do modelo Poisson com intercepto aleatório
+no intervalo $[-0,5 ; 0,5]$.
+
+```{r}
+ log(trapezio(integrando = integrando, a = -0.5, b = 0.5, f.fixo = y~1, 
+     dados= subset(dados, ID == 1), beta.fixo = 2, prec.pars=4, log=FALSE))
+```
+
+Este método é extremamente simples e serve apenas para apresentar as ideias gerais de integração numérica. Na sequência veremos que o resultado apresentado por este método é muito ruim.
+
+### Método de Simpson $1/3$
+
+Neste método, um polinômio de segunda ordem é usado para aproximar o integrando. Os coeficientes de um polinômio quadrático podem ser determinados a partir de três pontos. Para uma integral ao longo do domínio $[a,b]$, são usados os dois pontos finais $x_1 = a$, $x_3 = b$, e o ponto central, $x_2 = (a+b)/2$. O polinômio pode ser escrito na forma:
+
+\begin{equation}
+p(x) = \alpha + \beta(x - x_1) + \lambda(x - x_1)(x - x_2)
+(\#eq:simpson)
+\end{equation}
+
+onde $\alpha$, $\beta$ e $\lambda$ são constantes desconhecidas avaliadas a partir da condição que diz que o polinômio deve passar por todos os pontos, $p(x_1) = f(x_1)$, $p(x_2) = f(x_2)$ e $p(x_3) = f(x_3)$. Isso resulta em:
+
+\begin{equation*}
+\alpha = f(x_1), \quad \beta = [ f(x_2) - f(x_1)] / (x_2 - x_1) \quad \text{e} \quad \lambda = \frac{f(x_3) - 2 f(x_2) + f(x_1)}{2(h)^2}
+\end{equation*}
+onde $h = (b-a)/2$. Substituindo as constantes de volta em \ref{eq:simpson} e integrando $p(x)$ ao longo do intervalo $[a,b]$, obtém-se
+\begin{equation*}
+I = \int_{x_1}^{x_3} f(x) dx \approx \int_{x_1}^{x_3} p(x) dx = \frac{h}{3} \left[ f(a) + 4 f(\frac{a+b}{2}) + f(b) \right].
+\end{equation*}
+
+Note que, para o cálculo da integral é necessário apenas três avaliações da função, o que torna o método muito rápido. Podemos também facilmente implementar este método para integrar uma função qualquer, tal função terá como seus argumentos os limites $[a,b]$ e a função a ser integrada. 
+
+```{lemma}
+**Função para integração numérica por meio do método de Simpson.**
+```
+
+```{r}
+ simpson <- function(integrando, a, b, ...){
+   h <- (b-a)/2
+   x2 <-(a+b)/2
+   integral <- (h/3)*(integrando(a,...) + 
+                4*integrando(x2, ...) + integrando(b, ...))
+   return(integral)
+ }
+```
+
+Uma vez implementada a função podemos usá-la para integrar a nossa função de interesse. Lembre-se ainda que para o procedimento de maximização nos interessa o log do valor da integral e não a integral em log, por isso precisamos avaliar a função em sua escala original o que é computacionalmente incoveniente, mas necessário. Além disso, precisamos definir os limites de integração, neste caso fixamos $-0.5$ a $0.5$ tendo em mente o gráfico do integrando. Apenas para comparação dos resultados usamos a função `integrate()` do `R`.
+
+```{r}
+ ## Escala original
+ simpson(integrando = integrando, a = -0.5, b = 0.5, f.fixo = y~1, 
+         dados=subset(dados,ID==1), beta.fixo=2, prec.pars=4, log=FALSE)
+  ## Em log
+ log(simpson(integrando = integrando, a = -0.5, b = 0.5, 
+       f.fixo = y~1, dados=subset(dados, ID == 1),
+       beta.fixo = 2, prec.pars=4, log=FALSE))
+  # Resultado com a integrate
+ log(integrate(integrando, lower=-Inf, upper=Inf, f.fixo = y~1, 
+     dados=subset(dados, ID == 1), beta.fixo = 2, 
+       prec.pars=4, log=FALSE)$value)
+```
+
+O resultado do método de Simpson é compatível com o obtido via `integrate()`, e bastante diferente do obtido pelo método do Trapézio. O mal desempenho do último é basicamente por este estar quase que totalmente voltado aos limites do intervalo de integração, que neste caso são definidos arbitrariamente. Se olharmos para a Figura \@ref(fig:integrando) só a massa de probabilidade concentra-se em $[-0.1,0.1]$. Se integrarmos a função neste intervalo pelo método do Trapézio chegamos a um valor de 
+-36.19794 mais próximo aos  obtidos via 
+`Simpson` e `integrate()`. O problema que enfrentamos aqui é como definir tais limites em situações práticas de forma geral. Esta é uma das grandes limitações destes métodos, mesmo em uma única dimensão. 
+Outra grande limitação é como expandir estes métodos para integrais de dimensões maiores e como definir os limites em tais dimensões. O número de avaliações da função cresce exponencialmente com o número de dimensões da integral.
+ Estes problemas, não são de fácil solução e motivaram 
+ diversos outros métodos que tentam contornar o problema mantendo um número razoável da avaliações a função. 
+
+### Quadratura de Gauss-Hermite
+
+Nos dois métodos de integração apresentados até agora, a integral de $f(x)$ ao longo do intervalo $[a,b]$ foi avaliada representando $f(x)$ como um polinômio de fácil integração. A integral é avaliada como uma soma ponderada dos valores de $f(x)$ nos diferentes pontos. A localização dos pontos comuns é predeterminada em um dos métodos de integração. Até agora os dois métodos consideram pontos igualmente espaçados. Na quadratura de Gauss, a integral também é avaliada usando uma soma ponderada dos valores de $f(x)$ em pontos distintos ao longo do intervalo $[a,b]$ (chamados pontos de Gauss). Estes pontos, contudo, não são igualmente espaçados e não incluem os pontos finais. O método de Gauss-Hermite é uma extensão do método de Quadratura Gaussiana para resolver integrais da forma:
+\[
+  \int_{-\infty}^{\infty} e^{-x^2} f(x) dx 
+\]
+
+Neste caso, a integral é aproximada por uma soma ponderada da função avaliada nos pontos de Gauss e pesos de integração.
+\[
+  \int_{-\infty}^{\infty} e^{-x^2} f(x) dx \approx \sum_{i=1}^n w_i f(x_i)
+\]
+onde $n$ é o número de pontos usados para a aproximação. Os $x_i$ são as raízes do polinômio de Hermite $H_n(x) (i = 1< 2, \ldots, n )$ e os pesos $w_i$ associados são dados por
+\begin{equation*}
+  w_i = \frac{2^{n-1} n !  \sqrt{\pi}}{n^2 [H_{n-1}(x_i)]^2}
+\end{equation*}
+
+Para a aproximação de integrais via o método de Gauss-Hermite precisamos dos pesos de integração $w_i$ e dos pontos de Gauss $x_i$. 
+A função `gauss.quad()` do pacote `statmod` 
+calcula os pesos e os pontos de Gauss-Hermite. 
+A função abaixo, implementa o método de integração de Gauss-Hermite para uma função qualquer unidimensional.
+
+```{r include = FALSE}
+require(statmod)
+require(mvtnorm)
+require(fOptions)
+```
+
+
+```{lemma}
+**Função para integração numérica por meio do método de Gauss-Hermite unidimensional.**
+```
+
+```{r}
+ gauss.hermite <- function(integrando, n.pontos, ...){
+   pontos <- gauss.quad(n.pontos, kind="hermite")
+   integral <- sum(pontos$weights*integrando(pontos$nodes,...)
+                   /exp(-pontos$nodes^2))
+   return(integral)
+ }
+```
+
+Esta função tem apenas dois argumentos, o primeiro é a função a ser integrada e o segundo o número de pontos a ser utilizado na aproximação. A segunda linha da função faz apenas uma soma ponderada da função avaliada nos pontos de Gauss. O método de Gauss-Hermite apresenta duas grandes limitações. A primeira está relacionada a escolha dos pontos de Gauss, que são escolhidos baseados em $e\{-x^2\}$, independente da função $f(x)$ no integrando. Dependendo do suporte de $f(x)$, os pontos selecionados podem ou não estar dentro da área de interesse. Uma idéia natural é reescalonar os pontos de modo a colocá-los na área de maior densidade da função $f(x)$ o que gera o método chamado de Quadratura Adaptativa de Gauss-Hermite, que veremos adiante. 
+A Figura \@ref(fig:gauss) ilustra o problema da definição dos pontos de integração.
+
+```{r gauss, echo = FALSE, fig.cap = "Espalhamento dos pontos de integração pelo método de Gauss-Hermite.", fig.align = "center"}
+knitr::include_graphics("figs/intnum-013.pdf")
+```
+
+Pela Figura \@ref(fig:gauss) fica claro que para integrar a função em preto os pontos $(n=20)$ são satisfatórios, porém para a função em vermelho são claramente inadequados, já que, a área da função de maior massa não tem nenhum ponto de integração. Desta forma, para conseguir um resultado satisfatório é necessário aumentar muito o número de pontos de integração, encarecendo o procedimento. Vamos usar esta função para avaliar o valor da integral, contida no modelo Poisson com intercepto aleatório.
+
+```{r}
+ ## Em log
+ log(gauss.hermite(integrando = integrando, n.pontos=21, 
+                   f.fixo = y~1, dados=subset(dados, ID == 1), 
+                   beta.fixo = 2, prec.pars=4, log=FALSE))
+```
+
+O segundo problema do método de Gauss-Hermite está relacionado com a dimensão da integral a ser resolvida. Quando a função é unidimensional, basta espalhar os pontos sobre a reta real e avaliar a função neste pontos. Para funções em duas ou mais dimensões precisamos do produto cartesiano dos pontos de integração para espalhar na função multidimensional, ou seja, o número de pontos cresce exponencialmente de acordo com a dimensão da função a ser integrada. Por exemplo, se em uma dimensão usamos $20$ pontos para a integração em duas dimensões precisamos de $20^2 = 400$, em três $20^3 = 8000$. Isso mostra que para integrar funções multidimensionais o método de Gauss-Hermite torna rapidamente proibitivo. O método de Quadratura Adaptativa de Gauss-Hermite ameniza um pouco este problema, por requerer menos pontos de integração. 
+Porém, o problema persiste para dimensões maiores que cinco ou seis, em geral.
+ A função abaixo implementa o método de Gauss-Hermite para dimensões maiores que um.
+
+
+```{lemma}
+**Função para integração numérica por meio do método de Gauss-Hermite multidimensional.**
+```
+
+```{r}
+ gauss.hermite.multi <- function(integrando,n.dim,n.pontos, ...){
+ normaliza <- function(x){exp(-t(as.numeric(x))%*%as.numeric(x))}
+ pontos <- gauss.quad(n.pontos,kind="hermite")
+ nodes <- matrix(rep(pontos$nodes,n.dim),ncol=n.dim)
+ pesos <- matrix(rep(pontos$weights,n.dim),ncol=n.dim)
+ lista.nodes <- lista.pesos <- list()
+ for(i in 1:ncol(nodes)){
+  lista.nodes[[i]] <- nodes[,i]
+  lista.pesos[[i]] <- pesos[,i]}
+ nodes = as.matrix(do.call(expand.grid,lista.nodes))
+ pesos = do.call(expand.grid,lista.pesos)
+ pesos.grid = apply(pesos,1,prod)
+ norma = apply(nodes,1,normaliza)
+ integral <- sum(pesos.grid*(integrando(nodes,...)/norma))
+ return(integral)
+ }
+```
+
+Vamos usar a função `gauss.hermite.multi()`
+em uma dimensão apenas para exemplificar sua chamada.
+
+```{r}
+ log(gauss.hermite.multi(integrando = integrando, n.pontos=21, n.dim=1,
+                   f.fixo = y~1, dados=subset(dados, ID == 1), 
+                   beta.fixo = 2, prec.pars=4, log=FALSE))
+```
+
+### Adaptativa Gauss-Hermite e Aproximação de Laplace
+
+Com adaptativa Gauss-Hermite, os pontos de integração serão centrados e escalonados como se $f(x) e^{-x^2}$ fosse a distribuição gaussiana. A média desta distribuição coincide com a moda $\hat{x}$ de $ln[f(x)e^{-x^2}]$, e a variância será igual a
+
+\[
+  \begin{bmatrix}
+- \frac{\partial^2}{\partial x^2} ln[f(x)e^{-x^2}]|_{z=\hat{z}}
+\end{bmatrix}^{-1} .
+\]
+Assim, o novos pontos de integração adaptados serão dados por
+\[
+x_i^+ = \hat{x} + \begin{bmatrix}
+- \frac{\partial^2}{\partial x^2} ln[f(x)e^{-x^2}]|_{x=\hat{x}}
+\end{bmatrix}^{-1/2} x_i 
+\]
+com correspondentes pesos,
+\[
+  w_i^+ = \begin{bmatrix}
+- \frac{\partial^2}{\partial x^2} ln[f(x)e^{-x^2}]|_{z=\hat{z}}
+\end{bmatrix}^{-1/2} \frac{e^{x_i^+}}{e^{-x_i}} w_i .
+\]
+Como antes, a integral é agora aproximada por
+\[
+  \int f(x) e^{-x^2} dx \approx \sum_{i=1}^n w_i^+ f(x_i^+)
+\]
+
+Quando integração de Gauss-Hermite ou adaptativa Gauss-Hermite é usada no ajuste de modelos de regressão com efeitos aleatórios, uma aproximação é aplicada para a contribuição na verossimilhança para cada uma das $N$ unidades amostrais no conjunto de dados. Em geral, quanto maior a ordem de $n$ pontos de integração melhor será a aproximação. Tipicamente, adaptativa Gauss-Hermite precisa de muito menos pontos que Gauss-Hermite. Por outro lado, adaptativa Gauss-Hermite requer o cálculo de $\hat{x}$ para cada unidade amostral no conjunto de dados, assim a maximização numérica do integrando encarece bastante o custo computacional desta abordagem. Além disso, como o integrando é função dos parâmetros desconhecidos $\underline{\beta}$,$\Sigma$ e $\phi$, os pontos de quadratura, bem como os pesos usados na adaptativa Gauss-Hermite dependem destes parâmetros, e assim precisam ser atualizados a cada passo de um processo de estimação iterativo, através de algum maximizador numérico, como os encontrados na função `optim()`. 
+
+Um caso especial ocorre quando adaptativa Gauss-Hermite é aplicado com um ponto de integração. Denote $f(x)e^{-x^2}$ por $Q(x)$. Como $n=1$, $x_1 = 0$ e $w_1 = 1$, obtemos $x_1^+ = \hat{x}$, que é o máximo de $Q(x)$. Além disso, os pesos de integração são iguais a
+\[
+  w_1^+ = | Q''(\hat{x}) |^{-1/2} \frac{e^{-\hat{x}}}{e^{-0}} = (2\pi)^{n/2} |Q''(\hat{x})|^{-1/2} \frac{e^{Q(\hat{x})}}{f(\hat{x})}.
+\]
+
+Assim, a aproximação fica dada por
+\begin{align*}
+  \int f(x) e^{-x^2} dx &= \int e^{Q(x)} dx \\
+        &\approx w_1^+ f(x_1^+) = (2\pi)^{n/2} |Q''(\hat{x})|^{-1/2} e^{Q(\hat{x})},
+\end{align*}
+mostrando que a adaptativa Gauss-Hermite com um ponto de integração é equivalente a aproximar o integrando usando a Aproximação de Laplace. A função `laplace()` abaixo implementa a aproximação de Laplace para uma função qualquer.
+
+```{lemma}
+**Função para integração numérica por meio do método de Laplace.**
+```
+
+```{r}
+ laplace <- function(funcao, otimizador,n.dim, ...){
+   integral <- -999999
+   inicial <- rep(0,n.dim)
+   temp <- try(optim(inicial, funcao,..., method=otimizador, 
+               hessian=TRUE, control=list(fnscale=-1)))
+   if(class(temp) != "try-error"){
+   integral <- exp(temp$value) * (exp((n.dim/2)*log(2*pi) - 
+                   0.5*determinant(-temp$hessian)$modulus))}
+   return(integral)
+ }
+```
+
+Note a necessidade do uso da `optim()` para encontrar a moda da função e obter o Hessiano numérico. Importante notar que, na chamada para a integração via aproximação de Laplace a função integrando deve estar em escala logarítmica. A chamada abaixo, exemplifica esta aproximação.
+
+```{r}
+ log(laplace(integrando, otimizador="BFGS", n.dim=1,
+          f.fixo = y~1, dados=subset(dados, ID == 1), 
+          beta.fixo = 2, prec.pars=4, log=TRUE))
+```
+
+Para finalizar com o uso de integração por Quadratura, a função `adaptative.gauss.hermite()` implementa a integração adaptativa de Gauss-Hermite para uma função qualquer.
+
+```{lemma}
+**Função para integração numérica por meio do método de Gauss-Hermite multidimensional adaptativo.**
+```
+
+```{r}
+ adaptative.gauss.hermite <- function(funcao, n.dim, n.pontos, 
+                                      otimizador, ... ){
+ normaliza <- function(x){exp(-t(as.numeric(x))%*%as.numeric(x))}
+ pontos <- gauss.quad(n.pontos,kind="hermite")
+ integral <- -999999
+ inicial <- rep(0,n.dim)
+ temp <- try(optim(inicial, funcao,..., method=otimizador,
+                   hessian=TRUE, control=list(fnscale=-1)))
+ z.chapeu <- temp$par
+ sd.chapeu <- sqrt(diag(solve(-temp$hessian)))
+ mat.nodes <- matrix(NA, ncol=n.dim,nrow=n.pontos)
+ mat.pesos <- matrix(NA,ncol=n.dim,nrow=n.pontos)
+ for(i in 1:length(z.chapeu)){
+   mat.nodes[,i] <- z.chapeu[i] + sd.chapeu[i]*pontos$nodes
+   mat.pesos[,i] <- sd.chapeu[i] * 
+     (exp(-mat.nodes[,i]^2)/exp(-pontos$nodes^2))*pontos$weights
+ }
+ lista.nodes <- list()
+ lista.pesos <- list()
+ for(i in 1:ncol(mat.nodes)){
+  lista.nodes[[i]] <- mat.nodes[,i]
+  lista.pesos[[i]] <- mat.pesos[,i]}
+ nodes = as.matrix(do.call(expand.grid,lista.nodes))
+ pesos = do.call(expand.grid,lista.pesos)
+ pesos.grid = apply(pesos,1,prod)
+ norma = apply(nodes,1,normaliza) 
+ integral <- sum(pesos.grid*(exp(funcao(nodes,...))/norma))
+ return(integral)
+ }
+```
+
+Para comparar os resultados utilizamos a função usando diferentes quantidades de pontos de integração.
+
+```{r}
+ ## 1 ponto
+ log(adaptative.gauss.hermite(integrando, otimizador="BFGS", n.dim=1,
+          n.pontos=1, f.fixo = y~1, dados=subset(dados, ID == 1), 
+          beta.fixo = 2, prec.pars=4, log=TRUE))
+  ## 10 pontos
+ log(adaptative.gauss.hermite(integrando, otimizador="BFGS", n.dim=1,
+          n.pontos=10, f.fixo = y~1, dados=subset(dados, ID == 1), 
+          beta.fixo = 2, prec.pars=4, log=TRUE))
+  ## 21 pontos
+ log(adaptative.gauss.hermite(integrando, otimizador="BFGS", n.dim=1,
+          n.pontos=21, f.fixo = y~1, dados=subset(dados, ID == 1),
+          beta.fixo = 2, prec.pars=4, log=TRUE))
+```
+
+Com isso, terminamos nossa explanação dos métodos baseados na ideia de aproximar o integrando por algum tipo de polinômio que seja de fácil integração, e usar este como uma aproximação para a verdadeira integral. Na sequência, vamos apresentar um método diferente baseado em simulação, a ideia implícita é estimar o valor da integral. Este procedimento recebe o nome de integração Monte Carlo, além do método básico vamos apresentar algumas variações como o método de Quase Monte Carlo e Quase Monte Carlo adaptativo.
+
+### Integração Monte Carlo
+Integração Monte Carlo é um método simples e geral para aproximar integrais. Assuma que desejamos estimar o valor da integral de uma função $f(x)$ em algum domínio $D$ qualquer, ou seja,
+\begin{equation}
+  I = \int_D f(x) dx 
+  (\#eq:intmc)
+\end{equation}
+A função não precisa ser unidimensional. De fato, técnicas Monte Carlo são muito usadas para resolver integrais de alta dimensão, além de integrais que não tem solução analítica, como no nosso caso.
+
+Seja uma função densidade de probabilidade $p(x)$ cujo domínio coincide com $D$. 
+Então, a integral em \@ref(eq:intmc) é equivalente a
+\[
+  I = \int_D \frac{f(x)}{p(x)} p(x) dx .
+\]
+Essa integral corresponde a $E\left( \frac{f(x)}{p(x)} \right)$, ou seja, o valor esperado de $\frac{f(x)}{p(x)}$ com respeito a variável aleatória distribuída como $p(x)$. Esta igualdade é verdadeira para qualquer função densidade de probabilidade em $D$, desde que $p(x) \neq 0$ sempre que $f(x) \neq 0$. 
+
+Pode-se estimar o valor de $E\left( \frac{f(x)}{p(x)} \right)$ gerando número aleatórios de acordo com $p(x)$, calcular $f(x)/p(x)$ para cada amostra, e calcular a média destes valores. Quanto mais amostras forem geradas, esta média converge para o verdadeiro valor da integral sendo este o princípio básico da integração Monte Carlo. 
+
+No caso específico de modelos de regressão com efeitos aleatórios, a grande maioria das integrais devem ser resolvidas nos reais, ou seja, precisamos de uma distribuição $p(x)$ com este suporte. Escolhas naturais são as distribuições uniforme e gaussiana de dimensão igual a da integral a ser resolvida. 
+Além disso, precisamos decidir a parametrização desta distribuição, ou seja, qual será seu vetor de média e sua matriz de variância/covariância. Em algoritmos básicos, o mais comum é usar o vetor de média como $0$ e variância unitária. Mas, podemos adaptar este método de forma muito similar ao Gauss-Hermite adaptativo, 
+espalhando os pontos pelo integrando de forma a cobrir melhor a região relevante de integração.
+
+Além do espalhamento dos pontos, a geração dos pontos aleatórios também é um fator importante para este método. Como números aleatórios serão gerados a cada rodada do algoritmo, obtém-se diferentes valores para a integral o que é indesejável para maximização numérica. Uma abordagem alternativa são métodos *Quase Monte Carlo*, nos quais os números são gerados de acordo com uma sequência de baixa discrepância. Duas opções para a geração destas sequências de baixa discrepância, estão disponíveis no pacote `fOptions`, são elas *Halton* e *Sobol*. Afora esta escolha de pontos de baixa discrepâncias em substituição a aleatórios, o procedimento é o mesmo da integral de Monte Carlo.
+
+Para exemplificar a ideia de integração Monte Carlo e Quase Monte Carlo, a função `monte.carlo()` implementa o método para uma função qualquer, e permite ao usuário escolher a forma de espalhamento dos pontos.
+
+```{lemma}
+**Função para integração numérica por meio do método de Monte Carlo e Quasi Monte Carlo.**
+```
+
+```{r}
+require(fOptions)
+monte.carlo <- function(funcao, n.dim, n.pontos, tipo, ...){
+ if(tipo == "MC"){ pontos <- rmvnorm(n.pontos,mean=rep(0,n.dim))}
+ if(tipo == "Halton"){ pontos <- rnorm.halton(n.pontos,n.dim)}
+ if(tipo == "Sobol"){ pontos <- rnorm.sobol(n.pontos,n.dim)}
+ norma <- apply(pontos,1,dmvnorm)
+ integral <- mean(funcao(pontos,...)/norma)
+ return(integral)
+ }
+```
+Vamos resolver a integral contida no modelo Poisson com intercepto aleatório usando a função `monte.carlo()` com diferentes opções.
+
+```{r}
+ log(monte.carlo(integrando, n.dim=1, tipo = "MC", n.pontos=20,
+          f.fixo = y~1, dados=subset(dados, ID == 1), 
+          beta.fixo = 2, prec.pars=4, log=FALSE))
+  log(monte.carlo(integrando, n.dim=1, tipo = "Sobol", n.pontos=20,
+          f.fixo = y~1, dados=subset(dados, ID == 1), 
+          beta.fixo = 2, prec.pars=4, log=FALSE))
+```
+
+O mesmo problema na forma de espalhamento dos pontos encontrados no método de Quadratura de Gauss-Hermite, ocorre nos métodos de Monte Carlo e Quase Monte Carlo. 
+Os pontos são sorteados de uma gaussiana de média $0$ e variância $1$, mas quando o integrando não for adequadamente coberto por estes pontos a integração será ruim. Podemos novamente adaptar os pontos de integração que agora são as amostras sorteadas, espalhando os pontos em volta de sua moda de acordo com o hessiano obtido no ponto modal, de modo a explorar melhor o integrando. 
+O processo de adequação dos pontos é idêntico ao da adaptativa Gauss-Hermite, e não será detalhado novamente aqui. A função `adaptative.monte.carlo()` implementa este método para uma função qualquer.
+
+```{lemma}
+**Função para integração numérica por meio do método de Monte Carlo Adaptativo e Quasi Monte Carlo Adaptativo.**
+```
+
+```{r}
+ adaptative.monte.carlo <- function(funcao, n.pontos, n.dim, 
+                                    tipo, otimizador, ... ){
+  pontos <- switch(tipo, 
+            	"MC" = {rmvnorm(n.pontos,mean=rep(0,n.dim))},
+  			"Halton" = {rnorm.halton(n.pontos, n.dim)},
+  			"Sobol" = {rnorm.sobol(n.pontos, n.dim)})
+  integral <- -999999
+  inicial <- rep(0,n.dim)
+    temp <- try(optim(inicial, funcao, ... , method=otimizador,
+                 hessian=TRUE,control=list(fnscale=-1)))
+    if(class(temp) != "try-error"){
+     z.chapeu <- temp$par
+     H <- solve(-temp$hessian)
+     sd.chapeu <- sqrt(diag(H))
+     mat.nodes <- matrix(NA, ncol=n.dim,nrow=n.pontos)
+     for(i in 1:length(z.chapeu)){
+       mat.nodes[,i] <- z.chapeu[i] + sd.chapeu[i]*pontos[,i]
+     }
+  norma <- dmvnorm(mat.nodes,mean=z.chapeu,sigma=H,log=TRUE) 
+  integral = mean(exp(funcao(mat.nodes,...) - norma))
+    }
+    return(integral)
+ }
+```
+
+Novamente, vamos usar a função `adaptative.monte.carlo()` para resolver a integral contida no modelo Poisson com intercepto aleatório.
+
+```{r}
+ log(adaptative.monte.carlo(integrando, n.dim=1, tipo="MC", 
+          n.pontos=20, otimizador="BFGS", 
+          f.fixo = y~1, dados=subset(dados, ID == 1), 
+          beta.fixo = 2, prec.pars=4, log=TRUE))
+  log(adaptative.monte.carlo(integrando, n.dim=1, tipo="Halton", 
+          n.pontos=20, otimizador="BFGS", 
+          f.fixo = y~1, dados=subset(dados, ID == 1), 
+          beta.fixo=2, prec.pars=4, log=TRUE))
+  log(adaptative.monte.carlo(integrando, n.dim=1, tipo="Sobol", 
+          n.pontos=20, otimizador="BFGS", 
+          f.fixo = y~1, dados=subset(dados, ID == 1), 
+          beta.fixo=2, prec.pars=4, log=TRUE))
+```
+
+Nesta Seção, revisamos diversos métodos de integração numérica e seu uso no `R`. 
+Na sequência veremos alguns exemplos de modelos de regressão com efeitos aleatórios 
+e como usar estes diversos métodos para a estimação por máxima verossimilhança.

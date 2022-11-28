@@ -1,0 +1,93 @@
+# Modelos de regressão {#cap:reg}
+
+Modelos estocásticos têm sido amplamente utilizados tanto na comunidade científica 
+como no mundo dos negócios em geral. 
+Estudos de mercado usando modelos altamente estruturados, modelos de predição em séries financeiras, análises de componentes de solos para agricultura de precisão, mapeamento de doenças,
+modelos ecológicos, ambientais e climáticos são algumas das áreas de aplicações de tais modelos, entre tantas outras.
+De todos os métodos estatísticos, os modelos de regressão talvez sejam o mais amplamente utilizados na
+prática. Nestes modelos procura-se explicar, ao menos parcialmente, a variabilidade de 
+uma variável considerada como resposta, por outras variáveis chamadas de explicativas ou covariáveis.
+Procura-se verificar a existência e quantificar
+o efeito das covariáveis sobre a resposta, 
+embora a relação não seja necessariamente de causa e efeito.
+
+A área de modelos de regressão teve seu início com o tradicional modelo de regressão linear gaussiano, 
+que, seja por sua aplicabilidade e/ou pela facilidade analítica e computacional,   
+foi e continua sendo largamente utilizado para descrever a associação entre um conjunto de covariáveis e uma variável resposta. 
+Diversas transformações na resposta foram propostas para adaptar a suposição de normalidade. 
+Porém tais modelos não são satisfatórios para respostas discreta como no caso de dados binários, 
+contagens baixas e respostas restritas a certos intervalos como proporções 
+e índices com valores em intervalos limitados.
+
+A modelagem estatística por modelos de regressão recebeu um importante novo impulso desde o
+desenvolvimento dos modelos lineares generalizados 
+no início da década de $70$ cujo marco inicial é o trabalho de 
+@nelder+wedderburn:1972 que estendeu de uma forma mais geral a classe de modelos
+de regressão, acomodando sob a mesma abordagem diversas distribuições agrupadas na forma da 
+família exponencial. 
+Variáveis resposta binárias e de contagens foram as que receberam mais atenção, talvez pela dificuldade em tratar deste tipo de resposta com transformações do modelo linear gaussiano.
+Desde então modelos de regressão logística e de Poisson, passaram a ser utilizados 
+nas mais diversas áreas de pesquisa.
+Nas décadas seguintes e até os dias de hoje
+o modelo linear generalizado (MLG) tornou-se uma estrutura de referência inicial, canônica, 
+a partir da qual diversas modificações, expansões e alternativas são propostas na literatura.
+Classes mais amplas de distribuições para resposta, preditores não lineares ou aditivamente lineares, 
+modelagem conjunta de média e dispersão, adição de variáveis latentes no preditor
+são algumas das importantes extensões, às quais adicionam-se métodos 
+para inferência e algorítimos para computação.
+
+Neste capítulo vamos considerar alguns modelos simples de regressão
+com ilustrações computacionais. No Capítulo seguinte consideramos 
+modelos com extensões com inclusão de efeitos aleatórios.
+
+Considere que $Y_1, Y_2, \ldots, Y_n$ são variáveis aleatórias independentes e identicamente distribuídas e $X$ é a matriz de delineamento do modelo conhecida. Um modelo de regressão em notação matricial pode ser escrito da seguinte forma:
+\begin{align*}
+Y|X &\sim f(\underline{\mu}, \phi) \\
+\underline{\mu} &= g(X;\underline{\beta}).
+\end{align*}
+
+A distribuição de probabilidade  $f(\underline{\mu}, \phi)$ da variável resposta é descrita por dois conjuntos de parâmetros, os de locação (média) e os de dispersão (precisão / variância). 
+Por simplicidade de apresentação supomos aqui que o parâmetro de dispersão é comum a todas as observações 
+e o que muda é apenas a média. 
+Esta restrição pode ser flexibilizada, supondo que o parâmetro de dispersão, 
+também possa ser descrito por alguma função das covariáveis
+ que é possível requerendo uma generalização da implementação computacional. 
+%% deveríamos acrescentar um exemplo de um modelo de média e variância!!
+
+Nesta distribuição é muito importante estar atento ao espaço paramétrico de $\underline{\mu}$ e $\phi$. O segundo em geral tem como seu espaço paramétrico os reais positivos, já que, 
+o parâmetro de variabilidade tem que ser necessariamente positivo. 
+Para a parte de média devemos ter mais cuidado, uma vez que a função $g(\cdot)$ deve mapear o preditor linear ou não-linear, que pode assumir qualquer valor real, para o espaço paramétrico de $\underline{\mu}$. 
+Por exemplo, se estamos trabalhando com dados de contagens onde o vetor $\underline{\mu}$ representa o parâmetro da distribuição de Poisson.
+ A função $g(\cdot)$ deve então mapear dos reais para os reais positivos. 
+ Em outra situação, por exemplo com dados restritos ao intervalo $(0,1)$, 
+ a função $g(\cdot)$ deve mapear dos reais para o intervalo unitário e assim de forma análoga para outros espaço paramétricos.
+
+Note que para a declaração completa do modelo são necessárias duas suposições. 
+A primeira se refere a distribuição de probabilidade atribuída a variável resposta, neste caso $f(\underline{\mu}, \phi)$. A segunda é a definição de uma função $g(\cdot)$ fazendo com que o preditor linear ou não-linear, 
+que pode apresentar qualquer valor nos reais, 
+seja mapeado adequadamente para o espaço paramétrico da parte de média do modelo.
+
+A função $g(\cdot)$ deve ser duplamente diferenciável. Uma restrição adicional comum é que seja estritamente monótona, porém em modelos não-lineares, isso nem sempre é necessário. Esta função tem como seus argumentos a matriz de delineamento $X$ conhecida e os parâmetros $\underline{\beta}$ desconhecidos a serem estimados. Sendo a função $g(\cdot)$ definida e mapeando os valores do preditor, seja ele linear ou não, para espaço paramétrico de $\underline{\mu}$, o modelo está composto e é passível de ter seus parâmetros estimados pela maximização da função de verossimilhança.
+
+Um fato que pode passar desapercebido é com relação ao suporte da distribuição concordar ou não com os possíveis valores do fenômeno em estudo. Por exemplo, ao estudar o peso de animais é comum atribuir o modelo gaussiano, porém este modelo tem como suporte os reais, enquanto que o fenômeno varia apenas nos reais positivos. Nestes casos a usual justificativa prática é que a probabilidade atribuída a parte negativa é tão pequena que é desprezível na prática.
+
+Uma outra situação é quando trabalhamos com uma variável resposta restrita ao intervalo unitário.
+Podemos definir como função $g(\cdot)$ o inverso da função `logit` e vamos estar mapeando a média do modelo ao intervalo unitário compatível com os dados. 
+Porém, na escolha da distribuição nem sempre isso é feito. 
+É comum por exemplo, encontrar aplicações de modelos não-lineares atribuindo 
+a distribuição gaussiana para $f(\underline{\mu},\phi)$  que tem suporte nos reais e em 
+desacordo com os dados restritos a algum intervalo. 
+Apesar deste tipo de construção não ser incomum em aplicações, 
+é recomendado atribuir uma distribuição de probabilidade que 
+tenha suporte concordante com o campo de variação da variável resposta. 
+No caso de variável resposta restrita ao intervalo unitário, a distribuição Beta ou Simplex seriam opções razoáveis. 
+Tal fato motiva um dos Exemplo na Sessão \@ref(sec:reg-simplex).
+Quando pensamos na concordância entre dados e modelos é mais natural atribuir ao fenômeno uma distribuição cujo suporte, concorde com o campo de variação do fenômeno.
+
+Dado a relevância de modelos de regressão em aplicações nas mais diversas áreas do conhecimento, 
+neste capítulo vamos mostrar como implementar a estimação de alguns modelos de regressão mais usuais 
+como regressão de Poisson, Simplex e não-linear gaussiano.
+Vamos explorar o algoritmo de Newton-Raphson no modelo de regressão Poisson, para o modelo Simplex, vamos explorar o conceito de verossimilhança concentrada e exemplificar como usar a função `escore` obtida analiticamente dentro do algoritmo `BFGS` implementado na função `optim`. No último modelo vamos tratar tudo numericamente apenas como uma implementação simplificada. 
+Como material adicional apresentamos a implementação computacional de 
+um modelo simple para um processo de Poisson não homogêneo  e 
+um estudo de caso com um modelo de regressão para análise de um experimento com contagens subdispersas.

@@ -1,0 +1,757 @@
+## Exemplo - Distribuição Gama {#sec:veroGama}
+
+Sejam $Y_1, Y_2, \ldots, Y_n$ variáveis aleatórias independentes com distribuição Gama de parâmetros $a$ e $s$. Nosso objetivo partindo de uma amostra aleatória $y_1, y_2, \ldots y_n$ é fazer inferências sobre os seus dois parâmetros 
+com seus respectivos intervalos de confiança baseados na aproximação quadrática e na função *deviance*. 
+A função de densidade da distribuição Gama pode ser escrita na seguinte forma:
+
+\[
+  f(y) = \frac{1}{s^a \Gamma(a)} y^{a-1} \exp\{-y/s\}, \quad \text{para} \quad y > 0 \quad \text{e} \quad a, s > 0.
+\]
+
+Nesta parametrização $E(Y) = a \cdot s$ e $V(Y) = a \cdot s^2$. A função de verossimilhança é
+
+\begin{align*}
+  L(a,s) &= \prod_{i=1}^n (s^a \Gamma(a))^{-1} y_i^{a-1} \exp\{-y_i/s\} \\
+        &= s^{-na} \Gamma^{-n}(a) \exp\{-\sum_{i=1}^n y_i/s\} \prod_{i=1}^n y_i^{a-1}.
+\end{align*}
+
+Esta parametrização da função gama é comumente encontrada, 
+entretanto não é a mais conveniente para cálculos numéricos 
+pois os parâmetros não são ortogonais.
+Vamos explorar estes fatos seguindo inicialmente com esta parametrização
+para ilustrar o comportamento da verossimilhança.
+Ao final passamos a uma forma reparametrizada
+mais conveniente para implementação de algoritmos.
+
+A função de log-verossimilhança é dada por
+
+\[
+  l(a,s) = -n a \log s - n \log \Gamma(a) - \frac{1}{s}\sum_{i=1}^n y_i + (a-1) \sum_{i=1}^n \log y_i.
+\]
+
+As funções *escore* são obtidas derivando a log-verossimilhança em função 
+de cada um dos respectivos parâmetros,
+
+\begin{align*}
+  U(a) &= -n \log (s) - n \frac{\Gamma'(a)}{\Gamma(a)} + \sum_{i=1}^n \log y_i \\
+  U(s) &= - \frac{na}{s} + \frac{1}{s^2} \sum_{i=1}^n y_i .
+\end{align*}
+
+Para obter as estimativas de máxima verossimilhança igualamos essas expressões a zero
+e resolvemos em relação $a$ e $s$ o sistema de equações:
+
+$$
+\left\{\begin{align*}
+  \log(s) + \Psi(a)  &= \frac{1}{n} \sum_{i=1}^n \log y_i \\
+  a \cdot s &= \overline{y}
+\end{align*} \right.
+$$
+
+em que $\Psi(\cdot)$ é a função digama (`digamma()` no `R`) 
+definida por $\Psi(x) = \frac{d}{dx} \log \Gamma(x) = \Gamma'(x)/\Gamma(x)$.
+Este sistema claramente não tem solução analítica em $a$, porém para $s$ obtemos
+
+\begin{equation}
+\hat{s} = \frac{\overline{y}}{a}.
+(\#eq:s-gama)
+\end{equation} 
+
+Substituindo $\hat{s}$ na função de log-verossimilhança, obtemos o que chamamos de log-verossimilhança concentrada em $a$ com a expressão e escore dados por:
+
+
+
+\begin{align}
+l_s(a) &= -n a \log \frac{\overline{y}}{a} - n \log \Gamma(a) - \frac{a}{\overline{y}} \sum_{i=1}^n y_i + (a-1) \sum_{i=1}^n \log y_i \\
+(\#eq:vero-gama-conc)
+U_s(a) &= -n \log(\overline{y}/a) - n \frac{\Gamma'(a)}{\Gamma(a)} + \sum_{i=1}^n \log y_i
+(\#eq:escore-gama-conc)
+\end{align}
+
+
+que são funções apenas do parâmetro $a$.  Com a verossimilhança concentrada
+reduzimos o problema original de maximização em duas dimensões, a uma maximação
+para apenas uma dimensão, o que é mais eficiente e estável computacionalmente.
+Para encontrar a estimativa de $a$ ainda precisamos maximizar a
+log-verossimilhança concentrada numericamente.  Para isto temos diferentes
+alternativas.  Podemos usar um otimizador numérico como o implementado na função
+`optimize()` (para um parâmetro) ou alguns dos métodos da função `optim()` (para
+dois ou mais parâmetros) para maximizar \@ref(eq:vero-gama-conc).
+Alternativamente, podemos obter a estimativa igualando a equacão
+\@ref(eq:escore-gama-conc) a zero, e resolvendo numericamente, por exemplo com a
+função `uniroot()` do `R`.  O pacote `rootSolve` implementa algoritmos
+adicionais incluindo a definição e solução de sistemas de equações.
+
+Em geral, os métodos numéricos requerem valores iniciais para os parâmetros para inicializar o algoritmo.
+No caso da Gamma há uma escolha possível dos valores iniciais que seriam os estimadores pelo
+método dos momentos. 
+Para a parametrização da Gama adotada aqui temos que as médias e variâncias populacionais e amostrais são:
+
+\begin{align*}
+  \mu &= E[Y] = a \cdot s   \;\;\; &\sigma^2 &= Var[Y] = a \cdot s^2 \\
+  \hat{\mu} &= \frac{\sum_{i=1}^{n}Y_i}{n} = \bar{Y}   \;\;\; &\hat{\sigma}^2 &= \frac{\sum_{i=1}^{n}(Y_i - \hat{Y})^2}{n} 
+\end{align*}
+
+Igualando os amostrais aos respectivos populacionais temos que estes estimadores são dados por:
+
+\[
+\hat{a}_M = \frac{\bar{Y}}{\hat{s}_M} \;\; \mbox{ e }\;\; \hat{s}_M = \frac{\hat{\sigma}^2}{\bar{Y}} .
+\]
+
+Uma aproximação seria substituir $\hat{sigma}^2$ pela variância amostral.
+O uso de bons valores iniciais garante um melhor comportamento dos algoritmos numéricos.
+
+Mas antes disso, vamos investigar a ortogonalidade entre $a$ e $s$. 
+Para isto, precisamos obter a matriz de segundas derivadas,
+neste caso de dimensão $2 \times 2$, que fornece
+ a matriz de informação observada e/ou esperada.
+
+Derivando as funções escore temos,
+
+\begin{align*}
+\frac{\partial^2 l(a,s)}{\partial a^2} &= -n \left [ \frac{\Gamma(a) \Gamma''(a) - \Gamma'(a)^2}{\Gamma(a)^2} \right ] \\
+\frac{\partial^2 l(a,s)}{\partial s^2}   &= \frac{na}{s^2} - \frac{2}{s^3} \sum_{i=1}^n y_i \\
+\frac{\partial^2 l(a,s)}{\partial a \partial s} &= -\frac{n}{s}.
+\end{align*}
+
+Logo, a matriz de informação observada é dada por,
+
+\[
+  I_o(a,s) = \begin{bmatrix}
+n\left [ \frac{\Gamma''(a)}{\Gamma'(a)} - \left ( \frac{\Gamma'(a)}{\Gamma(a)} \right )^2 \right ] & \frac{n}{s} \\ 
+\frac{n}{s} & - \frac{na}{s^2} + \frac{2}{s^3 \sum_{i=1}^n y_i} 
+\end{bmatrix} .
+\]
+
+A matriz esperada é obtida tomando a esperança da matriz observada, lembrando que $E(Y) = a \cdot s$, temos
+
+\[
+  I_E(a,s) = \begin{bmatrix}
+n\left [ \frac{\Gamma''(a)}{\Gamma(a)} - \left ( \frac{\Gamma'(a)}{\Gamma(a)} \right )^2 \right ] & \frac{n}{s} \\ 
+\frac{n}{s} & \frac{na}{s^2}.
+\end{bmatrix} .
+\]
+
+O termos fora da diagonal são não-nulos o que mostra que os parâmetros são não ortogonais. 
+Para visualizarmos o formato da função de log-verossimilhança a Figura \@ref(fig:devgama) apresenta a superfície de log-verossimilhança e sua aproximação quadrática em escala de *deviance* 
+para facilitar a construção e visualização do gráfico. 
+Os dados utilizados foram gerados da distribuiição Gama, com parâmetros $a=10$ e $s = 5$.
+
+```{r devgama, echo = FALSE, fig.widht = 6.5, fig.height = 6.5, fig.align = "center", fig.cap = "Deviance exata e aproximada por tamanho de amostra - Distribuição Gama."}
+ll.gama <- function(par,y){
+  ll <- sum(dgamma(y,shape=par[1], scale=par[2], log=TRUE))
+  return(ll)}
+app.gamma <- function(par,par.est,I,y){
+  n <- length(y)
+  dev.gama <- crossprod(par-par.est, I) %*%(par - par.est)
+  return(dev.gama)
+  }
+
+set.seed(123)
+y10 <- rgamma(10,shape=10,scale=5)
+a <- seq(0.5,21,l=100)
+s <- seq(0.01,25,l=100)
+gride <- as.matrix(expand.grid(a,s))
+ll <- apply(gride,1,ll.gama,y=y10)
+devi <- 2*(max(ll) - ll)
+
+LEV <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+par(mfrow=c(2,2),mar=c(2.8, 2.8, 1.7, 1),mgp = c(1.8, 0.7, 0))
+contour(a,s,matrix(devi,100,100),levels=qchisq(LEV,df=2),
+        labels=LEV,xlab=expression(a),ylab=expression(s),main="n = 10", lwd=1.5)
+par(new=TRUE)
+par.est <- optim(c(1,1),ll.gama,y=y10,control=list(fnscale=-1),hessian=TRUE)
+de.ap10 <- apply(gride,1,app.gamma, par.est=par.est$par, I = -par.est$hessian,y=y10)
+contour(a,s,matrix(de.ap10,100,100),levels=qchisq(LEV,df=2),
+        labels=LEV,xlab=expression(a),ylab=expression(s),axes=FALSE,
+        lty=1,col="red",lwd=1)
+set.seed(123)
+y10 <- rgamma(100,shape=10,scale=5)
+a <- seq(8,19,l=100)
+s <- seq(2,7,l=100)
+gride <- as.matrix(expand.grid(a,s))
+ll <- apply(gride,1,ll.gama,y=y10)
+devi <- 2*(max(ll) - ll)
+contour(a,s,matrix(devi,100,100),levels=qchisq(LEV,df=2),
+        labels=LEV,xlab=expression(a),ylab=expression(s),main="n = 100", lwd=1.5)
+par(new=TRUE)
+par.est <- optim(c(1,1),ll.gama,y=y10,control=list(fnscale=-1),hessian=TRUE)
+de.ap10 <- apply(gride,1,app.gamma, par.est=par.est$par, I = -par.est$hessian,y=y10)
+contour(a,s,matrix(de.ap10,100,100),levels=qchisq(LEV,df=2),
+        labels=LEV,xlab=expression(a),ylab=expression(s),axes=FALSE,
+        lty=1,col="red",lwd=1)
+
+
+set.seed(123)
+y10 <- rgamma(500,shape=10,scale=5)
+a <- seq(8,13,l=100)
+s <- seq(3.8,6,l=100)
+gride <- as.matrix(expand.grid(a,s))
+ll <- apply(gride,1,ll.gama,y=y10)
+devi <- 2*(max(ll) - ll)
+contour(a,s,matrix(devi,100,100),levels=qchisq(LEV,df=2),
+        labels=LEV,xlab=expression(a),ylab=expression(s),main="n = 500", lwd=1.5)
+par(new=TRUE)
+par.est <- optim(c(1,1),ll.gama,y=y10,control=list(fnscale=-1),hessian=TRUE)
+de.ap10 <- apply(gride,1,app.gamma, par.est=par.est$par, I = -par.est$hessian,y=y10)
+contour(a,s,matrix(de.ap10,100,100),levels=qchisq(LEV,df=2),
+        labels=LEV,xlab=expression(a),ylab=expression(s),axes=FALSE,
+        lty=1,col="red",lwd=1)
+
+set.seed(123)
+y10 <- rgamma(2000,shape=10,scale=5)
+a <- seq(9,11,l=100)
+s <- seq(4.3,5.5,l=100)
+gride <- as.matrix(expand.grid(a,s))
+ll <- apply(gride,1,ll.gama,y=y10)
+devi <- 2*(max(ll) - ll)
+contour(a,s,matrix(devi,100,100),levels=qchisq(LEV,df=2),
+        labels=LEV,xlab=expression(a),ylab=expression(s),main="n = 2000", lwd=1.5)
+par(new=TRUE)
+par.est <- optim(c(1,1),ll.gama,y=y10,control=list(fnscale=-1),hessian=TRUE)
+de.ap10 <- apply(gride,1,app.gamma, par.est=par.est$par, I = -par.est$hessian,y=y10)
+contour(a,s,matrix(de.ap10,100,100),levels=qchisq(LEV,df=2),
+        labels=LEV,xlab=expression(a),ylab=expression(s),axes=FALSE,
+        lty=1,col="red",lwd=1)
+set.seed(123)
+y10 <- rgamma(100,shape=10,scale=5)
+```
+
+Pelos gráficos podemos ver claramente que quando o tamanho da amostra é pequeno $n=10$ o formato da log-verossimilhança é extremamente assimétrico e consequentemente a aproximação quadrática é muito ruim. Com o aumento da amostra a aproximação quadrática vai melhorando, até que com $n=2000$ a diferença é bastante pequena. Os gráficos também mostram a dependência entre os parâmetros $a$ e $s$, quando o $a$ aumenta necessariamente o $s$ diminui para manter a média que é $a\cdot s$, além disso fica claro também que a incerteza associada a estimativa de $a$ é muito maior quando comparada a estimativa de $s$.
+
+Agora retornamos à obtenção das estimativas de máxima verossimilhança. 
+Lembrando que a log-verossimilhança concentrada \@ref(eq:vero-gama-conc)
+é uma função apenas do parâmetro $a$, ama vez obtido a estimativa $\hat{a}$ podemos substitui-la em $\hat{s} = \frac{\overline{y}}{\hat{a}}$ e obter a estimativa de $s$. Da mesma forma podemos substituir as estimativas nas matrizes de informação observada e esperada e encontrar intervalos de confiança assintóticos, sabendo que estes intervalos serão consistentes apenas com amostras grandes. Mas para todos estes procedimentos precisamos maximizar a log-verossimilhança concentrada em $a$. A forma mais comum de fazer isso é usando o algoritmo de Newton-Raphson que utiliza a informação observada, 
+ou uma variante deste chamada de algoritmo Escore de Fisher
+que substitui a informação observada pela esperada. 
+Vamos abrir um parenteses e explicar rapidamente o algoritmo de Newton-Raphson.
+
+O método de Newton-Raphson é usado para se obter a solução numérica de uma equação na forma $f(x) = 0$, onde $f(x)$ é contínua e diferenciável e sua equação possui uma solução próxima a um ponto dado. O processo de solução começa com a escolha do ponto $x_1$ como a primeira tentativa de solução. A segunda tentativa, $x_2$, é obtida a partir do cruzamento com o eixo $x$ da reta tangente a $f(x)$ no ponto $(x_1, f(x_1))$. A tentativa seguinte, $x_3$ é a intersecção com o eixo $x$ da reta tangente a $f(x)$ no ponto $(x_2,f(x_2))$, e assim por diante. A equação de iteração é dada por:
+
+\begin{equation}
+  x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)}
+\end{equation}
+
+ela é chamada de equação de iteração porque a solução é obtida com a aplicação repetida em cada valor sucessivo de $i$ até que um critério de convergência seja atingido. Diversos critérios de convergência podem ser usados. Os mais comuns são:
+
+* Erro relativo 
+    \[ \left | \frac{x_{i+1} - x_i}{x_i} \right | \leq \epsilon \]
+* Tolerância em $f(x)$
+    \[ | f(x_i)| \leq \delta \]
+
+Uma função chamada `NewtonRaphson()` é definida em \@ref(lem:NR).
+
+```{lemma NR}
+**Algoritmo genérico de Newton-Raphson.**
+```
+
+```{r}
+NewtonRaphson <- function(initial, escore, hessiano, tol=0.0001, 
+                   max.iter, n.dim, print=FALSE, ...){
+  solucao <- initial
+  for(i in 2:max.iter){
+    solucao <- initial - solve(hessiano(initial, ...), 
+				escore(initial, ...))
+    tolera <- abs(solucao - initial)
+    if(all(tolera < tol) == TRUE)break
+    initial <- solucao
+    if(print) print(initial)
+  }
+  return(initial)
+}
+```
+
+Note que para usar este algoritmo é necessário obter a primeira (escore) e a segunda (hessiano) derivada. 
+Neste exemplo é possível obter expressões analíticas para ambas. 
+Em modelos mais complexos expressões analíticas podem ser substituídas por
+gradientes e hessianos obtidos por algoritmos numéricos. 
+Além disto, em certos casos o custo computacional em calcular o hessiano analítico pode ser muito maior que o numérico, o que acontece em alguns modelos multivariados que em geral envolvem muitas inversões de matrizes densas, fazendo com que este algoritmo se torne muito lento.
+
+Cabe ressaltar que o método de Newton-Raphson é um algoritmo para encontrar raízes de uma equação que no caso da função escore leva as estimativas de máxima verossimilhança. 
+Porém, existem diversos e poderosos algoritmos de maximização numérica que não 
+exigem derivadas analíticas embora possam ser beneficiados com o uso de resultados destas principalmente a função escore. No `R` alguns destes maximizadores numéricos estão implementados na função `optim()`.
+
+Continuando com o exemplo da Gama, vamos obter a função escore e o hessiano da função de log-verossimilhança concentrada e usar o algoritmo de Newton-Raphson para obter a estimativa de $a$.  
+
+A partir de \@ref(eq:escore-gama-conc) temos que:
+
+\begin{align*}
+U_s(a)  &= -n \log(\overline{y}/a) - n \Psi(a) + \sum_{i=1}^n \log y_i  \\
+U_s'(a) &= \frac{n}{a} - n \Psi'(a)
+\end{align*}
+
+em que $\Psi'(a)$ é a função trigama que é a derivada segunda do logaritmo da função gama. 
+
+Escrevendo estas funções em `R` temos o código \@ref(lem:escore-hess-gama).
+
+```{lemma escore-hess-gama}
+**Função escore e hessiana ambas em relação ao parâmetro $a$ da distribuição Gama.**
+```
+
+```{r}
+escore <- function(a,y){
+  n <- length(y)
+  u <- -n*log(mean(y)/a) - n*digamma(a) + sum(log(y))
+  return(u)}
+
+hessiano <- function(a,y){
+  n <- length(y)
+  u.l <- (n/a)-trigamma(a)*n
+  return(u.l)}
+```
+
+Gerando 100 valores da distribuição Gama com parametros $a = 10$ e $s = 5$, obtemos os valores iniciais aproximados ou exatos correspondendo aos estimadores dos momentos:
+
+```{r}
+set.seed(123)
+y100 <- rgamma(100,shape=10,scale=5)
+My <- mean(y100) ; Vy <- var(y100)
+(initAprox <- c(My^2/Vy , Vy/My))
+n <- length(y100) ; Vy <- Vy * (n-1)/n
+(init <- c(My^2/Vy , Vy/My))
+```
+
+O passo final para obter a estimativa de máxima verossimilhança de $a$ é usar o algoritmo de Newton-Raphson.
+
+
+```{r}
+(a.hat <- NewtonRaphson(initial = init[1], escore = escore , 
+       hessiano=hessiano, max.iter=100, n.dim=1, y=y100))
+```
+
+Definindo o argumento `print=TRUE` é possível visualizar todas as tentativas do algoritmo até a convergência. Neste exemplo foi necessário seis iterações para atingir o critério de convergência. Uma limitação deste algoritmo é que o chute inicial não pode estar muito longe da solução, o que pode ser difícil de obter em modelos complexos, nestes casos estimativas grosseiras por mínimos quadrados podem ser de grande valia como valores iniciais.
+
+Uma vez estimado o $a$ podemos substituir na expressão de $\hat{s}$ para obtê-lo,
+
+```{r}
+(s.hat <- mean(y100)/a.hat)
+```
+
+Para construção dos intervalos assintóticos basta substituir as estimativas nas matrizes de informação observada e/ou esperada. Note que, no caso da distribuição Gama a distribuição assintótica do vetor $(\hat{a},\hat{s})^\top$ é a seguinte,
+
+\[
+  \begin{bmatrix}
+\hat{a} \\ \hat{s} 
+\end{bmatrix} \sim NM_2 \left ( \begin{bmatrix}
+a \\ s  
+\end{bmatrix}, \begin{bmatrix}
+n \Psi'(\hat{a}) & n /\hat{s} \\ 
+n / \hat{s} &  n\hat{a} / \hat{s}^2 
+\end{bmatrix}^{-1} \right ) 
+\]
+
+poderíamos usar também a matriz de informação observada que é assintoticamente equivalente. O código \@ref(lem:IoIe-Gama) implementa a matriz de informação esperada e observada e constrói os intervalos de confiança assintóticos para $a$ e $s$.
+
+
+```{lemma IoIe-Gama}
+**Funções para a matriz de informação esperada e informação observada da distribuição Gama.**
+```
+
+
+```{r}
+Ie <- function(a,s,y){
+  n <- length(y)
+  saida <- matrix(c(n*trigamma(a),n/s,
+		  n/s, (n*a)/s^2),2,2)
+  return(saida)}
+
+Io <- function(a,s,y){
+  n <- length(y)
+  saida <- matrix(c(n*trigamma(a), n/s, n/s,
+		 -(n*a)/s^2 + (2/s^3)*sum(y)),2,2)
+  return(saida)}
+```
+
+Avaliando as matrizes no ponto de máximo,
+
+```{r}
+Ie(a = a.hat, s = s.hat, y=y100)
+Io(a = a.hat, s = s.hat, y=y100)
+```
+
+Como é possível observar a matriz de informação esperada e observada apesar de apresentarem formas diferentes levam a resultados idênticos para o tamanho de amostra $n=100$ considerado aqui. Sendo assim, vamos usar apenas a informação esperada que é mais simples de avaliar. Para obter os intervalos assintóticos basta inverter a matriz de informação e pegar os termos em sua diagonal que corresponde a variância de $\hat{a}$ e $\hat{s}$.
+
+```{r}
+erro.padrao <- sqrt(diag(solve(Ie(a = a.hat, s= s.hat, y=y100))))
+(ic.a <- a.hat + c(-1,1)*qnorm(0.975)*erro.padrao[1])
+(ic.s <- s.hat + c(-1,1)*qnorm(0.975)*erro.padrao[2])
+```
+
+Outra forma é a construção de intervalos baseados no perfil de verossimilhança. 
+As funções em \@ref(lem:pllab-gamma) implementam 
+o perfil de verossimilhança para os parâmetros $a$ e $s$, respectivamente.
+
+
+```{lemma pllab-gamma}
+**Funções para a log-verossimilhança perfilhada em relação aos parâmetros $a$ e $s$ da distribuição Gama.**
+```
+
+```{r}
+perf.a <- function(s, a, dados){
+   ll <- sum(dgamma(dados, shape=a, scale=s, log=TRUE))
+   return(ll)}
+perf.s <- function(a, s, dados){
+   ll <- sum(dgamma(dados, shape=a, scale=s, log=TRUE))
+   return(ll)}
+```
+
+Para as maximizações necessárias vamos utilizar a função `optimize()` própria para maximização em uma dimensão como é o caso aqui. Precisamos também criar uma grade para a avaliação da função. Também será avaliada a verossimilhança condicional para comparação de forma similar ao mostrado no Exemplo \@ref(sec:vero-normal).
+A Figura \@ref(fig:perfgama) apresenta os resultados.
+
+
+```{r}
+grid.a <- seq(9,18,l=100)
+grid.s <- seq(2,5,l=100)
+## Perfil para a
+vero.perf.a <- c()
+for(i in 1:length(grid.a)){
+vero.perf.a[i] <- optimize(perf.a,c(0,200), 
+		  a=grid.a[i],dados=y100,maximum=TRUE)$objective}
+
+## Perfil para s
+vero.perf.s <- c()
+for(i in 1:length(grid.s)){
+vero.perf.s[i] <- optimize(perf.s,c(0,1000), 
+                  s=grid.s[i],dados=y100,maximum=TRUE)$objective}
+
+## Condicional para a
+vero.cond.a <- sapply(grid.a,perf.a,s=s.hat,dados=y100)
+
+## Condicional para sigma
+vero.cond.s <- sapply(grid.s, perf.s, a= a.hat , dados=y100)
+```
+
+```{r perfgama, echo = FALSE, fig.width = 10, fig.height = 5, fig.align = "center", fig.cap = "Deviance perfilhada, condicional e limites do intervalo de confiança assintótico para $a$ e $s$ - Distribuição Gama."}
+par(mfrow=c(1,2), mar=c(3,3,1.5,1.5), mgp=c(1.7,0.8, 0))
+plot(grid.a,-2*(vero.cond.a - max(vero.cond.a)),type="l",ylab=expression(D(a[s])),xlab=expression(a),ylim=c(0,5), col=4)
+lines(grid.a,-2*(vero.perf.a - max(vero.perf.a)))
+abline(h=qchisq(0.95,df=1), lty=2)
+abline(v=ic.a[1],col="red")
+abline(v=ic.a[2],col="red")
+legend("topleft", c("Condicional", "Perfilhada","Lims assint."), lwd=1:3,col=c(4,1,2),lty=1,cex=0.8)
+
+plot(grid.s,- 2*(vero.cond.s - max(vero.cond.s)),type="l",ylab=expression(D(s[a])),xlab=expression(s),ylim=c(0,5), col=4)
+lines(grid.s,-2*(vero.perf.s - max(vero.perf.s)))
+abline(h=qchisq(0.95,df=1), lty=2)
+abline(v=ic.s,col="red", lty=2)
+#abline(v=ic.s[2],col="red")
+legend("topleft", c("Condicional", "Perfilhada","Lims assint."), lwd=1:3,col=c(4,1,2),lty=1,cex=0.8)
+```
+
+Como mostra a Figura \@ref(fig:perfgama) os intervalos obtidos condicionando a log-verossimilhança na estimativa de máxima verossimilhança são claramente mais curtos que o intervalo baseado em perfil de verossimilhança e o intervalo assintótico. Comparando o perfil com o assintótico verificamos que a perfilhada traz intervalos ligeiramente assimétricos e mais largos que a aproximação quadrática, a aproximação é ligeiramente deslocada para esquerda e para direita para os parâmetros $a$ e $s$ respectivamente.
+
+### Parametrizações para Gama
+
+Vamos explorar este exemplo para ilustrar o efeito de diferentes parametrizações
+no formato da verossimilhança da densidade Gama.
+Aproveitamos ainda esta sessão para ilustrar o uso de
+algumas sintaxes e formas de programação em `R`. 
+
+**Parametrização 1:** Esta é a parametrização utilizada anteriormente e também a usada
+nas funções `*gamma` do `R`.
+O parâmetro de forma (*shape*) é
+$\alpha=a$ e o de escala (*scale*) $\beta=s$.
+Lembrando as expressões obtidas anteriormente temos: 
+
+\begin{align*}
+  Y &\sim {\rm G}(\alpha, \beta) \\
+  f(y|\alpha, \beta) &= \frac{1}{\Gamma(\alpha)\,\beta^\alpha}\;y^{\alpha-1}\;\exp\{-y/\beta\}\;\;\;;
+  y \geq 0  \;,\; \alpha \geq 0   \;,\; \beta > 0 \\
+  E[Y] &= \alpha \beta    \;\;\; Var[Y] = \alpha \beta^2 \\
+  L((\alpha,\beta)|y) &= \left(\frac{1}{\Gamma(\alpha) \, \beta^\alpha}\right)^n\; \prod_{i=1}^{n} y_i^{\alpha-1}\;\exp\{- \sum_{i=1}^{n} y_i/\beta\}\\
+  l((\alpha,\beta)|y) &= n\left(-\log(\Gamma(\alpha)) - \alpha \log(\beta) +  
+        (\alpha-1) \overline{\log(y)} - \bar{y}/\beta\right)
+\end{align*}
+
+A função escore é escrita como:
+
+\begin{align*}
+\left\{ \begin{array}{ll} 
+\frac{d l}{d\beta} &= n\left(-\frac{\alpha}{\beta} + \frac{\bar{y}}{\beta^2}\right) \\
+\frac{d l}{d\alpha}        &= n \left(-\frac{\Gamma'(\alpha)}{\Gamma(\alpha)} -\log(\beta) + \overline{\log y}\right)
+\end{array}  \right.
+\end{align*}
+
+Igualando as funções a zero, da primeira equação temos 
+$\hat{\alpha} \hat{\beta} =  \bar{y}$. Substituindo $\beta$ por $\hat{\beta}$
+a segunda expressão é escrita como:
+
+\[
+n \left(-\frac{\Gamma'(\alpha)}{\Gamma(\alpha)} -\log\left(\frac{\bar{y}}{\hat{\alpha}}\right) + \overline{\log y}\right) = 0 \]
+
+O EMV é portanto solução conjunta de 
+
+\begin{align*}
+\left\{\begin{array}{ll}
+ \overline{\log y} - \log \beta &= \psi(\bar{y}/\beta)\\
+\hat{\alpha} \hat{\beta} &= \bar{y} 
+\end{array} \right.
+\end{align*}
+
+em que
+
+$\psi(t) = \frac{d}{dt} \log(\Gamma(t)) = \frac{\Gamma'(t)}{\Gamma(t)}$
+(função `digamma()` no `R`) e $\overline{\log y} = \sum_{i=1}^n \log(y_i)/n$.
+
+**Parametrização 2:** Esta parametrização utilizada por
+@Rizzo:2008, dentre outros autores, é a parametrização 
+original usada na linguagem `S` e sua primeira implementação  no programa `Splus`
+(`Splus` e `R` são duas implementações em *software*, não completamente distintas, da linguagem `Slang`).
+Neste caso o parâmetro de escala é trocado pela seu inverso, a taxa (*rate*) 
+e denotamos $\lambda=1/\beta$.
+No `R` pode-se definir a escala ou taxa.
+
+```{r}
+args(rgamma)
+```
+
+As expressões ficam então:
+
+\begin{align*}
+  Y &\sim {\rm G}(\alpha, \lambda)  \\
+  f(y|\alpha, \lambda) &= \frac{\lambda^\alpha}{\Gamma(\alpha)}\;y^{\alpha-1}\;\exp\{-\lambda y\}\;\;\;;
+  y \geq 0  \;,\; \alpha \geq 0   \;,\; \lambda > 0 \\
+  E[Y] &= \alpha/\lambda    \;\;\; Var[Y] = \alpha / \lambda^2 \\
+  L((\alpha,\lambda)|y) &= \left(\frac{\lambda^\alpha}{\Gamma(\alpha)}\right)^n\; \prod_{i=1}^{n} y_i^{\alpha-1}\;\exp\{- \lambda \sum_{i=1}^{n} y_i\}\\
+  l((\alpha,\lambda)|y) &= n\left(\alpha \log(\lambda)-\log(\Gamma(\alpha))  + 
+      (\alpha-1) \overline{\log(y)} - \lambda\bar{y}\right)
+\end{align*}
+
+Função escore:
+
+\begin{align*}
+
+\left\{ \begin{array}{ll} 
+\frac{d l}{d\lambda} &= n\left(\frac{\alpha}{\lambda} - \bar{y}\right) \\
+\frac{d l}{d\alpha}        &= n \left(\log(\lambda) - \frac{\Gamma'(\alpha)}{\Gamma(\alpha)} + \overline{\log y}\right)
+\end{array}  \right.
+
+\end{align*}
+
+Igualando as funções a zero, da primeira equação temos $\hat{\lambda} = \hat{\alpha}/\bar{y}$. Substituindo $\lambda$ por $\hat{\lambda}$
+a segunda expressão é escrita como:
+
+\[n \left(\log \left(\frac{\hat{\alpha}}{\bar{y}} \right)+ \overline{\log y} - \frac{\Gamma'(\alpha)}{\Gamma(\alpha)}\right) = 0 \]
+
+O EMV é solução conjunta de 
+
+\begin{align*}
+
+\left\{\begin{array}{ll}
+ \log \lambda + \overline{\log y} &= \psi(\lambda \bar{y})\\
+\bar{y} &= \alpha/\lambda
+\end{array} \right.
+
+\end{align*}
+
+@aitkin:2010 menciona ainda duas parametrizações sendo a primeira considerada a mais usual, 
+e sendo a mesma que é implementada no \R.  Uma segunda é parametrizada por
+$\alpha$ e $\mu = \alpha \beta$ com o segundo parâmetro correspondente à média da variável. 
+
+Esta segunda parametrização tem propriedades interessantes para inferência.
+A primeira é a ortogonalidade na matriz de informação entre $\alpha$ e $\mu$.
+Além disto em geral $\mu$ é o 
+usualmente o parâmetro de interesse para inferências e $\alpha$ é um parâmetro *nuisance*.
+A parametrização é adequada para modelagem estatística 
+na qual usualmente se propõe um modelo
+de regressão para média $\mu$, como por exemplo em modelos lineares generalizados (MLG).
+
+
+\begin{align*}
+  Y &\sim {\rm G}(\alpha, \mu)  \\
+  f(y|\alpha, \mu) &= \frac{\alpha^\alpha}{\Gamma(\alpha)\,\mu^\alpha}\;y^{\alpha-1}\;\exp\{- \alpha y/\mu\}\;\;\;;
+  y \geq 0  \;,\; \alpha \geq 0   \;,\; \mu \geq 0 \\
+  E[Y] &= \mu    \;\;\; Var[Y] = \mu^2/\alpha \\
+  L((\alpha,\mu)|y) &= \left(\frac{\alpha^\alpha}{\Gamma(\alpha) \mu^\alpha}\right)^n                 
+\prod_{i=1}^{n} y_i^{\alpha-1}\;\exp\{- \alpha \sum_{i=1}^{n}  y_i/\mu\}\\
+  l((\alpha,\mu)|y) &= n\left(\alpha (\log(\alpha)  - \log(\mu)) - \log(\Gamma(\alpha)) +  
+            (\alpha-1) \overline{\log(y)} - \alpha\bar{y}/\mu \right)
+\end{align*}
+
+Função escore
+
+\begin{align*}
+\left\{ \begin{array}{ll} 
+\frac{d l}{d\mu} &= n\left(-\frac{\alpha}{\mu} + \frac{\alpha\bar{y}}{\mu^2}\right) \\
+\frac{d l}{d\alpha}        &= n \left(\log(\alpha) + 1 - \log(\mu) - \frac{\Gamma'(\alpha)}{\Gamma(\alpha)} + \overline{\log y} - \frac{\bar{y}}{\mu}\right)
+\end{array}  \right.
+\end{align*}
+
+Igualando as funções a zero, da primeira equação temos $\hat{\mu} = \bar{y}$. 
+Substituindo $\mu$ por $\hat{\mu}$
+a segunda expressão é escrita como:
+
+\[n \left(\log \hat{\alpha} - \log(\bar{y}) - \frac{\Gamma'(\hat{\alpha})}{\Gamma(\hat{\alpha})} + \overline{\log y}\right) = 0 \]
+
+O EMV é solução conjunta de:
+
+\begin{align*}
+\left\{\begin{array}{ll}
+ \log \hat{\alpha} - \psi(\hat{\alpha}) &= \log \bar{y} - \overline{\log y}  \\
+\hat{\mu} &= \bar{y} 
+\end{array} \right.
+\end{align*}
+
+Nesta parametrização, a partir das expressões de $\frac{d^2 l}{d\mu^2}$ e $\frac{d^2 l}{d\alpha^2}$
+obtemos que os parametros são ortogonais na informação já que
+$I_E(\mu,\alpha)$ e $I_E(\hat{\mu},\hat{\alpha})$ são matrizes diagonais.  
+
+Para obter os gráficos de verossimilhança vamos definir uma função
+em `R` que será escrita com opção para as três parametrizações mencionadas.
+Em todas estas parametrizações os parâmetros são não negativos e 
+uma transformação logarítmica fornece parâmetros com suporte na reta real, 
+mas note que isto exclui o valor nulo do espaço paramétrico. 
+Desta forma nossa função permite ainda reparametrizações adicionais trocando 
+os parâmetros por seus logaritmos. 
+
+
+```{lemma Vero-Gama}
+**Funções de verossimilhança de distribuição Gama, para diferentes parametrizações.**
+```
+
+```{r}
+neglLik <- function(par, amostra, modelo=2, logpar=FALSE){
+  if(logpar) par <- exp(par)
+  ll <- switch(modelo, 
+    "1" = {alpha <- par[1]; beta <- par[2];
+           with(amostra, n*(-alpha*log(beta)-log(gamma(alpha)) +  
+                (alpha-1) * media.logs - media/beta))},
+    "2" = {alpha <- par[1]; lambda <- par[2] ;
+           with(amostra, n*(alpha*log(lambda)-log(gamma(alpha)) +  
+                (alpha-1) * media.logs - lambda * media))},
+    "3" = {alpha <- par[1]; mu <- par[2] ;
+           with(amostra, n*(alpha*(log(alpha) - log(mu)) - 
+                log(gamma(alpha)) +  (alpha-1) * media.logs - 
+                (alpha/mu) * media))})
+  return(-ll)
+}
+```
+
+A função em \@ref(lem:Vero-Gama) é escrita em termos de
+estatísticas (suficientes)  da amostra 
+para evitar repetições de cálculos e exige que estas quantidades sejam
+passadas na forma de uma *lista nomeada* pelo argumento `amostra`.
+A função retorna o negativo da verossimilhança.
+No exemplo a seguir 
+começamos então simulando um conjunto de dados com $\alpha=4.5$ e $\beta=2$, 
+e criamos o objeto com as estatísticas suficientes.
+
+```{r}
+set.seed(201107)
+dadosG <- rgamma(20, shape = 4.5, rate=2)
+am <- list(media=mean(dadosG), media.logs = mean(log(dadosG)), 
+           n=length(dadosG))
+```
+
+Quando possível, é mais conveniente fazer o gráfico das superfícies de verossimilhança
+na escala da *deviance* o que requer o valor máximo da verossimilhança. Assim, obtemos as estimativas de máxima verossimilhança para as 3 parametrizações, usando os códigos abaixo:
+
+```{r}
+mod1 <- optim(c(1,1), neglLik, amostra=am, modelo=1)$par
+mod2 <- optim(c(1,1), neglLik, amostra=am, modelo=2)$par
+mod3 <- optim(c(1,1), neglLik, amostra=am, modelo=3)$par
+cbind(mod1, mod2, mod3)
+```
+
+Neste ponto vamos simplesmente usar 
+os objetos `mod1`, `mod2` e `mod3`
+que contém as estimativas.
+Mais adiante vamos discutir em mais detalhes a obtenção das estimativas.
+
+Os comandos a seguir mostram como obter o gráfico da superfície de
+verossimilhança (*deviance*) para a parametrização~1.
+Utilizamos a função *deviance* genérica
+definida em \@ref(lem:dev-generica)
+para ser usada com densidades com dois parâmetros.
+Definimos uma sequencia de valores para cada parâmetro e o valor da *deviance*
+é calculado  em cada ponto da malha que combina os valores usando a função `outer()`.
+A partir da malha os contornos parametrização 1 na escala original dos parâmetros 
+são desenhados na forma de isolinhas.
+Comandos análogos são usados para as demais parametrizações 
+nas escalas originais e logarítmicas.
+
+Na Figura \@ref(fig:devSurf-Gamma) mostramos as superfícies
+para cada parametrização nas escalas originais e logarítmicas dos parâmetros.
+Simetria e ortogonalidade da superfície facilitam e melhoram o desempenho de algoritmos numéricos, 
+sejam de optimização ou de algorítmos de amostragem como por exemplo
+os de *MCMC* (cadeias de Markov por Monte Carlo).
+A superfície de verossimilhança para a parametrização~3 é a que apresenta melhores características.
+Isto sugere que algorítimos de cálculos de verossimilhança em procedimentos numéricos 
+utilizando a Gama devem ser 
+escritos nesta parametrização transformando ao final os resultados para outras
+parametrizações de interesse, se for o caso. 
+
+```{r echo = FALSE}
+mod1 <- optim(c(1,1), neglLik, amostra=am, modelo=1)$par
+mod2 <- optim(c(1,1), neglLik, amostra=am, modelo=2)$par
+mod3 <- optim(c(1,1), neglLik, amostra=am, modelo=3)$par
+```
+
+```{r echo = FALSE}
+devFun <- function(theta, est, llFUN, ...){
+  return(2 * (llFUN(theta, ...) - llFUN(est, ...)))
+}
+devSurf <- Vectorize(function(x,y, ...) devFun(c(x,y), ...),
+                     c("x", "y"))
+```
+
+```{r devSurf-Gamma, echo = FALSE, fig.align = "center", fig.width = 9, fig.height = 6, fig.cap = "Superfícies de deviance sob diferentes parametrizações - Distribuição Gama."}
+par(mfcol=c(2,3))
+## par 1
+alpha <- seq(1.5,10.9, len=100)
+beta  <- seq(0.17,1.35, len=100)
+dev1  <- outer(alpha, beta, FUN = devSurf, est=mod1, llFUN=neglLik, amostra=am, modelo=1)
+
+LEVELS <- c(0.99,0.95,0.9,0.7,0.5,0.3,0.1,0.05)
+contour(alpha,beta, dev1, levels=qchisq(LEVELS,df=2),
+        labels=LEVELS, xlab=expression(alpha),ylab=expression(beta))
+points(t(mod1), pch=19, cex=0.6)
+#persp(alpha, beta, dev1)
+## OBS, na verdade nao precisa calcular  no log.. é só usar invariancia... 
+lalpha <- seq(log(1.6),log(10.6), len=100)
+lbeta  <- seq(log(0.17),log(1.35), len=100)
+dev1l  <- outer(lalpha, lbeta, FUN = devSurf, est=log(mod1), llFUN=neglLik, amostra=am, modelo=1, logpar=T)
+
+contour(lalpha,lbeta, dev1l, levels=qchisq(LEVELS,df=2),
+        labels=LEVELS, xlab=expression(log(alpha)),ylab=expression(log(beta)))
+points(t(log(mod1)), pch=19, cex=0.6)
+#persp(lalpha, lbeta, dev1l)
+
+## par 2
+lambda <- seq(0.7,5.6, len=100)
+dev2 <- outer(alpha, lambda, FUN=devSurf, est=mod2, llFUN=neglLik, amostra=am)
+
+llambda <- seq(log(0.7),log(5.6), len=100)
+dev2l <- outer(lalpha, llambda, FUN=devSurf, est=log(mod2), llFUN=neglLik, amostra=am, logpar=T)
+
+contour(alpha,lambda, dev2, levels=qchisq(LEVELS,df=2),
+        labels=LEVELS, xlab=expression(alpha),ylab=expression(lambda))
+points(t(mod2), pch=19, cex=0.6)
+#persp(alpha, lambda, dev2)
+
+contour(lalpha,llambda, dev2l, levels=qchisq(LEVELS,df=2),
+        labels=LEVELS, xlab=expression(log(alpha)),ylab=expression(log(lambda)))
+points(t(log(mod2)), pch=19, cex=0.6)
+#persp(lalpha, llambda, dev2l)
+
+## par 3
+mu <- seq(1.4,2.83, len=100)
+dev3 <- outer(alpha, mu, FUN = devSurf, est=mod3, llFUN=neglLik, amostra=am, modelo=3)
+
+lmu <- seq(log(1.4),log(2.83), len=100)
+dev3l <- outer(lalpha, lmu, FUN = devSurf, est=log(mod3), llFUN=neglLik, amostra=am, modelo=3, logpar=T)
+
+contour(alpha,mu, dev3, levels=qchisq(LEVELS,df=2),
+        labels=LEVELS, xlab=expression(alpha),ylab=expression(mu))
+points(t(mod3), pch=19, cex=0.6)
+#persp(alpha, mu, GRdev)
+
+contour(lalpha, lmu, dev3l, levels=qchisq(LEVELS,df=2),
+        labels=LEVELS, xlab=expression(log(alpha)),ylab=expression(log(mu)))
+points(t(log(mod3)), pch=19, cex=0.6)
+#persp(rGRl, muGRl, GRdevl)
+```
+
+Neste exemplo passamos detalhadamente por cada passo do processo de inferência. 
+Apresentamos o algoritmo de Newton-Raphson e comparamos três abordagens para a construção de intervalos de confiança. 
+Há necessidade de uso intensivo de ferramentas do cálculo diferencial para obter a função escore e a matriz de informação. 
+Destacou-se que nem sempre é fácil ou mesmo possível obter analiticamente as quantidades necessários para inferência.

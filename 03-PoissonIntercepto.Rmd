@@ -1,0 +1,268 @@
+## Modelo Poisson com intercepto aleatório {#sec:PoisIntercepto}
+
+Na seção \@ref(sec:simulaPoisIntercepto) simulamos dados de um modelo Poisson com intercepto aleatório
+definido em \@ref(eq:modPoisIntercepto). 
+Agora vamos ver como usar os diversos métodos de integração numérica dentro do processo de estimação dos parâmetros $\underline{\theta} = (\beta_0, \tau)$ deste modelo. 
+O primeiro passo é escrever uma função com modelo completo 
+como no código \@ref(lem:integrandoPoisInt).
+
+```{r echo = FALSE, results = "hide", message = FALSE}
+require(bbmle)
+require(statmod)
+require(mvtnorm)
+require(fOptions)
+laplace <- function(funcao, otimizador,n.dim, ...){
+  integral <- -999999
+  inicial <- rep(0,n.dim)
+  temp <- try(optim(inicial,funcao,...,method=otimizador,hessian=TRUE,control=list(fnscale=-1)))
+  if(class(temp) != "try-error"){
+  integral <- exp(temp$value)* (exp(0.5*log(2*pi) - 0.5*determinant(-temp$hessian)$modulus))}
+  return(integral)
+}
+gauss.hermite.multi <- function(integrando, n.dim, n.pontos, ... ){
+normaliza <- function(x){exp(-t(as.numeric(x))%*%as.numeric(x))}
+pontos <- gauss.quad(n.pontos,kind="hermite")
+nodes <- matrix(rep(pontos$nodes,n.dim),ncol=n.dim)
+pesos <- matrix(rep(pontos$weights,n.dim),ncol=n.dim)
+lista.nodes <- list()
+lista.pesos <- list()
+for(i in 1:ncol(nodes)){
+ lista.nodes[[i]] <- nodes[,i]
+ lista.pesos[[i]] <- pesos[,i]}
+nodes = as.matrix(do.call(expand.grid,lista.nodes))
+pesos = do.call(expand.grid,lista.pesos)
+pesos.grid = apply(pesos,1,prod)
+norma = apply(nodes,1,normaliza)
+integral <- sum(pesos.grid*(integrando(nodes,...)/norma))
+return(integral)
+}
+monte.carlo <- function(funcao, n.dim, n.pontos, tipo, ...){
+if(tipo == "MC"){ pontos <- rmvnorm(n.pontos,mean=rep(0,n.dim))}
+if(tipo == "Halton"){ pontos <- rnorm.halton(n.pontos,n.dim)}
+if(tipo == "Sobol"){ pontos <- rnorm.sobol(n.pontos,n.dim)}
+norma <- apply(pontos,1,dmvnorm)
+integral <- mean(funcao(pontos,...)/norma)
+return(integral)
+}
+adaptative.gauss.hermite <- function(funcao, n.dim, n.pontos, otimizador, ... ){
+normaliza <- function(x){exp(-t(as.numeric(x))%*%as.numeric(x))}
+pontos <- gauss.quad(n.pontos,kind="hermite")
+integral <- -999999
+inicial <- rep(0,n.dim)
+temp <- try(optim(inicial,funcao,...,method=otimizador,hessian=TRUE,control=list(fnscale=-1)))
+z.chapeu <- temp$par
+sd.chapeu <- sqrt(diag(solve(-temp$hessian)))
+mat.nodes <- matrix(NA, ncol=n.dim,nrow=n.pontos)
+mat.pesos <- matrix(NA,ncol=n.dim,nrow=n.pontos)
+for(i in 1:length(z.chapeu)){
+  mat.nodes[,i] <- z.chapeu[i] + sd.chapeu[i]*pontos$nodes
+  mat.pesos[,i] <- sd.chapeu[i]* (exp(-mat.nodes[,i]^2)/exp(-pontos$nodes^2))*pontos$weights
+}
+lista.nodes <- list()
+lista.pesos <- list()
+for(i in 1:ncol(mat.nodes)){
+ lista.nodes[[i]] <- mat.nodes[,i]
+ lista.pesos[[i]] <- mat.pesos[,i]}
+nodes = as.matrix(do.call(expand.grid,lista.nodes))
+pesos = do.call(expand.grid,lista.pesos)
+pesos.grid = apply(pesos,1,prod)
+norma = apply(nodes,1,normaliza) 
+integral <- sum(pesos.grid*(exp(funcao(nodes,...))/norma))
+return(integral)
+}
+adaptative.monte.carlo <- function(funcao, n.pontos, n.dim, tipo, otimizador, ... ){
+  if(tipo == "MC"){ pontos <- rmvnorm(n.pontos,mean=rep(0,n.dim))}
+  if(tipo == "Halton") {pontos <- rnorm.halton(n.pontos, n.dim)}
+  if(tipo == "Sobol") {pontos <- rnorm.sobol(n.pontos, n.dim)}
+  integral <- -999999
+  inicial <- rep(0,n.dim)
+   temp <- try(optim(inicial,funcao,...,method=otimizador,hessian=TRUE,control=list(fnscale=-1)))
+   if(class(temp) != "try-error"){
+    z.chapeu <- temp$par
+    H <- solve(-temp$hessian)
+    sd.chapeu <- sqrt(diag(H))
+    mat.nodes <- matrix(NA, ncol=n.dim,nrow=n.pontos)
+    for(i in 1:length(z.chapeu)){
+      mat.nodes[,i] <- z.chapeu[i] + sd.chapeu[i]*pontos[,i]
+      }
+ norma <- dmvnorm(mat.nodes,mean=z.chapeu,sigma=H,log=TRUE) 
+ integral = mean(exp(funcao(mat.nodes,...) - norma))
+   }
+   return(integral)
+}
+simula.poisson <- function(X,Z,beta.fixo,prec.pars){
+  n.bloco <- dim(Z)[2]
+  n.rep <- dim(Z)[1]/n.bloco
+  bi <- rnorm(n.bloco,0,sd=1/prec.pars)
+  XZ <- cbind(X,Z)
+  beta <- c(beta.fixo,bi)
+  preditor <- XZ%*%beta
+  lambda <- exp(preditor)
+  y <- rpois(length(lambda),lambda=lambda)
+  return(data.frame(y=y,X=X,ID=rep(1:n.bloco,each=n.rep)))
+}
+
+ID <- as.factor(rep(1:10,each=10))
+X <- rep(1,100)
+Z <- model.matrix(~-1 + ID)
+set.seed(123)
+dados <- simula.poisson(X=X,Z=Z,beta.fixo = 2, prec.pars=4)
+```
+
+```{lemma integrandoPoisInt}
+**Integrando da função de verossimilhança para o modelo de regressão de Poisson com efeito aleatório de intercepto.**
+```
+
+```{r}
+Poisson.Int <- function(b,beta.fixo, prec.pars, X, Z, Y,log=TRUE){
+  tau <- exp(prec.pars)
+  ll = sapply(b,function(bi){
+    preditor <- as.matrix(X)%*%beta.fixo + as.matrix(Z)%*%bi
+    lambda <- exp(preditor)
+    sum(dpois(Y,lambda=lambda,log=TRUE)) + 
+        dnorm(bi, 0, sd = 1/tau , log=TRUE)
+  })
+  if(log == FALSE){ll <- exp(ll)}
+  return(ll)}
+```
+
+No código \@ref(lem:veroM) definimos uma função genérica que capta um conjunto de dados e monta a log-verossimilhança, já integrada de acordo com uma das opções de integração apresentadas anteriormente. 
+Essa função vai ser usada para diversos modelos com efeitos aleatórios apresentados neste texto.
+
+```{lemma veroM}
+**Função de verossimilhança genérica com opções de método de integração numérica.**
+```
+
+```{r}
+veroM <- function(modelo, formu.X, formu.Z, beta.fixo, prec.pars, 
+                  integral, pontos, otimizador, n.dim, dados){
+  dados.id <- split(dados, dados$ID)
+  ll <- c()
+  for(i in 1:length(dados.id)){
+    X <- model.matrix(as.formula(formu.X),data=dados.id[[i]])
+    Z <- model.matrix(as.formula(formu.Z),data=dados.id[[i]])
+    if(integral == "LAPLACE"){
+    ll[i] <- laplace(modelo,otimizador=otimizador,n.dim=n.dim, 
+               X=X, Z=Z, Y=dados.id[[i]]$y, beta.fixo=beta.fixo,
+               prec.pars=prec.pars,log=TRUE)}
+    if(integral == "GH"){
+    ll[i] <- gauss.hermite.multi(modelo, n.pontos= pontos, n.dim=n.dim, 
+                    X=X, Z=Z, Y=dados.id[[i]]$y, beta.fixo=beta.fixo,
+                    prec.pars=prec.pars,log=FALSE)}
+    if(integral == "MC"){
+    ll[i] <- monte.carlo(modelo,n.pontos=pontos, n.dim=n.dim, 
+                   tipo= "MC", X=X, Z=Z, Y=dados.id[[i]]$y, 
+                   beta.fixo=beta.fixo, prec.pars=prec.pars,
+                   log=FALSE)}
+    if(integral == "QMH"){
+    ll[i] <- monte.carlo(modelo,n.pontos=pontos, n.dim=n.dim, 
+                   tipo= "Halton", X=X, Z=Z, Y=dados.id[[i]]$y, 
+                   beta.fixo=beta.fixo,
+                   prec.pars=prec.pars,log=FALSE)}
+    if(integral == "QMS"){
+    ll[i] <- monte.carlo(modelo,n.pontos=pontos, n.dim=n.dim, 
+                  tipo= "Sobol", X=X, Z=Z, Y=dados.id[[i]]$y, 
+                  beta.fixo=beta.fixo, prec.pars=prec.pars,log=F)}
+    if(integral == "AGH"){
+    ll[i] <- adaptative.gauss.hermite(modelo,n.pontos=pontos, 
+                  n.dim=n.dim, otimizador=otimizador,
+                  X=X, Z=Z, Y=dados.id[[i]]$y, beta.fixo=beta.fixo,
+                  prec.pars=prec.pars,log=TRUE)}
+    if(integral == "AMC"){
+    ll[i] <- adaptative.monte.carlo(modelo,n.pontos=pontos, 
+                   n.dim=n.dim, otimizador=otimizador, tipo="MC",
+                   X=X, Z=Z, Y=dados.id[[i]]$y, beta.fixo=beta.fixo,
+                   prec.pars=prec.pars,log=TRUE)}
+    if(integral == "AQMH"){
+    ll[i] <- adaptative.monte.carlo(modelo,n.pontos=pontos, n.dim=n.dim, 
+                 otimizador=otimizador, tipo="Halton", X=X, Z=Z, 
+                 Y=dados.id[[i]]$y, beta.fixo=beta.fixo,
+                 prec.pars=prec.pars,log=TRUE)}
+    if(integral == "AQMS"){
+    ll[i] <- adaptative.monte.carlo(modelo,n.pontos=pontos, n.dim=n.dim, 
+                 otimizador=otimizador, tipo="Sobol", X=X, Z=Z, 
+                 Y=dados.id[[i]]$y, beta.fixo=beta.fixo,
+                 prec.pars=prec.pars,log=TRUE)}
+    }
+  return(sum(log(ll)))
+}
+```
+
+A função `veroM()` foi definida de forma genérica.
+Alternativamente, pode-se definir uma função específica para cada modelo.
+Para o modelo Poisson com intercepto aleatório definimos 
+o código \@ref(lem:veroMPoisInt).
+
+```{lemma veroMPoisInt}
+**Função de verossimilhança marginal para o modelo de regressão de Poisson com efeito aleatório de intercepto.**
+```
+
+```{r}
+mod.Poisson <- function(b0,tau,integral, pontos, otimizador, 
+                        n.dim, dados){
+  ll = veroM(modelo = Poisson.Int, formu.X="~1", formu.Z="~1", 
+             beta.fixo = b0, prec.pars=tau, integral=integral, 
+             pontos=pontos,otim=otimizador,n.dim=n.dim,dados=dados)
+  #print(round(c(b0,tau,ll),2))
+  return(-ll)}
+```
+
+Usando a função `mle2()` para estimar os parâmetros via o algoritmo *BFGS*, e aproximação de Laplace, temos o seguinte.
+
+```{r}
+system.time(P.laplace <- mle2(mod.Poisson,start=list(b0=0,tau=log(1/4)),
+  data=list(integral="LAPLACE",otimizador = "BFGS", n.dim=1, 
+  dados=dados, pontos=NA)))
+summary(P.laplace)
+```
+
+Para os demais métodos de integração obtemos os seguintes valores da log-verossimilhança:
+
+```{r}
+par <- coef(P.laplace)
+MET <- c("LAPLACE","GH","MC","QMH","QMS","AGH","AMC","AQMH","AQMS")
+sapply(MET, function(metodo){
+       mod.Poisson(b0=par[1],tau=par[2], integral=metodo,
+                   pontos=21, n.dim=1,otimizador="BFGS", dados=dados)})
+```
+
+Neste exemplo todos os métodos apresentaram valores muito próximos do obtido pela aproximação de Laplace, 
+mais isto não significa que todos possuem o mesmo comportamento numérico.
+Por exemplo, o método Monte Carlo, requer muitos pontos para convergência, 
+o que o torna muito lento pois a cada iteração estamos re-sorteando de uma gaussiana multivariada.
+Alternativamente e de forma mais eficiente, podemos sortear apenas uma vez e usar os mesmos pontos em todas as iterações do algoritmo numérico. 
+O mesmo se aplicada a todos os outros métodos. 
+
+Para implementações mais eficientes devemos abandonar ou alterar 
+a função genérica apresentada aqui apenas como exemplo didático. 
+Algoritmos mais eficientes podem já receber os pontos de integração como argumento da função. Implementações análogas podem ser feitas para implementar a quadratura de Gauss-Hermite
+de forma mais eficiente.
+ Ressaltamos que neste momento não estamos interessados em eficiência computacional, apenas em apresentar os aspectos gerais dos métodos de integração numérica. 
+ 
+O mesmo ajuste feito anteriormente utilizando Laplace
+ fornece o resultado a seguir usando quadratura de Gauss-Hermite.
+
+```{r}
+system.time(P.GH <- mle2(mod.Poisson,start=list(b0=0,tau=log(1/4)),
+  data=list(integral="GH",pontos=100, n.dim=1, dados=dados)))
+summary(P.GH)
+```
+
+Repetimos ainda o ajuste com quasi-Monte Carlo com os pontos
+de Sobol. Neste exemplo, obtemos resultados semelhantes
+porém com tempos computacionais diferentes.
+
+```{r}
+system.time(P.AQMS <- mle2(mod.Poisson,start=list(b0=0,tau=log(1/4)),
+  data=list(integral="AQMS",pontos=10,otimizador="BFGS", 
+  n.dim=1, dados=dados)))
+summary(P.AQMS)
+```
+
+Com isso, passamos por todas as etapas do processo de estimação de um modelo de regressão com efeitos aleatórios
+ilustrando os princípios básicos e fundamentos dos algoritmos.
+Na sequência, vamos discutir alguns modelos com mais elementos, como por exemplo,
+com diferentes estruturas de efeitos aleatórios. 
+O processo de especificação/implementação do modelo e
+os métodos de integração seguem os mesmos princípios vistos até aqui. 
+Nos próximos exemplos, mudamos a matriz $Z$ de delineamento associada aos efeitos aleatórios.

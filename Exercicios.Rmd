@@ -1,0 +1,25 @@
+### Exercícios {-}
+
+1. Para cada uma das distribuições de probabilidade abaixo escreva a
+função de probabilidade ou densidade probabilidade, identifique
+o suporte, a esperança, a variância, os parâmetros e o espaço paramétrico.
+a) Distribuição Poisson de parâmetro $\lambda$.
+b) Distribuição binomial de parâmetros $n$ e $p$.
+c) Distribuição exponencial de parâmetro $\lambda$.
+d) Distribuição normal de parâmetros $\mu$ e $\sigma^2$.
+e) Distribuição gama de parâmetros $\alpha$ e $\beta$.
+f) Distribuição uniforme de parâmetros $a$ e $b$.
+g) Distribuição binomial negativa de parâmetros $\mu$ e $\phi$.
+h) Distribuição log-normal de parâmetros $\mu$ e $\sigma^2$.
+i) Distribuição inversa Gaussiana de parâmetros $\mu$ e $\sigma^2$.
+j) Distribuição Tweeedie de parâmetros $\mu$, $\phi$ e $p$.
+2. Para cada uma das situações abaixo proponha uma distribuição de probabilidade
+adequada e justifique sua escolha baseado em aspectos do fenômeno aleatório e
+características da distribuição. Descreva quais aspectos da inferência estatística podem estar associados com cada uma das situações mencionadas.
+a) Itens em uma linha de produção são classificados quanto a sua adequação aos padrões de produção. Apenas as condições conforme ou não-conforme são possíveis.
+b) Uma pesquisa de mercado visa identificar o potencial de um novo negócio em uma cidade. Para isto um questionário com perguntas em uma escala likert de cinco níveis foi construído e aplicado a uma amostra de tamanho $n$ da população de interesse.
+c) Número de carros que chegam a um caixa automático de um banco durante um período de uma hora nas manhãs de fins de semana.
+d) Ocorrência de defeitos relevantes em uma rodovia um mês após sua construção.
+e) Medidas antropométricas (peso e altura) são tomadas em crianças do nono ano de escolas públicas brasileiras. Deseja-se caracterizar tais medidas para auxiliar na construção de equipamentos escolares de tamanho adequado.
+f) Deseja-se estudar a distribuição do número de horas que um equipamento eletrônico funciona antes de apresentar defeitos com o objetivo de estabelecer um prazo razoável de garantia.
+g) Número de quilômetros rodados que um novo pneu é capaz de rodar antes de apresentar defeitos.

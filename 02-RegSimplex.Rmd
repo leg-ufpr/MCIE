@@ -1,0 +1,262 @@
+## Regressão Simplex {#sec:reg-simplex}
+
+Em situações práticas podemos estar diante de variáveis restritas ao intervalo
+$(0,1)$, como taxas, proporções e índices.  O exemplo que motiva essa sessão vem
+da área de ciências sociais na qual é comum a mensuração de variáveis latentes
+(não observáveis) que muitas vezes buscam medir qualidade, através de
+indicadores indiretos sobre o fenômeno latente. Um exemplo deste tipo de análise
+é o IDH - Índice de Desenvolvimento Humano, preconizado pela ONU - Organização
+das Nações Unidas, em todo o mundo.
+
+Estes índices que tradicionalmente, por construção, resultam sempre em valores
+no intervalo unitário, buscam medir indiretamente o nível de desenvolvimento de
+um país. O índice pode ser adaptado como o IDH-M (Índice de Desenvolvimento
+Humano - Municipal) para municípios, estados ou qualquer aglomeração de
+indivíduos, como por exemplo, bairros de uma cidade.  A importância em ressaltar
+que a construção leva a um número no intervalo unitário, é a de que o índice é
+expresso como uma nota em uma escala comum, permitindo a comparação entre
+países, estados, municípios ou bairros.
+
+Com foco em tais situações, selecionamos para este exemplo o Índice de Qualidade
+de Vida de Curitiba (IQVC). Este índice é composto por $19$ indicadores
+separados em $4$ áreas temáticas: Habitação, Saúde, Educação e Segurança. Estes
+indicadores buscam de forma indireta medir o nível de vida da população
+residente em cada um dos $75$ bairros da cidade. A metodologia para sua
+construção segue as premissas do IDH, e como tal resulta sempre em valores no
+intervalo unitário. Para sua construção é utilizada a base de microdados do
+Censo 2000, disponibilizada pelo IBGE (Instituto Brasileiro de Geografia e
+Estatística). Um interesse comum é relacionar o IQVC com a renda média do bairro
+medida em salários mínimos vigentes na época da pesquisa, neste caso ano
+de 2000. Os dados são disponibilizados pelo IPPUC/PR (*www.ippuc.org.br*)
+e uma versão resumida está disponível no arquivo *simplex.txt* dos
+complementos *online*.
+
+Para a construção do modelo de acordo com a abordagem que utilizamos neste
+material, é necessário fazer duas suposições, como nos MLG's usuais, a primeira
+a respeito da distribuição de probabilidade atribuída a variável resposta e a
+segunda referente a função $g(\cdot)$ que vai mapear o preditor linear ou não ao
+espaço paramétrico induzido pela distribuição suposta. Para este exemplo vamos
+supor a distribuição como sendo Simplex e a função $g(\cdot)$ como a inversa da
+função *logit*, comum em modelos lineares generalizados. A apresentação
+do modelo aqui baseia-se no trabalho de @Miyashiro:2008.
+
+A função densidade de probabilidade Simplex é indexada por dois tipos de parâmetros locação $\mu \in (0,1)$ e dispersão $\sigma^2 > 0$. Ambos podem ser decompostos em função de covariáveis observadas. Uma variável aleatória $Y$ que segue o modelo Simplex tem função densidade dada por
+$$
+\begin{equation} (\#eq:simplex)
+  f(y; \mu, \sigma^2) = [ 2 \pi \sigma^2 {y(1-y)}^3]^{-1/2} \exp \left\{ - d(y;\mu)/2\sigma^2 \right\}, \quad y \in (0,1),
+\end{equation}
+$$
+em que
+
+\begin{equation*}
+  d(y;\mu) = \frac{(y - \mu)^2}{y (1-y) \mu^2 (1- \mu)^2} .
+\end{equation*}
+
+Sejam $Y_1, Y_2, \ldots, Y_n$ variáveis aleatórias independentes, sendo cada $Y_i \sim S(\mu_i, \sigma^2)$, $i = 1,2, \ldots, n.$ O modelo de regressão Simplex é definido pela densidade \@ref(eq:simplex), sendo as médias $\mu_i$ dadas por
+\begin{equation*}
+  \mu_i = g( x_i^\top \underline{\beta}) = g(\eta_i)
+\end{equation*}
+em que $g(\cdot)$ é uma função que transforma valores dos reais ao intervalo unitário, $\underline{\beta} = (\beta_1, \beta_2, \ldots, \beta_p)^\top$ é o vetor de parâmetros da regressão $(\underline{\beta} \in \Re^p)$, $x_i^\top = (x_{i1}, x_{i2}, \ldots, x_{ip})^\top$ são os valores conhecidos de $p$ covariáveis e $\eta_i$ neste caso é o preditor linear. Poderíamos, sem perda de generalidade definir o preditor como
+\begin{equation*}
+  h(\mu_i) = x_i^\top \underline{\beta}  = \eta
+\end{equation*}
+onde agora $h(\cdot)$ é uma função de ligação que transforma do $(0,1)$ em $\Re$, dependendo da situação pode ser mais simples definir de uma forma ou de outra. No caso Simplex vamos definir a função $h(\cdot)$ como sendo a função $logit$ que facilita bastante a obtenção do vetor *escore*. O objetivo deste exemplo é mostrar como usar os otimizadores numéricos implementados na função `optim()`, porém usando o vetor *escore* obtido analiticamente.
+
+Dada a função densidade de probabilidade, podemos facilmente obter a função de log-verossimilhança,
+\[
+  l_i(\mu_i,\sigma^2) = - 0.5 [\log(2\pi) + \log(\sigma^2) + 3 \log \{ y_i (1 - y_i)\} + d(y_i;\mu_i)/\sigma^2].
+\]
+
+Temos que $h(\mu_i) = x_i^\top \underline{\beta} = \eta_i$, então para obter o vetor escore precisamos derivar em relação a cada $\beta_p$.
+
+
+\begin{equation*}
+  \frac{\partial l(\underline{\beta}, \sigma^2)}{\partial \beta_p} = 
+  \sum_{i=1}^n \frac{\partial l_i(\mu_i, \sigma^2)}{\partial \mu_i} \frac{\partial \mu_i}{ \partial \eta_i} \frac{\partial \eta_i}{\partial \beta_i}.
+\end{equation*}
+
+Para obter o vetor escore para a parte de média precisamos de três componentes, o primeiro é:
+\begin{eqnarray}
+ & \frac{\partial l(\mu_i, \sigma^2)}{\partial \mu_i} = -\frac{1}{2 \sigma^2} \frac{\partial}{\partial \mu_i} d(y_i, \mu_i) = \\ \nonumber
+ &  =  \sigma^{-2} \left[\underbrace{ \frac{(y_i - \mu_i)}{(1-\mu)^2 \mu^2 (1-y)y} + \frac{(y_i - \mu_i)^2}{(1-\mu)^2 \mu^3 (1-y)y} - 
+      \frac{ (y_i - \mu_i)^2}{(1-\mu_i)^3 \mu^2 (1 - y_i)y_i} }_u \right] ,
+\end{eqnarray}
+o segundo,
+\[
+  \frac{\partial \mu_i}{ \partial \eta_i} = \frac{1}{g'(\mu_i)} = \mu_i (1 - \mu_i) ,
+\]
+e o terceiro,
+\[
+  \frac{\partial \eta_i}{\partial \beta_i} =  x_{ip} .
+\]
+
+Em notação matricial, a função escore para $\underline{\beta}$ é dada por
+\[ U_{\underline{\beta}}(\underline{\beta}, \sigma^2) = \sigma^{-2} X^\top T u, \]
+onde $X$ é uma matriz $n \times p$, de delineamento do modelo, $T = diag\{ 1/g'(\mu_1), \ldots, 1/g'(\mu_i) \}$ e $u^\top = (u_1, \ldots, u_n)\top.$
+
+A função escore para $\sigma^2$ é facilmente obtida, derivando $l(\underline{\beta}, \sigma^2)$ em relação a $\sigma^2$,
+\begin{equation*}
+  U_{\sigma^2}(\underline{\beta}, \sigma^2) = -\frac{n}{2 \sigma^2} + \frac{1}{2 \sigma^4} \sum_{i=1}^n d(y_i; \mu_i).
+\end{equation*}
+
+Note que podemos obter $\hat{\sigma}^2$ analiticamente, sua equação é dada por
+\[  \hat{\sigma}^2 =  \frac{1}{n} \sum_{i=1}^n d(y_i, \hat{\mu}_i) . \]
+
+Com isso temos todos os elementos necessários para a implementação computacional
+do modelo de regressão Simplex. Não há uma implementação da densidade Simplex
+entre as funções básicas do `R`. Começamos então definindo uma função para
+densidade da Simplex.
+
+```{lemma}
+**Função densidade de probabilidade para uma variável aleatória de distribuição Simplex.**
+```
+
+```{r}
+dsimplex <- function(y, mu, sigma, log=TRUE){
+  dis <- (y-mu)^2 / (y*(1-y)*mu^2 *(1-mu)^2)
+  dsim <- -0.5*log(2*pi) -0.5*log(sigma) - 
+                (3/2)*log(y*(1-y)) - (1/(2*sigma))*dis
+  if(log == FALSE){dsim <- exp(dsim)}
+  return(dsim)}
+```
+
+Dada a aplicação teremos o vetor $\underline{\beta} = (\beta_0, \beta_1)$ e
+então o modelo de regressão Simplex em `R` é apresentado no código abaixo.
+Definimos a função de ligação *logit* para $h(\cdot) = g^{-1}(\cdot)$ e
+sua inversa $g(\cdot)$.  Note que como o parâmetro $\sigma^2$ tem solução
+analítica e depende apenas de $\mu_i$ não precisamos maximizar numericamente em
+relação a este parâmetro, estamos novamente usando uma log-verossimilhança
+concentrada.  Basta substituirmos seu estimador na expressão da
+log-verossimilhança.  Em nossas implementações este procedimento foi fundamental
+para conseguir estabilidade nos resultados do algoritmo de maximização da
+verossimilhança.
+
+```{lemma}
+**Função de log-verossimilhança para o modelo de regressão Simplex.**
+```
+
+```{r}
+inv.logit <- function(x, lambda){ 1/(1+exp(-x)) }
+modelo.simplex <- function(b0, b1, formula, data){
+  mf <- model.frame(formula, data=data)
+  y <- model.response(mf)
+  X <- model.matrix(formula, data=mf)
+  mu <- inv.logit(X%*%c(b0,b1))
+  d0 <- ((y-mu)^2)/(y*(1-y)*mu^2*(1-mu)^2)
+  sigma <- sum(d0)/length(y)
+  ll <- sum(dsimplex(y, mu=mu, sigma=sigma))
+  return(-ll)
+}
+```
+O próximo passo é implementar a função escore já obtida, note novamente que ela é função apenas de dois parâmetros $\beta_0$ e $\beta_1$, uma vez que tenhamos estes substituímos na expressão de $\hat{\sigma}^2$ e o usamos na expressão do vetor escore.
+
+```{lemma}
+**Função escore para o modelo de regressão Simplex.**
+```
+
+```{r}
+escore <- function(b0, b1, formula, data){
+  mf <- model.frame(formula, data=data)
+  y <- model.response(mf)
+  X <- model.matrix(formula, data=mf)
+  eta <- X%*%c(b0,b1)
+  mu <- inv.logit(eta)
+  d0 = ((y - mu)^2) / (y*(1-y)*mu^2 * (1-mu)^2)
+  sigma <- sum(d0)/length(y)
+  T <- diag(c(mu*(1-mu)))
+  u <- (1/(sigma*(1-mu)*mu))*(-((y-mu)^2/((1-mu)^2*mu^2)) +  
+         (((y - mu)^2)/((1-mu)^2*mu^2))+((y-mu)/((1-mu)^2*mu^2)))
+  es <- (crossprod(X,T) %*% u)/sigma
+  return(as.numeric(-es))
+}
+```
+
+Com isto, estamos aptos a passar a log-verossimilhança e o vetor escore para a
+optim e obter as estimativas de máxima verossimilhança para $\beta_0$ e
+$\beta_1$, com estas substituímos na expressão de $\hat{\sigma}^2$ e concluímos
+o processo de estimação. Antes disso, precisamos do conjunto de dados que será
+analisado. O arquivo chamado *simplex.txt* traz o conjunto para a
+análise. O código abaixo lê a base de dados e apresenta um pequeno resumo. A
+Figura \@ref(fig:histSimplex) apresenta uma análise exploratória gráfica, com um
+histograma e um diagrama de dispersão relacionando o IQVC com a renda média do
+bairro em salários mínimos que foi divido por $10$ para evitar problemas
+numéricos.
+
+```{r}
+dados <- read.table("simplex.txt",header=TRUE)
+head(dados)
+```
+
+O conjunto de dados contêm apenas três colunas, a primeira denominada $ID$
+apenas identifica os diferentes bairros, a coluna $y$ apresenta o Índice de
+Qualidade de Vida de Curitiba (IQVC) e a coluna $MEDIA$ apresenta a renda média
+do bairro em salários mínimos dividido por $10$.
+
+
+```{r histSimplex, echo = FALSE, fig.width = 7.5, fig.height = 4, fig.cap = "Histograma e diagrama de dispersão - IQVC.", fig.align = "center"}
+par(mfrow=c(1,2),mar=c(2.8, 2.8, 1.7, 1),mgp = c(1.8, 0.7, 0))
+hist(dados$y,ylab="Frequência",xlab="IQVC",main="")
+plot(y ~ MEDIA, ylim=c(0,1), xlim=c(0,4), ylab="IQV", xlab="Renda em S.M", data=dados)
+mod <- lm(y ~ MEDIA, data=dados)
+abline(mod)
+```
+Para o ajuste do modelo Simplex, vamos novamente usar as facilidades do pacote `bbmle` que usa internamente a função `optim()`. O ajuste é dado no seguinte código. 
+
+```{r message = FALSE}
+require(bbmle)
+simplex.logit.gr <- mle2(modelo.simplex, start=list(b0=0,b1=0),
+                         gr=escore, method="BFGS",
+                         data=list(formula=y~MEDIA, data=dados))
+```
+
+A única diferença é no uso do argumento $gr$ onde é passada a função escore com
+exatamente os mesmos argumentos adicionais usados na função de
+log-verossimilhança. A função `optim()` tem quatro otimizadores básicos:
+*Nelder-Mead*, *gradiente conjugado*, *BFGS* e
+*simulating annealing*.  O uso de gradiente analítico só é possível nos
+algoritmos *BFGS* e *gradiente conjugado*.
+
+O resumo tradicional do modelo pela função `summary()`, traz os erros
+padrões que são usados para a construção de intervalos de confiança
+assintóticos, que podem ser obtidos diretamente pela função `confint(...,
+method="quad")`.
+
+```{r}
+summary(simplex.logit.gr)
+confint(simplex.logit.gr, method="quad")
+```
+
+Deixamos como exercício para o leitor obter o intervalo de confiança para
+$\sigma^2$ e os perfis de verossimilhança para $\beta_0$ e $\beta_1$. Para
+finalizar o exemplo, podemos visualizar o ajuste sobreposto aos dados. Para
+isto, vamos escrever uma função genérica para gerar os preditos.
+
+
+```{lemma}
+**Função para calcular os valores preditos para um modelo de regressão Simplex.**
+```
+
+```{r}
+my.predict <- function(modelo, formula, newdata){
+  X <- model.matrix(formula,data=newdata)
+  beta <- coef(modelo)[1:ncol(X)]
+  preditos <- inv.logit(X%*%beta)
+  return(preditos)
+}
+```
+
+Usando a função `my.predict()` obtemos os valores preditos pelo modelo para
+rendas em uma sequência de valores.
+
+```{r}
+preditos <- my.predict(simplex.logit.gr, formula=~MEDIA, 
+                       newdata= data.frame(MEDIA=seq(0,4,l=500)))
+```
+
+Por fim, plotamos na Figura \@ref(fig:desSimplex) um diagrama de dispersão com as
+observações e a média predita pelo modelo para a sequência de valores de renda.
+
+```{r desSimplex, echo = FALSE, width = 6, height = 4.5, fig.cap = "Diagrama de dispersão e modelo ajustado - IQVC 2000.", fig.align = "center"}
+plot(y ~ MEDIA, ylim=c(0,1), xlim=c(0,4), ylab="IQVC", xlab="Renda em S.M/10", data=dados)
+lines(preditos ~ seq(0,4,l=500))
+```

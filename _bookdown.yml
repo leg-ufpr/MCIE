@@ -2,16 +2,15 @@ output_dir: _book
 book_filename: "MCIEbook"
 chapter_name: "Chapter "
 
-rmd_files: [
-    "index.Rmd",
-    "introduction.Rmd",
-    "likelihood.Rmd",
-    "Exemplos.Rmd",
-    "Exemplos2.Rmd",
-    "ExemplosADD.Rmd",
-    "Modreg.Rmd",
-    "bibliography.Rmd"
-]
+rmd_files: ["index.Rmd", "introduction.Rmd", "01-likelihood.Rmd",
+    #"01-Exemplos.Rmd", "01-exemploGaussiana.Rmd", "01-gamma.Rmd", "01-NB.Rmd",
+    #"01-Exemplos2.Rmd", "01-final1.Rmd", "02-cap-Reg.Rmd", "02-RegPoisson.Rmd",
+    #"02-RegSimplex.Rmd", "02-countgamma.Rmd", "02-naoLinear.Rmd",
+    #"02-PPlik.Rmd", "03-cap-EfAlea.Rmd", "03-modeloGeo.Rmd", "03-Marginal.Rmd",
+    #"03-IntNumerica.Rmd", "03-PoissonIntercepto.Rmd", "03-PoissonAninhado.Rmd",
+    #"03-Beta.Rmd", "03-dlm-mle.Rmd", 
+    "bibliography.Rmd"]
+
 
 before_chapter_script: "config/_setup.R"
 

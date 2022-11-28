@@ -1,5 +1,5 @@
 ---
-title: "Métodos Computacionais para Inferência Estatística"
+title: "Estatística Inferencial com apoio computacional"
 author:
   - PhD Wagner Hugo Bonat
   - PhD Paulo Justiniano Ribeiro Junior
@@ -8,7 +8,9 @@ documentclass: book
 papersize: a5
 fontsize: 9pt
 geometry: [left=2cm, right=1.2cm, top=1.5cm, bottom=1.5cm]
-bibliography: [config/MCIE.bib]
+output:
+  bookdown::html_document2: default
+bibliography: [config/referencia.bib]
 biblio-style: apalike
 ---
 
@@ -18,7 +20,7 @@ A ideia de verossimilhança como instrumento para avaliar a evidência contida n
 dados está no centro dos fundamentos da metodologia estatística.
 Embora formalizada nos trabalhos de Sir Ronald Aylmer Fisher nos anos 20, 
 apenas muitas décadas depois e principalmente com as possibilidades abertas pela 
-computação estatística, esta pôde ser explorada, investigada, aplicada, modificada e 
+computação  estatística, esta pôde ser explorada, investigada, aplicada, modificada e 
 expandida nas mais diferentes formas.
 
 A necessidade de computação em estatística está presente desde sua origem, 
@@ -31,8 +33,8 @@ permitindo usuários investigar possibilidades e conceitos, experimentar ideias,
 adaptar códigos, implementar protótipos com grande flexibilidade ainda que sem 
 um investimento proibitivo no domínio dos recursos utilizados.
 
-Em particular os projetos de *software livre* cumprem tal papel 
-sem impor obstáculos ao usuário. Neste contexto o *Projeto `R` de Computação Estatística* 
+Em particular os projetos de software livre cumprem tal papel 
+sem impor obstáculos ao usuário. Neste contexto o Projeto `R` de Computação Estatística 
 iniciado na década de 90 e com a primeira versão lançada no ano 2000, tem uma impactante 
 contribuição e larga abrangência que, em muito, ultrapassa os limites da área de estatística. 
 A linguagem já imprimiu uma marca indelével no conjunto de recursos disponíveis para
@@ -41,9 +43,8 @@ interessados em computação e métodos estatísticos.
 O presente texto situa-se na interface entre métodos de 
 inferência estatística baseada em verossimilhança e métodos computacionais 
 (com implementações em ambiente `R`). Sem nos aprofundarmos em nenhuma das duas áreas, 
-procuramos ilustrar suas conexões através de diversos exemplos básicos de modelagem estatística. 
-Nossa expectativa é a de que o texto possa servir como material introdutório ao leitor e facilitar 
-seu caminho para construir suas próprias implementações em modelagens de seu interesse. 
+procuramos ilustrar suas conexões por meio de diversos exemplos básicos de modelagem estatística. 
+Nossa expectativa é a de que o texto possa servir como material introdutório ao leitor e facilitar seu caminho para construir suas próprias implementações em modelagens de seu interesse. 
 
 O material foi motivado por nossa experiência em grupos de estudos e
 disciplinas conduzidas no âmbito do LEG/UFPR
@@ -55,35 +56,31 @@ Nossa estratégia usual é a de escrever nossas funções, na forma de protótip
 melhor desenvolver a intuição sobre as características dos modelos e métodos estatísticos em discussão.
 Desta forma as funções e códigos apresentados são predominantemente ilustrativos,
 privilegiando a facilidade de leitura e entendimento.
-Os códigos não devem ser vistos como implementações definitivas  
-nem tampouco tentam explorar usos mais eficientes da linguagem, ainda que alguns cuidados
+Os códigos não devem ser vistos como implementações definitivas nem tampouco 
+tentam explorar o uso eficiente da linguagem, ainda que alguns cuidados
 para evitar problemas numéricos sejam tomados na definição de certas operações.
 Por vezes os resultados são comparados com os fornecidos por funções do `R` e alguns de seus pacotes.
 Seguimos a sugestão de que *''programming is the best way to debug your ideias"*.
 
-Nosso público alvo são alunos de final de graduação, com alguma exposição anterior a conceitos de 
-inferência estatística e ao uso do ambiente `R`. Outros potenciais interessados são alunos em 
+Nosso público alvo são alunos de final de graduação, com alguma exposição anterior a conceitos de inferência estatística e ao uso do ambiente `R`. 
+Outros potenciais interessados são alunos em 
 início de pós-graduação e/ou profissionais que tenham interesse em se familiarizar 
 com elementos de programação em `R` para inferência estatística.
 Incentivamos os leitores do material a nos enviar comentários, sugestões e correções.
 
 O texto é permeado de códigos em linguagem `R` que são identificados pelo uso de fonte
-estilo \verb|VERBATIM como esta|. 
+estilo `VERBATIM como esta`. 
 Um tratamento especial é dado as funções em `R` que são definidas dentro de caixas em destaque.
 Tipicamente estas definem funções implementando alguma metodologia ou 
 alguma função de verossimilhança a ser chamada por funções otimizadoras.
-Um material **online** complementa o texto com exemplos e informações adicionais
-e está disponível em `http://www.leg.ufpr.br/mcie`.
 
 Todo o material é produzido utilizando *software* livre.
 As implementações de métodos e algoritmos é toda feita no ambiente `R`
-de computação estatística. O texto é escrito utilizando \LaTeX{} e a integração
+de computação estatística. O texto é escrito utilizando _latex_ e a integração
 com o `R` pelo mecanismo `rmarkdown`.
-Os recursos são utilizados em sistema operacional `LINUX`, incluindo a página *web*
-disponibilizada em ambiente `Dokuwiki` em um servidor `Apache`. 
-
+Os recursos são utilizados em sistema operacional `LINUX`.
 
 W.H.B, P.J.R. Jr e W.M.Z. 
 
-Curitiba, Junho, 2020.
+Curitiba, Junho, 2021.
 

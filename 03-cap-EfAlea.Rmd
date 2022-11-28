@@ -1,0 +1,51 @@
+# Modelos de regressão com efeitos aleatórios
+
+A área de modelagem estatística teve um grande impulso com a criação dos modelos de regressão, 
+dos quais os ilustrados no Capítulo \@ref(sec:reg) são alguns exemplos. 
+As aplicações aparecem nas mais diversas áreas da ciência. Nesta diversidade de aplicações é muito fácil encontrar situações de relevância prática nas quais os modelos de regressão tradicionais deixam de ser adequados pela existência de características que violam suposições de modelos usuais. Alguns exemplos são:
+
+* para covariáveis contínuas, a suposição de efeito estritamente linear no preditor pode não ser adequada,
+* as observações podem ser correlacionadas no espaço,
+* as observações podem ser correlacionadas no tempo,
+* interações complexas podem ser necessárias para modelar o efeito conjunto de algumas covariáveis,
+* heterogeneidade entre indivíduos ou unidades pode não ser suficientemente descrita por covariáveis.
+
+Em tais situações a variabilidade das observações usualmente não segue a prescrita pelo modelo
+ de probabilidades e a classe de modelos de regressão é estendida pela adição
+ de efeitos aleatórios, incorporando variáveis não observadas (latentes). 
+ Esta abordagem é extensivamente utilizada por ser altamente flexível mas ainda preservando
+ especificações de modelos entre distribuições conhecidas e tratáveis analítica e/ou computacionalmente. 
+ Esta classe de modelos pode facilmente ser descrita como uma extensão dos modelos de regressão com efeitos fixos, pela inclusão de mais uma suposição. Considere que $Y$ seja um vetor de dimensão $n$. A seguinte estrutura hierárquica descreve um modelo de regressão com efeitos aleatórios. Neste livro vamos nos limitar a inclusão de efeitos aleatórios gaussianos, como na seguinte especificação:
+ 
+\begin{align*}
+	[Y | b , X]  &\sim f(\underline{\mu}, \phi) \\
+	g(\underline{\mu}) &= X \underline{\beta} + Z \underline{b} \\
+	\underline{b} &\sim NMV(\underline{0}, \Sigma) .
+\end{align*}
+
+O preditor linear é decomposto em duas componentes, a parte de efeitos fixos $X \underline{\beta}$ e a parte aleatória $Z \underline{b}$. As matrizes de delineamento $X$ e $Z$ são consideradas conhecidas representando os efeitos de covariáveis de interesse. O vetor $\underline{\beta}$ representa os efeitos fixos que deverão ser estimados. O vetor aleatório $\underline{b}$ são quantidades não observadas (latentes) para o qual vamos atribuir uma distribuição gaussiana multivariada de média $0$ e matriz de covariância $\Sigma$. De acordo com a estrutura imposta a $\Sigma$ podemos induzir diversos tipos de correlação entre as observações $Y$. 
+É usual adotar a suposição de independência condicional em $[Y|b]$, ou seja, dado os efeitos aleatórios as observações são independentes, o que é usado na construção da verossimilhança e explorado 
+por algoritmos numéricos.
+
+A inferência baseada em verossimilhança para esta classe de modelos apresenta desafios computacionais, principalmente quando a distribuição atribuída a variável resposta é diferente da gaussiana. 
+Na discussão a seguir vamos, sem perda de generalidade, excluir a matriz de efeitos fixos $X$. 
+Como temos duas quantidades aleatórias, devemos obter a distribuição conjunta $[Y,b]$ 
+que pode, seguindo a estrutura hierárquica do modelo, ser fatorada na forma $[Y,b] = [Y|b][b]$.
+ Entretanto, apenas $Y$ é observável e portanto a verossimilhança é dada pela distribuição marginal $[Y]$ 
+ que é obtida fazendo uma média sobre os valores da variável não observada
+ $[Y] = \int [Y|b][b] db$. As estimativas são obtidas maximizando $[Y]$ em relação aos parâmetros do modelo. 
+Sob a suposição de que $[b]$ é gaussiana multivariada, 
+temos que os parâmetros do modelos são $[\underline{\beta}, \Sigma, \phi]$, ou seja, 
+o vetor de efeitos fixos mais os parâmetros que indexam a distribuição do efeito aleatório
+tipicamente com algum parâmetro de variabilidade ou precisão.
+
+Quando a distribuição de $[Y]$ não é gaussiana, não é possível resolver analiticamente a integral contida na função de verossimilhança e temos que recorrer a métodos numéricos.
+Isto implica que métodos de integração numérica são necessários para avaliar a verossimilhança marginal 
+e obter as estimativas de máxima verossimilhança. 
+Esta descrição é bastante genérica e será detalhada na sequência. 
+Mas antes vamos apresentar um exemplo onde a distribuição de $[Y]$ 
+e obter as estimativas de máxima verossimilhança. 
+Esta descrição é bastante genérica e será detalhada na sequência. 
+Mas antes vamos apresentar um exemplo onde a distribuição de $[Y]$ 
+é gaussiana porém as amostras não são independentes.
+

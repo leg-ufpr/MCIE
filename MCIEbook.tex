@@ -1,0 +1,761 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+  9pt,
+  a5paper,
+]{book}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[left=2cm,right=1.2cm,top=1.5cm,bottom=1.5cm]{geometry}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newlength{\cslentryspacingunit} % times entry-spacing
+\setlength{\cslentryspacingunit}{\parskip}
+\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
+ {% don't indent paragraphs
+  \setlength{\parindent}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+  \let\oldpar\par
+  \def\par{\hangindent=\cslhangindent\oldpar}
+  \fi
+  % set entry spacing
+  \setlength{\parskip}{#2\cslentryspacingunit}
+ }%
+ {}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={Estatística Inferencial com apoio computacional},
+  pdfauthor={PhD Wagner Hugo Bonat; PhD Paulo Justiniano Ribeiro Junior; Dr Walmes Marques Zeviani},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Estatística Inferencial com apoio computacional}
+\author{PhD Wagner Hugo Bonat \and PhD Paulo Justiniano Ribeiro Junior \and Dr Walmes Marques Zeviani}
+\date{}
+
+\usepackage{amsthm}
+\newtheorem{theorem}{Teorema}[chapter]
+\newtheorem{lemma}{Código}[chapter]
+\newtheorem{corollary}{Corolário}[chapter]
+\newtheorem{proposition}{Proposição}[chapter]
+\newtheorem{conjecture}{Conjecture}[chapter]
+\theoremstyle{definition}
+\newtheorem{definition}{Definição}[chapter]
+\theoremstyle{definition}
+\newtheorem{example}{Example}[chapter]
+\theoremstyle{definition}
+\newtheorem{exercise}{Exercise}[chapter]
+\theoremstyle{definition}
+\newtheorem{hypothesis}{Hypothesis}[chapter]
+\theoremstyle{remark}
+\newtheorem*{remark}{Destaque }
+\newtheorem*{solution}{Solution}
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{1}
+\tableofcontents
+}
+\hypertarget{prefuxe1cio}{%
+\chapter*{Prefácio}\label{prefuxe1cio}}
+\addcontentsline{toc}{chapter}{Prefácio}
+
+A ideia de verossimilhança como instrumento para avaliar a evidência contida nos
+dados está no centro dos fundamentos da metodologia estatística.
+Embora formalizada nos trabalhos de Sir Ronald Aylmer Fisher nos anos 20,
+apenas muitas décadas depois e principalmente com as possibilidades abertas pela
+computação estatística, esta pôde ser explorada, investigada, aplicada, modificada e
+expandida nas mais diferentes formas.
+
+A necessidade de computação em estatística está presente desde sua origem,
+seja de forma manual ou, na agora onipresente, forma eletrônica com o uso de computadores.
+O desenvolvimento de linguagens e aplicativos para computação estatística
+ampliam rápida e largamente as possibilidades de geração e tratamento de dados.
+Linguagens interpretadas, direcionadas e/ou adaptáveis para computação estatística
+diminuem dramaticamente a distância entre programação e uso de aplicativos
+permitindo usuários investigar possibilidades e conceitos, experimentar ideias,
+adaptar códigos, implementar protótipos com grande flexibilidade ainda que sem
+um investimento proibitivo no domínio dos recursos utilizados.
+
+Em particular os projetos de software livre cumprem tal papel
+sem impor obstáculos ao usuário. Neste contexto o Projeto \texttt{R} de Computação Estatística
+iniciado na década de 90 e com a primeira versão lançada no ano 2000, tem uma impactante
+contribuição e larga abrangência que, em muito, ultrapassa os limites da área de estatística.
+A linguagem já imprimiu uma marca indelével no conjunto de recursos disponíveis para
+interessados em computação e métodos estatísticos.
+
+O presente texto situa-se na interface entre métodos de
+inferência estatística baseada em verossimilhança e métodos computacionais
+(com implementações em ambiente \texttt{R}). Sem nos aprofundarmos em nenhuma das duas áreas,
+procuramos ilustrar suas conexões por meio de diversos exemplos básicos de modelagem estatística.
+Nossa expectativa é a de que o texto possa servir como material introdutório ao leitor e facilitar seu caminho para construir suas próprias implementações em modelagens de seu interesse.
+
+O material foi motivado por nossa experiência em grupos de estudos e
+disciplinas conduzidas no âmbito do LEG/UFPR
+(Laboratório de Estatística e Geoinformação da Universidade Federal do Paraná)
+nos últimos anos. Procuramos mesclar a discussão de princípios básicos de
+inferência estatística, com ênfase em métodos baseados na função de verossimilhança,
+com a implementação computacional.
+Nossa estratégia usual é a de escrever nossas funções, na forma de protótipos, para
+melhor desenvolver a intuição sobre as características dos modelos e métodos estatísticos em discussão.
+Desta forma as funções e códigos apresentados são predominantemente ilustrativos,
+privilegiando a facilidade de leitura e entendimento.
+Os códigos não devem ser vistos como implementações definitivas nem tampouco
+tentam explorar o uso eficiente da linguagem, ainda que alguns cuidados
+para evitar problemas numéricos sejam tomados na definição de certas operações.
+Por vezes os resultados são comparados com os fornecidos por funções do \texttt{R} e alguns de seus pacotes.
+Seguimos a sugestão de que \emph{'\,'programming is the best way to debug your ideias''}.
+
+Nosso público alvo são alunos de final de graduação, com alguma exposição anterior a conceitos de inferência estatística e ao uso do ambiente \texttt{R}.
+Outros potenciais interessados são alunos em
+início de pós-graduação e/ou profissionais que tenham interesse em se familiarizar
+com elementos de programação em \texttt{R} para inferência estatística.
+Incentivamos os leitores do material a nos enviar comentários, sugestões e correções.
+
+O texto é permeado de códigos em linguagem \texttt{R} que são identificados pelo uso de fonte
+estilo \texttt{VERBATIM\ como\ esta}.
+Um tratamento especial é dado as funções em \texttt{R} que são definidas dentro de caixas em destaque.
+Tipicamente estas definem funções implementando alguma metodologia ou
+alguma função de verossimilhança a ser chamada por funções otimizadoras.
+
+Todo o material é produzido utilizando \emph{software} livre.
+As implementações de métodos e algoritmos é toda feita no ambiente \texttt{R}
+de computação estatística. O texto é escrito utilizando \emph{latex} e a integração
+com o \texttt{R} pelo mecanismo \texttt{rmarkdown}.
+Os recursos são utilizados em sistema operacional \texttt{LINUX}.
+
+W.H.B, P.J.R. Jr e W.M.Z.
+
+Curitiba, Junho, 2021.
+
+\hypertarget{introduuxe7uxe3o}{%
+\chapter{Introdução}\label{introduuxe7uxe3o}}
+
+A abordagem estatística para análise e resumo de informações contidas em um conjunto de dados, consiste na suposição de que existe um mecanismo estocástico gerador do processo em análise. Este mecanismo é descrito por meio de um modelo probabilístico, representado por uma distribuição de probabilidade. Em situações reais a verdadeira distribuição de probabilidade geradora do processo é desconhecida, sendo assim, distribuições de probabilidade adequadas devem ser escolhidas de acordo com o tipo de fenômeno em análise. Por exemplo, se o fenômeno em estudo consiste em medir uma característica numérica de um grupo de indivíduos em uma escala contínua, distribuições com este \textbf{suporte} devem ser escolhidas.
+O \textbf{suporte} de uma distribuição de probabilidade informa qual o domínio da função, ou seja, quais são os valores que a variável aleatória pode assumir.
+Considere o caso da distribuição gaussiana, o \textbf{suporte} é a reta real, no caso da distribuição gama o suporte é apenas os reais positivos.
+Um cuidado adicional deve ser dado quando a variável de interesse é discreta, por exemplo contagens, onde é comum atribuir uma distribuição de Poisson que tem \textbf{suporte} nos naturais positivos.
+
+Em quase todos os problemas de modelagem estatística não existe uma única distribuição de probabilidade que pode representar o fenômeno.
+Porém, na maioria das situações assume-se que a distribuição de probabilidade geradora do processo é conhecida, com exceção dos valores de um ou mais \textbf{parâmetros} que a indexam.
+Por exemplo, considere que o tempo de vida de um tipo de componente eletrônico tem distribuição exponencial com \textbf{parâmetro} \(\lambda\), mas o valor exato de \(\lambda\) é desconhecido. Se o tempo de vida de vários componentes de mesmo tipo são observados, baseado nestas observações e qualquer outra fonte relevante de informação que esteja disponível, é possível fazer \textbf{inferência} sobre o valor desconhecido do parâmetro \(\lambda\).
+O processo de \textbf{inferência} consiste em encontrar um valor mais plausível para \(\lambda\), bem como, informar um intervalo para o qual acredita-se conter o verdadeiro valor de \(\lambda\), além de decidir ou opinar se \(\lambda\) é igual, maior ou menor que algum valor previamente especificado.
+Em alguns problemas há ainda interesse em fazer previsões sobre possíveis valores do processo, por exemplo, em outros tempos ou locais.
+
+Em implementações computacionais para inferência estatística, deve-se sempre estar atento ao \textbf{espaço paramétrico} \((\Theta)\) de um modelo probabilístico. No caso do tempo de vida de componentes eletrônicos, assumindo que a distribuição exponencial é adequada e está sendo indexada pelo parâmetro \(\lambda\). De acordo com a construção do modelo exponencial, tem-se que o \textbf{espaço paramétrico} de \(\lambda\) é dado pelo conjunto dos reais positivos. Em um modelo gaussiano, com média \(\mu\) e variância \(\sigma^2\), o espaço paramétrico é \(\Re \times \Re_{+}\) ou seja, todo o conjunto dos reais para média \(\mu\) enquanto que para \(\sigma^2\) o espaço paramétrico restringe-se aos reais positivos. Outro caso comum são modelos em que o parâmetro representa alguma proporção \(p\) e tem como espaço paramétrico o intervalo \((0,1)\).
+Estas restrições precisam ser levadas em consideração no processo de inferência e são de fundamental importância para o sucesso de muitos algoritmos de maximização numérica.
+Não raramente nas implementações computacionais são feitas reparametrizações
+com novos parâmetros para os quais os valores são projetados na reta real, com resultados transformados de volta ao espaço original. Por exemplo, pode-se adotar \(\psi = \log{\sigma}\) para variância do modelo normal e \(\psi = \log{p/(1-p)}\) para a proporção de sucesso em um experimento binomial.
+
+Partindo destes conceitos, um fenômeno aleatório ou estocástico é descrito minimamente por uma \textbf{distribuição de probabilidade}, que por sua vez é indexada por seus parâmetros e respectivos campos de variação \textbf{espaço paramétrico}, além do campo de variação da própria variável aleatória que deve ser compatível com o \textbf{suporte} da distribuição atribuída ao fenômeno. Por exemplo, não é correto atribuir uma distribuição de Poisson para a altura (medida contínua) de trabalhadores, uma vez que o campo de variação da variável de interesse (resposta) não é compatível com o suporte da distribuição de probabilidade.
+
+Considere o caso onde deseja-se fazer uma pesquisa a respeito da intenção de voto em um plebiscito. Suponha que \(n\) eleitores selecionados aleatoriamente são questionados sobre a sua intenção em votar a favor \((1)\) ou contra \((0)\) uma determinada mudança na legislação. Deseja-se estimar a proporção \(\theta\) de eleitores favoráveis à mudança. Assume-se que o modelo Bernoulli seja adequado para a intenção de voto de cada eleitor e portanto o número de
+favoráveis em uma amostra aleatória de \(n\) eleitores tem distribuição binomial \({\rm B}(n, \theta)\). Este modelo tem como possíveis respostas para cada indivíduo da amostra os valores \(0\) e \(1\) e como parâmetro indexador \(\theta\) que representa a proporção de favoráveis e tem o intervalo unitário como seu espaço paramétrico.
+Com este conjunto de suposições e conhecimentos a respeito do modelo probabilístico, tem-se total condições de fazer inferência sobre o parâmetro \(\theta\) a partir dos dados de uma amostra.
+
+A Figura \ref{fig:espacomodelo}(A) representa a região definida pelo modelo para uma amostra aleatória de tamanho \(100\).
+A superfície é obtida calculando-se os valores das probabilidades de se observar \(y\) favoráveis em uma amostra para cada um dos possíveis valores do parâmetro. Para visualização omitimos os valores próximos às bordas \([0,1]\).
+Um corte da superfície de probabilidades em um particular valor do parâmetro
+fornece uma \textbf{distribuição de probabilidades} para as possíveis respostas
+como ilustrado na \ref{fig:espacomodelo}(B) para \(\theta=0,65\).
+Um corte para um valor de \(y=60\), que poderia ser o obtido em uma determinada amostra, fornece a \textbf{função de verossimilhança} denotada por \(\mathrm{L}(\theta|y)\) que é apresentada na
+Figura \ref{fig:espacomodelo}(C). Tal função fornece uma medida de proximidade entre cada possível valor do parâmetro e a amostra observada.
+
+\begin{figure}[h]
+
+{\centering \includegraphics{MCIEbook_files/figure-latex/espacomodelo-1} 
+
+}
+
+\caption{Superfície de probabilidades (esquerda), distribuição de probabilidades (centro) e função de verossimilhança (direita) para um modelo binomial.}\label{fig:espacomodelo}
+\end{figure}
+
+Em outras palavras, no gráfico da função de verossimilhança \(\mathrm{L}(\theta|y)\),
+a ordenada de cada ponto da curva é dada pela probabilidade do valor \(y\) observado na amostra, ter sido gerado por cada um dos possíveis valores de \(\theta\). Desta forma é intuitivo pensar que a melhor estimativa para o parâmetro, baseada na amostra, é o valor do parâmetro que tem maior probabilidade de gerar o resultado visto na amostra, portanto o valor
+que maximiza a função de verossimilhança. Isto define o \textbf{estimador de máxima verossimilhança} \(\hat{\theta}\).
+Também é intuitivo pensar que podemos definir uma ``faixa'' de valores
+que possuem uma probabilidade ``não muito distante e aceitável'' da máxima
+probabilidade de gerar o resultado visto na amostra.
+Tal faixa define um \textbf{estimador por intervalo} com valores inferior e superior \((\hat{\theta}_I, \hat{\theta}_S)\) que delimitam
+uma região no espaço paramétrico que possui valores de verossimilhança
+que não estejam abaixo de um percentual pré-definido do máximo possível
+valor da verossimilhança.
+Finalmente, pode-se verificar se um determinado valor de interesse, tal como \(\theta_0 = 0,5\) no exemplo considerado,
+é \textbf{compatível} com a amostra comparando-se sua verossimilhança
+com a máxima possível. Este último caso permite definir um \textbf{teste de hipótese} de interesse para guiar uma tomada de decisão.
+Na Figura \ref{fig:model} redesenhamos o gráfico da função de verossimilhança
+agora com a escala vertical com valores relativos ao máximo valor e os elementos no gráfico ilustram os três objetivos centrais da inferência estatística.
+
+\begin{figure}[h]
+
+{\centering \includegraphics{MCIEbook_files/figure-latex/model-1} 
+
+}
+
+\caption{Visualização da estimativa de máxima verossimilhança, estimativa intervalar e valor correspondente a uma hipótese na função de verossimilhança relativa (RL) para o modelo binomial.}\label{fig:model}
+\end{figure}
+
+Neste texto será dada ênfase na inferência baseada na verossimilhança, que fornece \textbf{estimadores} e procedimentos com propriedades desejáveis para os parâmetros desconhecidos de um modelo probabilístico. A \textbf{função de verossimilhança} fornece todos os elementos necessários
+para a obtenção de estimativas pontuais e intervalares, além da construção de testes de hipóteses. Toda a metodologia será descrita através de exemplos abordando diversos aspectos teóricos, com ênfase na implementação computacional para estimação de parâmetros desconhecidos cobrindo desde modelos simples até modelos altamente estruturados.
+A abordagem de inferência pela verossimilhança não é, entretanto, a solução de todo e qualquer problema, podendo tornar-se intratável analítica e/ou computacionalmente em certos modelos. Entretanto, os princípios permanecem válidos e diversos procedimentos estendem, aproximam ou substituem a verossimilhança quando necessário. Tais extensões estão fora do escopo deste texto que concentra-se na obtenção da verossimilhança com ênfase em procedimento numéricos. Nossa intenção é reforçar a intuição para aspectos fundamentais e básicos de inferência.
+
+\hypertarget{exercuxedcios}{%
+\subsection*{Exercícios}\label{exercuxedcios}}
+\addcontentsline{toc}{subsection}{Exercícios}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Para cada uma das distribuições de probabilidade abaixo escreva a
+  função de probabilidade ou densidade probabilidade, identifique
+  o suporte, a esperança, a variância, os parâmetros e o espaço paramétrico.
+
+  \begin{enumerate}
+  \def\labelenumii{\alph{enumii})}
+  \tightlist
+  \item
+    Distribuição Poisson de parâmetro \(\lambda\).
+  \item
+    Distribuição binomial de parâmetros \(n\) e \(p\).
+  \item
+    Distribuição exponencial de parâmetro \(\lambda\).
+  \item
+    Distribuição normal de parâmetros \(\mu\) e \(\sigma^2\).
+  \item
+    Distribuição gama de parâmetros \(\alpha\) e \(\beta\).
+  \item
+    Distribuição uniforme de parâmetros \(a\) e \(b\).
+  \item
+    Distribuição binomial negativa de parâmetros \(\mu\) e \(\phi\).
+  \item
+    Distribuição log-normal de parâmetros \(\mu\) e \(\sigma^2\).
+  \item
+    Distribuição inversa Gaussiana de parâmetros \(\mu\) e \(\sigma^2\).
+  \item
+    Distribuição Tweeedie de parâmetros \(\mu\), \(\phi\) e \(p\).
+  \end{enumerate}
+\item
+  Para cada uma das situações abaixo proponha uma distribuição de probabilidade
+  adequada e justifique sua escolha baseado em aspectos do fenômeno aleatório e
+  características da distribuição. Descreva quais aspectos da inferência estatística podem estar associados com cada uma das situações mencionadas.
+
+  \begin{enumerate}
+  \def\labelenumii{\alph{enumii})}
+  \tightlist
+  \item
+    Itens em uma linha de produção são classificados quanto a sua adequação aos padrões de produção. Apenas as condições conforme ou não-conforme são possíveis.
+  \item
+    Uma pesquisa de mercado visa identificar o potencial de um novo negócio em uma cidade. Para isto um questionário com perguntas em uma escala likert de cinco níveis foi construído e aplicado a uma amostra de tamanho \(n\) da população de interesse.
+  \item
+    Número de carros que chegam a um caixa automático de um banco durante um período de uma hora nas manhãs de fins de semana.
+  \item
+    Ocorrência de defeitos relevantes em uma rodovia um mês após sua construção.
+  \item
+    Medidas antropométricas (peso e altura) são tomadas em crianças do nono ano de escolas públicas brasileiras. Deseja-se caracterizar tais medidas para auxiliar na construção de equipamentos escolares de tamanho adequado.
+  \item
+    Deseja-se estudar a distribuição do número de horas que um equipamento eletrônico funciona antes de apresentar defeitos com o objetivo de estabelecer um prazo razoável de garantia.
+  \item
+    Número de quilômetros rodados que um novo pneu é capaz de rodar antes de apresentar defeitos.
+  \end{enumerate}
+\end{enumerate}
+
+\hypertarget{definiuxe7uxf5es-e-propriedades}{%
+\chapter{Definições e propriedades}\label{definiuxe7uxf5es-e-propriedades}}
+
+Neste Capítulo apresentamos os três objetivos fundamentais da inferência estatística, estimação pontual, intervalar e teste de hipóteses baseado na função de verossimilhança.
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-4}{}\label{def:unnamed-chunk-4}\textbf{Função de verossimilhança} - Seja \(\mathbf{y}\) um vetor \(n \times 1\) representando uma realização de um vetor aleatório \(\mathbf{Y}\) com função de probabilidade ou densidade probabilidade \(\mathrm{f}(\mathbf{Y},\boldsymbol{\theta})\), onde \(\boldsymbol{\theta}\) denota um vetor \(p \times 1\) de parâmetros, com \(\boldsymbol{\theta} \in \Theta\), sendo \(\Theta\) o respectivo espaço paramétrico.
+A função de verossimilhança ou simplesmente verossimilhança para \(\boldsymbol{\theta}\) dado os valores observados \(\mathbf{y}\)
+é a função \(\mathrm{L}(\boldsymbol{\theta}| \mathbf{y}) \equiv \mathrm{f}(\mathbf{Y},\boldsymbol{\theta})\).
+\end{definition}
+
+A função de verossimilhança é dada pela expressão da distribuição conjunta de todas as variáveis aleatórias envolvidas no modelo, porém vista como função dos parâmetros, uma vez que tendo os dados sido observados, são quantidades fixas. Para cada particular valor do parâmetro que pode ser escalar ou vetor,
+a verossimilhança é uma medida de compatibilidade, plausibilidade ou similaridade do modelo com a amostra observada medida pela probabilidade ou densidade conjunta dos valores observados. Fracamente falando, pode-se
+dizer que a verossimilhança nos fornece a probabilidade de observar o que
+foi realmente observado, dado o modelo assumido para os dados.
+
+A expressão da verossimilhança \(\mathrm{L}(\boldsymbol{\theta}| \mathbf{y})\)
+pode ser mais cuidadosamente definida considerando a natureza das variáveis aleatórias.
+Para modelos discretos não há ambiguidade e o valor da função de verossimilhança é a probabilidade de ocorrer o dado observado, ou seja
+\[
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \equiv \mathrm{P}_{\boldsymbol{\theta}}(\mathbf{Y}=\mathbf{y}). \]
+No caso de modelos contínuos a probabilidade de um particular conjunto de
+valores ser observado é nula. Entretanto, na prática medidas contínuas são tomadas com algum grau de precisão em um intervalo, digamos,
+\(y_{iI} \leq y_i \leq y_{iS}\) e a verossimilhança para um conjunto de observações é:
+\begin{equation}
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) = \mathrm{P}_{\boldsymbol{\theta}}(y_{1I} \leq y_1 \leq y_{1S}, y_{2I} \leq y_2 \leq y_{2S}, 
+\ldots, y_{nI} \leq y_n \leq y_{nS}).
+\label{eq:verogeral}
+\end{equation}
+Esta definição é geral e requer a especificação da distribuição conjunta
+de \(\mathrm{Y}\). Fazendo a suposição de observações independentes tem-se que:
+\begin{equation}\label{eq:veroind}
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) = \mathrm{P}_{\boldsymbol{\theta} }(y_{1I} \leq y_1 \leq y_{1S}) \cdot \mathrm{P}_{\boldsymbol{\theta}}(y_{2I} \leq y_2 \leq y_{2S}), \ldots ,
+\mathrm{P}_{\boldsymbol{\theta}}(y_{nI} \leq y_n \leq y_{nS}).
+\end{equation}
+Até este ponto a definição pode ser utilizada tanto para dados considerados
+pontuais quanto para dados intervalares, como no caso de dados censurados.
+Vamos supor agora uma situação mais simples e comum na qual todos os dados
+são medidos a um grau de precisão comum.
+Neste caso, cada dado é medido em um intervalo
+\((y_i - \delta/2 \leq Y_i \leq y_i + \delta/2)\)
+e a verossimilhança é dada por:
+\begin{align*}
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) &= \prod_{i=1}^n \mathrm{P}_{\boldsymbol{\theta} }(y_i - \delta/2 \leq Y_i \leq y_i + \delta/2) \\
+&= \prod_{i=1}^n \int_{y_i - \delta/2}^{y_i + \delta/2} \mathrm{f}(y_i , \boldsymbol{\theta}) \mathrm{d}y_i.
+\end{align*}
+Se o grau de precisão é alto, ou seja \(\delta\) é pequeno em relação a variabilidade dos dados a expressão se reduz a
+\[ 
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \approx \left(\prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta}) \right) \delta^n  , 
+\label{eq:veroiid}
+\]
+e se \(\delta\) não depende dos valores dos parâmetros temos a verossimilhança
+como produto das densidades individuais,\\
+\begin{equation}\label{eq:veroiid}
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \approx \prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta})  ,
+\end{equation}
+e de forma mais geral para observações não independentes
+com a densidade multivariada:
+\begin{equation}\label{eq:veromv}
+\mathrm{L}(\boldsymbol{\theta}|\mathbf{y}) \approx \mathrm{f}(\mathbf{y}, \boldsymbol{\theta}) .
+\end{equation}
+
+No caso onde os elementos de \(\mathbf{y}\) são independentes a verossimilhança é simplesmente um produto das distribuições de cada variável aleatória \(Y_i\) individualmente, ou seja, \(\mathrm{L}(\boldsymbol{\theta}| \mathbf{y}) = \prod_{i=1}^n \mathrm{f}(y_i, \boldsymbol{\theta})\).
+Neste caso, o procedimento de inferência pode ser bastante facilitado tanto analítica como computacionalmente. Porém, cabe ressaltar que isso não é uma exigência, e situações onde as amostras não são independentes são tratadas da mesma forma, escrevendo a verossimilhança de uma forma adequada,
+considerando a distribuição conjunta do vetor \(\mathbf{Y}\).
+
+Esta parte do texto concentra-se exclusivamente no uso da função de verossimilhança como base para explicar os aspectos envolvidos na inferência estatística, seja na obtenção de estimativas pontuais, intervalares ou testes de hipóteses. Começamos revisando conceitos de estimação e suas relações com a função de verossimilhança.
+
+\hypertarget{estimauxe7uxe3o-pontual}{%
+\section{Estimação pontual}\label{estimauxe7uxe3o-pontual}}
+
+Seja \(Y_1, Y_2, \ldots, Y_n\) variáveis aleatórias com forma conhecida da
+função probabilidade no caso de variáveis aleatórias discretas ou
+da função densidade de probabilidade para variáveis aleatórias contínuas, em ambos os casos denotadas por \(\mathrm{f}(\mathbf{Y}, \boldsymbol{\theta})\).
+O vetor \(\boldsymbol{\theta}\) denota os parâmetros desconhecidos, sendo que um único elemento de \(\boldsymbol{\theta}\) será denotado por \(\theta\), o qual queremos estimar através de uma
+amostra \(y_1, y_2, \ldots, y_n\), de realizações das variáveis aleatórias \(Y_1, Y_2, \ldots, Y_n\). Denota-se de forma simplificada, \(Y_i \sim \mathrm{f}(\boldsymbol{\theta})\) com \(i = 1, \ldots, n\). Esta notação deve ser lida da seguinte forma: a variável aleatória \(Y_i\) segue uma distribuição \(\mathrm{f(\cdot)}\) que por sua vez é indexada, descrita ou governada por um vetor de parâmetros \(\boldsymbol{\theta}\). A seguir apresentamos algumas definições importantes para o decorrer do texto.
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-5}{}\label{def:unnamed-chunk-5}\textbf{Estatística} - Uma estatística é uma variável aleatória \(\mathrm{T} = \mathrm{t}(\mathbf{Y})\), onde a função \(\mathrm{t}(\cdot)\) não depende de \(\boldsymbol{\theta}\).
+\end{definition}
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-6}{}\label{def:unnamed-chunk-6}\textbf{Estimador} - Uma estatística \(\mathrm{T}\) é um estimador para \(\theta\) se o valor realizado \(\mathrm{t} = \mathrm{t}(\boldsymbol{y})\) é usado como uma estimativa para o valor de \(\theta\).
+\end{definition}
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-7}{}\label{def:unnamed-chunk-7}\textbf{Distribuição amostral} - A distribuição de probabilidade de \(\mathrm{T}\) é chamada de distribuição amostral do estimador \(\mathrm{t}(\mathbf{Y})\).
+\end{definition}
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-8}{}\label{def:unnamed-chunk-8}\textbf{Viés} - O viés de um estimador \(\mathrm{T}\) é a quantidade \[\mathrm{B}(\mathrm{T}) = \mathrm{E}(\mathrm{T} - \theta).\] O estimador \(\mathrm{T}\) é dito não viciado para \(\theta\) se \(\mathrm{B}(\mathrm{T}) = 0\), tal que \(\mathrm{E}(\mathrm{T}) = \theta\). O estimador \(\mathrm{T}\) é assintoticamente não viciado para \(\theta\) se \(\mathrm{E}(\mathrm{T}) \to \theta\) quando \(n \to \infty\).
+\end{definition}
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-9}{}\label{def:unnamed-chunk-9}\textbf{Eficiência relativa} - A eficiência relativa entre dois estimadores \(\mathrm{T_1}\) e \(\mathrm{T_2}\) é a razão \(\mathrm{er} = \frac{\mathrm{V}(\mathrm{T_1})}{\mathrm{V}(\mathrm{T_2})}\) em que \(\mathrm{V}(\cdot)\) denota a variância do respectivo estimador.
+\end{definition}
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-10}{}\label{def:unnamed-chunk-10}\textbf{Erro quadrático médio} - O erro quadrático médio de um estimador \(\mathrm{T}\) é a quantidade \[ \mathrm{EQM}(\mathrm{T}) = \mathrm{E}( ( \mathrm{T} - \theta)^2 ) = \mathrm{V}(\mathrm{T}) + \mathrm{B}(\mathrm{T})^2 . \]
+\end{definition}
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-11}{}\label{def:unnamed-chunk-11}\textbf{Consistência} - Um estimador \(\mathrm{T}\) é \textbf{médio quadrático consistente} para \(\theta\) se o \(\mathrm{EQM}(\mathrm{T}) \to 0\) quando \(n \to \infty\). O estimador \(\mathrm{T}\) é \textbf{consistente em probabilidade} se \(\forall \epsilon > 0\), \(\mathrm{P}( | \mathrm{T} - \theta | > \epsilon) \to 0\), quando \(n \to \infty\).
+\end{definition}
+
+Estas definições introduzem conceitos e propriedades básicas para uma estatística ser um estimador adequado para um determinado parâmetro. Fracamente falando, o desejo é obter um estimador que seja assintóticamente não-viciado, ou seja, conforme o tamanho da amostra aumenta ele se aproxima cada vez mais do verdadeiro valor do parâmetro. Além disso, é interessante que ele seja eficiente, ou seja, apresente a menor variância possível entre todos os estimadores de \(\theta\). Esta definição de eficiência, introduz o conceito de variância minima. Sendo assim, para saber se um estimador é eficiente é necessário conhecer um limite inferior para a variância de um estimador, uma vez que tal quantidade exista e seja passível de calcular, ao propor um estimador para \(\theta\), basta calcular a sua variância e comparar com a menor possível, se ele atingir este limite será eficiente. Além disso, tomando sua esperança pode-se concluir sobre o seu viés dependendo da situação em termos assintóticos. O Teorema (limite inferior de Cramér-Rao) \ref{thm:cramer}, ajuda a responder sobre a eficiência de um estimador qualquer. Mas antes precisamos de mais algumas definições.
+
+Como dito, a verossimilhança é uma medida de compatibilidade da amostra observada com um particular vetor de parâmetros, desta forma é natural definir como estimador para o vetor de parâmetros \(\boldsymbol{\theta}\), aquele particular vetor digamos, \(\hat{\boldsymbol{\theta}}\), que tenha a maior compatibilidade com a amostra, ou em outras palavras o vetor que maximiza a função de verossimilhança ou compatibilidade.
+O particular valor assumido pela função de verossimilhança neste caso não é importante,
+o que interessa para \textbf{inferência} são os valores relativos de
+\(\mathrm{L}(\boldsymbol{\theta}|\mathrm{y})\) para diferentes conjuntos de \(\boldsymbol{\theta}\).
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-12}{}\label{def:unnamed-chunk-12}\textbf{Estimativa de máxima verossimilhança} -
+Seja \(\mathrm{L}(\boldsymbol{\theta}|\mathbf{y})\) a função de verossimilhança.
+O valor \(\hat{\boldsymbol{\theta}} = \hat{\boldsymbol{\theta}}(\mathbf{y})\) é a estimativa de máxima verossimilhança para \(\boldsymbol{\theta}\) se \(\mathrm{L}(\hat{\boldsymbol{\theta}}) \ge \mathrm{L}(\boldsymbol{\theta})\), \(\forall \boldsymbol{\theta} \in \Theta\).
+\end{definition}
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-13}{}\label{def:unnamed-chunk-13}\textbf{Estimador de máxima verossimilhança} - Se \(\hat{\boldsymbol{\theta}}(\mathbf{y})\) é a estimativa de máxima verossimilhança, então \(\hat{\boldsymbol{\theta}}(\mathbf{Y})\) é o estimador de máxima verossimilhança. Em geral vamos usar a abreviação EMV para nos referirmos ao estimador de máxima verossimilhança.
+\end{definition}
+
+Nesta etapa é preciso ter cuidado com a notação. Veja que \(\hat{\boldsymbol{\theta}}(\mathbf{y})\) é um vetor de escalares, por outro lado \(\hat{\boldsymbol{\theta}}(\mathbf{Y})\) é um vetor de variáveis aleatórias. Daqui em diante usaremos apenas \(\hat{\boldsymbol{\theta}}\), para ambos os casos sendo que o contexto indicará o real sentido de \(\hat{\boldsymbol{\theta}}\). A função de verossimilhança contêm toda a informação proveniente dos dados sobre o vetor de parâmetros \(\boldsymbol{\theta}\). Apesar disso, a \(\mathrm{L}(\boldsymbol{\theta}|\mathbf{y})\) é computacionalmente incoveniente, uma vez que esta função apresentará valores muito próximos de zero, conforme o tamanho da amostra aumenta. Por razões meramente computacionais é mais comum usar a função de log-verossimilhança.
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-14}{}\label{def:unnamed-chunk-14}\textbf{Log-verossimilhança} - Se \(\mathrm{L}(\boldsymbol{\theta}|\mathbf{y})\) é a função de verossimilhança, então \(\mathrm{l}(\boldsymbol{\theta}|\mathbf{y}) = \log \mathrm{L}(\boldsymbol{\theta}|\mathbf{y})\) é a função de log-verossimilhança.
+\end{definition}
+
+Segue do fato da função logaritmo ser monótona crescente que maximizar \(\mathrm{L}(\boldsymbol{\theta}|\mathbf{y})\) e \(\mathrm{l}(\boldsymbol{\theta}|\mathbf{y})\)
+levam ao mesmo ponto de máximo. Neste ponto estamos habilitados a enunciar um dos teoremas mais fortes da inferência estatística que permitirá concluir sobre a eficiência de um estimador. Neste texto vamos enunciar o Teorema apenas para um o caso em que
+\(\theta\) é um escalar, porém o caso multiparâmetros segue de forma analoga.
+
+\begin{theorem}
+\protect\hypertarget{thm:cramer}{}\label{thm:cramer}\textbf{Limite inferior de Cramer-Rao} - Se \(\mathrm{T}\) é um estimador não-viciado para \(\theta\) e \(\mathrm{l}(\theta|\mathbf{Y})\) é duas vezes diferenciável com respeito a \(\theta\), então
+\[ \mathrm{V}(\mathrm{T}) \ge \frac{1}{\mathrm{E}( - \mathrm{l}^{\prime \prime}(\theta| \mathbf{Y}) )} . \]
+\end{theorem}
+
+Este teorema informa o limite inferior para a variância de um estimador \(\hat{\mathrm{T}}\) qualquer. O estimador de máxima verossimilhança apresenta propriedades ótimas e uma delas é a eficiência, ou seja, assintóticamente o EMV atinge o limite inferior de Cramer-Rao.
+Na sequência discutimos como expressar a incerteza com relação ao vetor de parâmetros \(\boldsymbol{\theta}\) através da construção de intervalos de confiança.
+
+\hypertarget{intervalos-de-confianuxe7a}{%
+\section{Intervalos de confiança}\label{intervalos-de-confianuxe7a}}
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-15}{}\label{def:unnamed-chunk-15}\textbf{Intervalo de confiança} - Um intervalo de verossimilhança para \(\theta\)
+é um intervalo da forma \(\theta: \mathrm{L}(\theta|\mathbf{y}) \ge r \mathrm{L}(\hat{\theta}|\mathbf{y})\) ou equivalentemente, \(\theta: \mathrm{D}(\theta) \leq c^*\), com \(\mathrm{D}(\theta) = -2[\mathrm{l}(\theta)-\mathrm{l}(\hat{\theta})]\) e \(c^* = - 2 \log(r)\).
+\end{definition}
+
+Esta definição é bastante geral para o caso uniparamétrico, para o caso multiparâmetros
+os princípios se mantêm e trocamos o intervalo de confiança por uma região de confiança, o que será abordado mais adiante. Nesta definição o valor de \(r\) precisa ser especificado entre \(0\) e \(1\), para intervalos não vazios, logo \(c^* > 0\). Quanto maior o valor de \(c^*\) mais largo será o intervalo, algumas vezes o intervalo pode ser a união de sub-intervalos disjuntos, porém este caso não é usual. Apesar do valor de \(c^*\) ser necessário para a construção dos intervalos ainda não temos elementos suficientes para especificá-lo.
+
+Usando esta definição pode-se pensar ao menos duas formas de construção de intervalos de confiança. A primeira é considerar a quantidade \(\frac{\mathrm{L}(\theta)}{\mathrm{L}(\hat{\theta})} \ge r\) que é a \textbf{verossimilhança relativa}, ou seja, compara cada valor de \(\theta\) com o máximo. Nestas condições a verossimilhança relativa toma sempre valores entre \(0\) e \(1\) e o intervalo é a região do espaço paramétrico para qual os valores associados de verossimilhança sejam uma fração não menor que \(r\) do máximo valor. Por exemplo, definindo \(r = 0.8\) estamos deixando que faça parte do intervalo de confiança valores que tenham até \(80\%\) de compatibilidade com a amostra observada, da mesma forma poderíamos definir \(r = 0.20\) ou \(0.50\), dependendo de nosso critério. Royall (1997) propõe que este valor seja definido por analogias com resultados considerados aceitáveis em experimentos simples como lançamento de uma moeda.
+Porém, em grande parte dos problemas práticos uma interpretação probabilística baseada em idéias frequentistas é usada. Voltaremos a escolha do ponto de corte mais adiante quando apresentarmos as propriedades assintóticas do EMV.
+Uma forma equivalente é utilizar a função \emph{deviance} definindo o intervalo
+pelos valores que satisfazem \(\mathrm{D}(\theta) = -2[\mathrm{l}(\theta)-\mathrm{l}(\hat{\theta})] \leq -2 \log(r)\).
+Esta é uma outra forma de considerar a verossimilhança relativa,
+agora em termos de diferença em log-verossimilhança.
+Neste caso a região de confiança pode ser definida como anteriormente ou valendo-se
+de propriedades frequentistas desta quantidade conforme veremos na sequência.
+
+Em ambas abordagens surge o problema de que após definir o valor \(c^* = -2\log(r)\), é necessário encontrar as raízes da função de verossimilhança relativa ou da \emph{deviance} que fornecem os limites do intervalo de confiança para um \(c^*\) especificado. Em geral vamos chamar o valor \(c^*\) ou equivalentemente \(r\) de ponto de corte.
+Encontrar as raízes da função comumente envolve métodos numéricos, uma vez que na maioria das situações práticas não é possível obter expressões fechadas para os limites do intervalo.
+
+Dado esta restrição é comum fazer uma expansão em séries de Taylor para a \(\mathrm{l}(\theta)\) em torno de \(\hat{\theta}\) de forma a facilitar a obtenção do intervalo de confiança. Expandindo \(\mathrm{l}(\theta)\) em série de Taylor até segunda ordem em torno de \(\hat{\theta}\), resulta na seguinte equação,
+\[
+\mathrm{D}(\theta) = -2[\mathrm{l}(\theta)-\mathrm{l}(\hat{\theta})] = 2 \left\{\mathrm{l}(\hat{\theta}) - [ \mathrm{l}(\hat{\theta}) + (\theta - \hat{\theta})\mathrm{l}^{\prime}(\hat{\theta}) + \frac{1}{2}(\theta - \hat{\theta})^2 \mathrm{l}^{\prime \prime}(\hat{\theta})] \right\} .
+\]
+Como por definição do EMV \(\mathrm{l}^{\prime}(\hat{\theta}) = 0\), eliminando termos
+a aproximação em série de Taylor, toma a seguinte forma quadrática e define a região\\
+\[ \mathrm{D}(\theta) =  - (\theta - \hat{\theta})^2 \mathrm{l}^{\prime \prime}(\hat{\theta}) \leq c^*. \]
+que por sua vez, define intervalos de confiança da forma,
+\[ \hat{\theta} \pm \sqrt{ \frac{c^*}{-\mathrm{l}^{\prime \prime}(\hat{\theta})}}. \]
+
+Isto corresponde a fazer uma aproximação quadrática da função \emph{deviance},
+que torna o intervalo fácil de ser obtido. Estendendo para o caso de multiparâmetros, tem-se que uma região de confiança para \(\boldsymbol{\theta}\) é dada pelo conjunto
+\({ \boldsymbol{\theta} \in \Theta : \mathrm{D}(\boldsymbol{\theta}) \leq c^*}\).
+Portanto, as duas formas de interpretar o intervalo de confiança discutidas no caso uniparamétrico podem ser estendidas para o caso multiparamétrico, sem problemas.
+Novamente a questão que surge é a definição de um valor para \(c^*\).
+Pela abordagem frequentista é desejável que o intervalo tenha uma interpretação em termos de probabilidades ou frequência e isto é atingido através das propriedades assintóticas dos estimadores de máxima verossimilhança que serão apresentadas adiante, mas antes vamos materializar apresentar o terceiro objetivo da inferência estatística, ou seja, testes de hipóteses.
+
+\hypertarget{testes-de-hipuxf3teses}{%
+\section{Testes de hipóteses}\label{testes-de-hipuxf3teses}}
+
+Nesta seção mostramos como diversos testes de hipóteses surgem naturalmente a partir da interpretação da função de verossimilhança.
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-16}{}\label{def:unnamed-chunk-16}\textbf{Hipótese estatística} - Chamamos de hipótese estatística qualquer afirmação acerca da distribuição de probabilidade de uma ou mais variáveis aleatórias.
+\end{definition}
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-17}{}\label{def:unnamed-chunk-17}\textbf{Teste de hipótese} - Chamamos de teste de uma hipótese estatística a função de decisão \(\chi \to \{a_0, a_1\}\), em que \(a_0\) corresponde à ação de considerar a hipótese \(\mathrm{H_0}\), como verdadeira e \(a_1\) corresponde à ação de considerar a hipótese \(\mathrm{H_1}\) como verdadeira.
+\end{definition}
+
+Na definição acima, \(\chi\) denota o espaço amostral associado à amostra \(y_1, y_2, \ldots, y_n\). A função de decisão \(d\) divide o espaço amostral \(\chi\) em dois conjuntos,
+\[ A_0 = \{ ( y_1, \ldots, y_n \in \chi; d(y_1, \ldots, y_n) = a_0 \}\]
+e
+\[ A_1 = \{ ( y_1, \ldots, y_n \in \chi; d(y_1, \ldots, y_n) = a_1 \}\]
+onde \(A_0 \cup A_1 = \chi\) e \(A_0 \cap A_1 = \emptyset\). Como em \(A_0\) temos os pontos amostrais que levam à não rejeição de \(\mathrm{H_0}\), vamos chamar de \(A_0\) de região de não rejeição e, por analogia, \(A_1\) de região de rejeição de \(H_0\), também chamada de região crítica.
+
+Um teste de hipótese pode resultar em um de dois tipos de erros. Tradicionalmente, esses dois tipos de erros recebem os nomes de erro Tipo I (\(\alpha\)) e erro Tipo II (\(\beta\)).
+O erro tipo I ocorre quando rejeitamos \(\mathrm{H_0}\) e esta é verdadeira. O erro Tipo II ocorre quando não rejeitamos \(\mathrm{H_0}\) e esta é falsa. Em termos de probabilidade temos,
+\[ \alpha = \mathrm{P}(Y \in A_1 | \theta_0) \quad \text{e} \quad \beta = \mathrm{P}(Y \in A_0 | \theta_1).\]
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-18}{}\label{def:unnamed-chunk-18}O poder do teste com região crítica \(A_1\) para testar \(\mathrm{H_0}: \theta = \theta_0\) contra \(\mathrm{H_1}: \theta = \theta_1\) é dado por
+\[\pi(\theta_1) = \mathrm{P}(Y \in A_1 | \theta_1).\]
+\end{definition}
+
+Note que \(\pi(\theta_1) = 1 - \beta\), e \(\beta\) é a probabilidade do erro Tipo II.
+
+Estas definições tratam o teste de hipótese diretamente como uma função de decisão
+que quantifica a incerteza associada com cada possível decisão.
+
+Uma forma mais intuitiva de construir um teste de hipótese é definir uma estratégia para definir se um particular valor, digamos, \(\theta_0\) é plausível para o parâmetro \(\theta\). Como já discutido a função de verossimilhança nos fornece exatamente a plausibilidade de um determinado valor do parâmetro ser o gerador da amostra realizada dada uma função de probabilidade ou densidade probabilidade especificada. Assim, usar a função de verossimilhança para decidir sobre a plausibilidade de \(\theta_0\) é natural.
+
+Considere o gráfico da função de log-verossimilhança apresentado na Figura \ref{fig:TH}.
+Note que decidir sobre a plausibilidade do valor \(\theta_0\), consiste basicamente em medir o quanto longe ele está do valor mais plausível, ou seja, do EMV \(\hat{\theta}\). Baseado na Figura \ref{fig:TH} fica claro que tal distância pode ser medida de pelo menos três formas diferentes: no eixo das ordenadas, no eixo das abscissas ou verificando se a inclinação da reta tangente a \(\theta_0\) é diferente de zero. Estas três formas de medir a distância entre \(\theta_0\) e \(\hat{\theta}\) levam a construção de três tipos de testes de hipóteses que serão discutidos nas próximos subseções.
+
+\begin{figure}[h]
+
+{\centering \includegraphics{MCIEbook_files/figure-latex/TH-1} 
+
+}
+
+\caption{Diferentes formas de construir teste de hipótese baseado em verossimilhança.}\label{fig:TH}
+\end{figure}
+
+\hypertarget{teste-da-razuxe3o-de-verossimilhanuxe7a}{%
+\subsection{Teste da razão de verossimilhança}\label{teste-da-razuxe3o-de-verossimilhanuxe7a}}
+
+Se decidirmos pela distância medida pelo eixo das ordenadas, somos levados ao teste da razão de verossimilhança.
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-19}{}\label{def:unnamed-chunk-19}A estatística do teste da razão de verossimilhança para testar \(\mathrm{H_0}: \theta \in \Theta_0\) versus \(\mathrm{H_1} : \theta \in \Theta_0^c\) é
+\[ \lambda(\mathbf{y}) = \frac{\mathrm{sup}_{\Theta_0} \mathrm{L}(\theta | \mathbf{y})} {\mathrm{sup}_{\Theta} \mathrm{L}(\theta | \mathbf{y})},\] onde \(\mathrm{sup}\) denota o supremo de \(\mathrm{L}(\theta | \mathbf{y})\) restrito ao conjunto \(\Theta\).
+O teste da razão de verossimilhança (TRV) é qualquer teste que tenha uma região de rejeição da forma \({\mathbf{y} : \lambda(\mathbf{y}) \leq r}\) onde \(r\) é qualquer número que satisfaça \(0 \leq r \leq 1\).
+\end{definition}
+
+Para testar \(\mathrm{H_0}: \theta = \theta_0\) versus \(\mathrm{H_1}: \theta \neq \theta_0\), suponha \(Y_1, \ldots, Y_n\) sejam iid \(f(\mathbf{y}|\theta)\), \(\hat{\theta}\) seja o EMV de \(\theta\), e \(f(\mathbf{y}|\theta)\) satisfaça as condições de regularidade. Desse modo, de acordo com \(\mathrm{H_0}\), pelo Teorema \ref{thm:ASS} à medida que \(n \to \infty\)
+\[ -2 \log \lambda(\underline{y}) \to \chi^2_1. \]
+
+\hypertarget{teste-de-wald}{%
+\subsection{Teste de Wald}\label{teste-de-wald}}
+
+Por outro lado, se optamos pela distância no eixo das abscissas temos o chamado teste de Wald. Suponha que deseja-se testar a hipótese bilateral \(\mathrm{H_0} : \theta = \theta_0\) versus \(\mathrm{H_1} : \theta \neq \theta_0\).
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-20}{}\label{def:unnamed-chunk-20}A estatística de Wald é dada por
+\[\mathrm{Z_n} = (\hat{\theta} - \theta_0)/\sqrt{\mathrm{V}(\hat{\theta})}\]
+e rejeita \(\mathrm{H_0}\) se, e somente se, \(\mathrm{Z_n} < -z_{\alpha/2}\).
+\end{definition}
+
+Se \(\mathrm{H_0}\) for verdadeira, então \(\theta = \theta_0\) e \(Z_n\) convergem em distribuição para \(Z \sim N(0,1)\). Portanto, a probabilidade do Erro Tipo I, \(\mathrm{P}_{\theta_0}(\mathrm{Z_n} < - z_{\alpha/2} \quad \text{ou} \quad \mathrm{Z_n} > z_{\alpha/2}) \to \mathrm{P}(Z < -z_{\alpha/2} \quad \text{ou} \quad Z > z_{\alpha/2}) = \alpha\), e este é, assintoticamente, um teste de tamanho \(\alpha\). Em geral, um teste de Wald é um teste com base em uma estatística da forma,
+\[ \mathrm{Z_n} = \frac{\mathrm{W_n} -  \theta_0}{\mathrm{S_n} } \]
+onde \(\theta_0\) é um valor hipotético do parâmetro \(\theta\), \(\mathrm{W_n}\) é um estimador de \(\theta\) e \(\mathrm{S_n}\) é o erro padrão de \(\mathrm{W_n}\), uma estimativa do desvio padrão de \(\mathrm{W_n}\). Se \(\mathrm{W_n}\) for o EMV para \(\theta\), então, \(\sqrt{\mathrm{I_O}(\hat{\theta})}\) é o erro padrão de \(\mathrm{W_n}\).
+
+\hypertarget{teste-escore}{%
+\subsection{Teste escore}\label{teste-escore}}
+
+Por fim, podemos olhar para a inclinação da reta tangente no ponto \(\theta_0\) o que leva ao chamado teste escore. Lembre-se que a estatística escore é definida como
+\[\mathrm{U}(\theta) = \frac{\partial}{\partial \theta} \mathrm{l}(\theta | \boldsymbol{Y}).\]
+
+Sabemos (ver \ref{thm:EU}) que para todo \(\theta\), \(\mathrm{E}_{\theta} (\mathrm{U}(\theta)) = 0\).
+Em particular, se estivermos testando \(\mathrm{H_0}: \theta = \theta_0\) e se \(\mathrm{H_0}\) for verdadeira, então \(\mathrm{U}(\theta)\) tem média \(0\). Além disso,
+\[ \mathrm{V}_{\theta}(\mathrm{U}(\theta)) = -\mathrm{E}_{\theta} \left( \frac{\partial^2 }{\partial \theta^2} \mathrm{l}(\theta | \boldsymbol{Y}) \right) = \mathrm{I_E}(\theta)\]
+ou seja, o número de informações é a variância da estatística escore.
+
+\begin{definition}
+\protect\hypertarget{def:unnamed-chunk-21}{}\label{def:unnamed-chunk-21}A estatística de teste escore é
+\[ \mathrm{Z_S} = \mathrm{U}(\theta_0)/ \sqrt{\mathrm{I_E}(\theta_0)}. \]
+Se \(\mathrm{H_0}\) for verdadeira, \(\mathrm{Z_S}\) tem distribuição normal com média \(0\) e variância \(1\).
+\end{definition}
+
+\hypertarget{propriedades-do-emv}{%
+\section{Propriedades do EMV}\label{propriedades-do-emv}}
+
+Apesar de definirmos a função de verossimilhança como uma quantidade fixa avaliada em \(\mathbf{y}\), devemos lembrar que ela é baseada em apenas uma realização do vetor aleatório \(\mathbf{Y}\), sendo assim, estudar o comportamento probabilístico dos estimadores de máxima verossimilhança é de fundamental importância para definir suas propriedades probabilística e baseado nisto obter intervalos de confiança e testes de hipóteses com interpretações probabilísticas. Para isto, vamos precisar de mais algumas definições.
+
+\begin{definition}
+\protect\hypertarget{def:fcesc}{}\label{def:fcesc}\textbf{Função escore} - Sendo \(\mathrm{l}(\boldsymbol{\theta}|\mathbf{y})\) a função de log-verossimilhança, o vetor \emph{escore} é definido por
+\[ \mathrm{U}(\boldsymbol{\theta}) = \left( \frac{\partial \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_1}, \ldots, \frac{\partial \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_p}\right)^\top. \]
+\end{definition}
+
+Note que a função escore nada mais é que o vetor gradiente da função de log-verossimilhança.
+Definimos as matrizes de informação \textbf{observada} e \textbf{esperada}, também chamada de matriz de informação de Fisher.
+
+\begin{definition}
+\protect\hypertarget{def:IO}{}\label{def:IO}\textbf{Matriz de informação observada} - Sendo \(\mathrm{l}(\boldsymbol{\theta}|\mathbf{y})\) a função de log-verossimilhança, a matriz de informação observada é definida por
+\[ \mathrm{I}_O(\boldsymbol{\theta}) = \left[\begin{array}{cccc}
+ - \frac{\partial^2 \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_1^2}  & \ldots  &  \ldots & -\frac{\partial^2 \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_1 \partial \theta_p}  \\
+                \vdots                                           & \ddots    & - \frac{\partial^2 \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_i \partial \theta_j}& \vdots \\
+                \vdots                                           & - \frac{\partial^2 \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_j \partial \theta_i} & \ddots & \vdots \\
+- \frac{\partial^2 \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_p \partial \theta_1} & \ldots & \ldots & - \frac{ \partial^2 \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_p^2} 
+\end{array}\right]. \]
+\end{definition}
+
+\begin{definition}
+\protect\hypertarget{def:IE}{}\label{def:IE}\textbf{Matriz de informação esperada} - Sendo \(\mathrm{l}(\boldsymbol{\theta}|\mathbf{y})\) a função de log-verossimilhança, a matriz de informação esperada é definida por
+
+\[ \mathrm{I}_E(\boldsymbol{\theta}) = \left[\begin{array}{cccc}
+ \mathrm{E} \left[- \frac{\partial^2 \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_1^2} \right]  & \ldots  &  \ldots & \mathrm{E} \left[-\frac{\partial^2 \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_1 \partial \theta_p}\right]  \\
+                \vdots                                           & \ddots    & \mathrm{E} \left[- \frac{\partial^2 \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_i \partial \theta_j} \right]& \vdots \\
+                \vdots                                           & \mathrm{E} \left[ - \frac{\partial^2 \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_j \partial \theta_i}\right] & \ddots & \vdots \\
+\mathrm{E} \left[- \frac{\partial^2 \mathrm{l}(\boldsymbol{\theta})}{\partial \theta_p \partial \theta_1}\right] & \ldots & \ldots & \mathrm{E} \left[- \frac{ \partial^2 \mathrm{l}(\underline{\theta})}{\partial \theta_p^2}\right] 
+\end{array}\right]. \]
+\end{definition}
+
+Duas propriedades importantes da função escore são apresentadas nos Teoremas a seguir.
+
+\begin{theorem}
+\protect\hypertarget{thm:EU}{}\label{thm:EU}\textbf{Primeira igualdade de Bartlett} - Sendo \(\mathrm{U}(\boldsymbol{\theta})\) a função escore, então
+\[\mathrm{E}(\mathrm{U}(\boldsymbol{\theta})) = 0.\]
+\end{theorem}
+
+\begin{theorem}
+\protect\hypertarget{thm:VU}{}\label{thm:VU}\textbf{Segunda igualdade de Bartlett} - Sendo \(\mathrm{U}(\boldsymbol{\theta})\) a função escore, então
+\[\mathrm{V}(\mathrm{U}(\boldsymbol{\theta})) = \mathrm{E}(\mathrm{I}_O(\boldsymbol{\theta})) = \mathrm{I}_E(\boldsymbol{\theta}).\]
+\end{theorem}
+
+Note que a variância do vetor \(\mathrm{U}(\boldsymbol{\theta})\) é a matriz com entradas
+\[ \left[\begin{array}{cccc}
+ \mathrm{Cov}(\mathrm{U_1}, \mathrm{U_1})  & \ldots  &  \ldots & \mathrm{Cov}(\mathrm{U_1},\mathrm{U_d})  \\
+  \vdots        & \ddots  &  \mathrm{Cov}(\mathrm{U_i}, \mathrm{U_j}) & \vdots \\
+  \vdots        & \mathrm{Cov}(\mathrm{U_j}, \mathrm{U_i}) & \ddots & \vdots \\
+\mathrm{Cov}(\mathrm{U_d},\mathrm{U_1}) & \ldots & \ldots & \mathrm{Cov}(\mathrm{U_d}, \mathrm{U_d}) 
+\end{array}\right]. \]
+onde \(\mathrm{Cov}(\mathrm{U_i}, \mathrm{U_i}) = \mathrm{V}(\mathrm{U_i})\). Uma propriedade importante de \(\mathrm{I}_O(\boldsymbol{\hat{\theta}})\) e \(\mathrm{I}_E(\boldsymbol{\hat{\theta}})\) é que elas são matrizes definida positiva, as quais mensuram a curvatura observada/esperada da superfície de log-verossimilhança. Com estas definições, pode-se escrever a função \emph{deviance} aproximada para um vetor de parâmetros da seguinte forma:
+\[ \mathrm{D}(\boldsymbol{\theta}) \approx (\boldsymbol{\theta} - \boldsymbol{\hat{\theta}})^\top \mathrm{I_O}(\boldsymbol{\hat{\theta}})(\boldsymbol{\theta} - \boldsymbol{\hat{\theta}}) . \]
+Assim \(\mathrm{D}(\boldsymbol{\theta})\) é não negativa uma vez que \(\mathrm{I_O}(\boldsymbol{\hat{\theta}})\) é uma matriz positiva definida.
+Uma vez definidas as quantidades envolvidas, estamos aptos a enunciar o teorema a seguir.
+
+\begin{theorem}
+\protect\hypertarget{thm:DEMV}{}\label{thm:DEMV}\textbf{Distribuição assintótica do EMV} - Para um problema de estimação regular, no limite com \(n \to \infty\), se \(\boldsymbol{\theta}\) é o verdadeiro vetor de parâmetros, então
+\[\hat{\boldsymbol{\theta}} \sim NM_p(\boldsymbol{\theta}, \mathrm{I_E}(\boldsymbol{\theta})^{-1}),\]
+ou seja, a distribuição assintótica de \(\hat{\boldsymbol{\theta}}\) é uma normal multivariada com matriz de variância/covariância dada pela inversa da matriz de informação esperada.
+\end{theorem}
+
+\begin{corollary}
+\protect\hypertarget{cor:RESEMV}{}\label{cor:RESEMV}Qualquer termo assintóticamente equivalente a \(\mathrm{I_E}(\boldsymbol{\theta})\) pode ser usado no Teorema \ref{thm:DEMV}. Assim,
+\[ \hat{\boldsymbol{\theta}} \sim NM_p(\boldsymbol{\theta}, \mathrm{I_E}^{-1}(\boldsymbol{\hat{\theta}}))\]
+\[ \hat{\boldsymbol{\theta}} \sim NM_p(\boldsymbol{\theta}, \mathrm{I_O}^{-1}(\boldsymbol{\theta}))\]
+\[ \hat{\boldsymbol{\theta}} \sim NM_p(\boldsymbol{\theta}, \mathrm{I_O}^{-1}(\boldsymbol{\hat{\theta}})).\]
+\end{corollary}
+
+\begin{theorem}
+\protect\hypertarget{thm:ASS}{}\label{thm:ASS}\textbf{Distribuição assintótica da deviance} - Para um problema de estimação regular, no limite com \(n \to \infty\), se \(\boldsymbol{\theta}\) é o verdadeiro valor do parâmetro, então
+\[ \mathrm{D}(\boldsymbol{\theta}) = -2[\mathrm{l}(\boldsymbol{\theta})-\mathrm{l}(\hat{\boldsymbol{\theta}})] \sim \chi^2_d \]
+ou seja, a função deviance segue uma distribuição qui-Quadrado com \(p\) graus de liberdade, onde \(p\) é a dimensão do vetor \(\boldsymbol{\theta}\).
+\end{theorem}
+
+De acordo com os teoremas apresentados, podemos chegar a algumas das principais propriedades dos estimadores de máxima verossimilhança:
+
+\begin{itemize}
+\tightlist
+\item
+  O estimador de máxima verossimilhança \(\hat{\boldsymbol{\theta}}\) de \(\boldsymbol{\theta}\) é assintóticamente não-viciado, isto é, \(\mathrm{E}(\hat{\boldsymbol{\theta}}) \to \boldsymbol{\theta}\).
+\item
+  Assintóticamente \(\mathrm{V}(\hat{\boldsymbol{\theta}}) \to \mathrm{I_E}^{-1}(\boldsymbol{\theta})\), o qual por uma versão multivariada do limite de Cramér-Rao é o melhor possível, mostrando que o EMV é eficiente para o vetor \(\boldsymbol{\theta}\), ao menos para grandes amostras.
+\item
+  Denote \(\mathrm{J} = \mathrm{I_E}^{-1}(\boldsymbol{\theta})\), então \(\mathrm{V}(\hat{\boldsymbol{\theta}}) = \mathrm{J}\), sendo que, \(\mathrm{J}\) é uma matriz simétrica e definida positiva, com elementos \(\mathrm{J_{ij}} = \mathrm{Cov}(\hat{\boldsymbol{\theta}}_i, \hat{\boldsymbol{\theta}}_j)\) então \(\mathrm{J_{ii}}\) é a variância de \(\hat{\boldsymbol{\theta}}_i\).
+  Denota-se \(\mathrm{J_{ii}}^{\frac{1}{2}}\) o desvio padrão de \(\hat{\boldsymbol{\theta}}_i\).
+\item
+  Podemos construir intervalos de \(100(1-\alpha)\%\) de confiança para \(\theta_i\) na forma \(\hat{\theta}_i \pm z_{\frac{\alpha}{2}} \mathrm{J_{ii}}^{\frac{1}{2}}\). Intervalos desta forma serão denominados, intervalos de Wald ou baseados em aproximação quadrática da verossimilhança. Importante notar que estes intervalos coincidem com os obtidos baseado em aproximação por Série de Taylor de segunda ordem da função \emph{deviance}.
+\item
+  Para regiões de confiança baseados na \emph{deviance} considera-se \${[} \boldsymbol{\theta} \in \Theta : \mathrm{D}(\boldsymbol{\theta}) \leq c\^{}*{]} \$, para algum valor \(c^*\) a ser especificado. Pode-se escolher \(c^*\) baseado em justificativas assintóticas de que \(\mathrm{D}(\boldsymbol{\theta}) \sim \chi^2_p\) é uma escolha razoável para \(c^* = c_{\alpha}\) com \(\mathrm{P}(\chi^2_d \ge c_{\alpha}) = \alpha\), por exemplo se \(\alpha = 0.05\), então \(c_{\alpha} = 3.84\). Isto gera uma região de \(100(1 - \alpha)\%\) de confiança. Estes intervalos serão denominados de intervalos \emph{deviance}.
+\end{itemize}
+
+De acordo com as propriedades apresentadas tem-se duas formas básicas de construir intervalos de confiança. A primeira mais simples é baseada na aproximação quadrática da log-verossimilhança e a segunda utilizando diretamente a função \emph{deviance} obtida com os dados. A segunda opção é em geral mais trabalhosa computacionalmente, uma vez que usualmente gera uma equação não linear que precisa ser resolvida numericamente.
+A primeira opção é bastante direta, uma vez obtida a matriz de segundas derivadas basta invertê-la e tirar a raiz dos termos da diagonal para se obter o intervalo de confiança para cada parâmetro, marginalmente. Esta abordagem é muito simples mas apresenta limitações. Restrições naturais no espaço paramétrico como, por exemplo,
+para parâmetros de variância e correlação não são respeitadas e podem resultar em limites absurdos, com limite(s) do intervalo fora do espaço paramétrico. Os intervalos serão sempre simétricos ao aproximar a verossimilhança por uma forma quadrática, o que normalmente não produz resultados adequados para parâmetros de variância e correlação.
+Em modelos com efeitos aleatórios há um interesse natural nos parâmetros de variância, precisão e correlação. Testar a significância de tais efeitos utilizando as variâncias associadas às estimativas que indexam o modelo podem produzir resultados imprecisos.
+Logo, esta abordagem é limitida em classes mais gerais de modelos estatísticos.
+
+A segunda opção resulta em uma região conjunta para o caso de dois ou mais parâmetros,
+enquanto que pela aproximação é possível obter um intervalo marginal para cada parâmetro,
+porém baseado em uma aproximação quadrática da superfície de log-verossimilhança.
+Este tipo de representação é a mais desejável para inferência,
+porém não pode ser obtida diretamente apenas com o Teorema \ref{thm:ASS}.
+Por exemplo, suponha que tem-se interesse em um determinado componente do vetor de parâmetros, digamos \(\theta_i\). A partir da aproximação quadrática podemos facilmente construir um intervalo de confiança, tendo como \(\hat{\theta}_I\) e \(\hat{\theta}_S\) o seu limite inferior e superior, respectivamente. Pelo Teorema \ref{thm:ASS} para o caso em que a dimensão de \(\boldsymbol{\theta}\) é maior que um, não temos um intervalo desta forma mas sim uma região, o que apesar de mais informativa tem menor apelo prático e apresenta dificuldades de interpretação. Uma forma intuitiva de obter um intervalo da forma \(\hat{\theta}_I\) e \(\hat{\theta}_S\) é fixar o restante do vetor de parâmetros nas suas estimativas de máxima verossimilhança e obter os limites em uma direção de cada vez.
+Esta abordagem tem uma clara restrição que é não levar em consideração a incerteza associada ao restante do vetor de parâmetros para a construção do intervalo.
+
+Temos um método simples via aproximação quadrática, porém que não funciona bem quando a superfície de log-verossimilhança é assimétrica. Por outro lado, o método baseado na função \emph{deviance} não apresenta esta restrição mas fornece regiões de confiança conjuntas, e não diretamente limites \(\hat{\theta}_I\) e \(\hat{\theta}_S\) para cada parâmetro.
+Duas abordagens básicas para este problema podem ser consideradas: a primeira é fazer uma reparametrização do modelo nos parâmetros que apresentam forte assimetria ou são restritos, para torná-los irrestritos e aproximadamente simétricos, obter a variância baseada na aproximação quadrática nesta reparametrização e depois converter para a escala original. Quando este procedimento é satisfatório o custo computacional é baixo. Uma outra opção é construir uma nova verossimilhança que não dependa dos outros parâmetros, de forma que podemos atuar como no caso uniparamétrico. Estas duas alternativas serão discutidas na próxima seção.
+
+\hypertarget{reparametrizauxe7uxe3o-e-verossimilhanuxe7a-perfilhada}{%
+\section{Reparametrização e verossimilhança perfilhada}\label{reparametrizauxe7uxe3o-e-verossimilhanuxe7a-perfilhada}}
+
+Considere o problema de obter a estimativa pontual e intervalar para um parâmetro de interesse \(\phi = \mathrm{g}(\boldsymbol{\theta})\), onde \(\mathrm{g}(\cdot)\) é uma função e, desde que \(\mathrm{L}(\phi) = \mathrm{L}( \mathrm{g}(\boldsymbol{\theta}))\), a função de verossimilhança para \(\phi\) é obtida da função de verossimilhança de \(\boldsymbol{\theta}\) por uma transformação de escala. Consequentemente, como \(\hat{\phi} = \mathrm{g}(\boldsymbol{\hat{\theta}})\), quando o intervalo de confiança digamos \(\hat{\theta}_I\) e \(\hat{\theta}_S\) for obtido diretamente pela função de verossimilhança, log-verossimilhança ou \emph{deviance}, o intervalo para \(\phi\) pode ser obtido simplesmente transformando os limites obtidos para \(\theta\), no caso unidimensional. Esta propriedade é conhecida como \textbf{invariância} do estimador de máxima verossimilhança. Porém, quando o intervalo for obtido pela aproximação quadrática isso não é válido e um Teorema adicional é necessário para esta transformação.
+
+\begin{theorem}
+\protect\hypertarget{thm:delta}{}\label{thm:delta}Considere obter um intervalo de confiança para \(\phi = \mathrm{g}(\boldsymbol{\theta})\) por invariância temos que \(\hat{\phi} = \mathrm{g}(\hat{\boldsymbol{\theta}})\) e a variância de \(\hat{\phi}\) é dada por
+\[ \mathrm{V}(\hat{\phi}) = \mathrm{V}( \mathrm{g}(\hat{\boldsymbol{\theta}})) = \nabla \mathrm{g}(\hat{\boldsymbol{\theta}})^\top \mathrm{I_E}(\hat{\boldsymbol{\theta}})^{-1}  \nabla \mathrm{g}(\hat{\boldsymbol{\theta}}) \]
+com
+\[ \nabla \mathrm{g}(\hat{\boldsymbol{\theta}}) = \left( \frac{\partial \mathrm{g}(\hat{\boldsymbol{\theta}})}{\partial \theta_1}, \ldots, \frac{\partial \mathrm{g}(\hat{\boldsymbol{\theta}})}{\partial \theta_d} \right)^\top. \]
+\end{theorem}
+
+A partir do Teorema \ref{thm:delta} é imediato o seguinte teorema.
+
+\begin{theorem}
+\protect\hypertarget{thm:deltadis}{}\label{thm:deltadis}Para um problema de estimação regular se \(\phi = g(\boldsymbol{\theta})\) são os verdadeiros valores dos parâmetros, então quando \(n \to \infty\) tem-se que
+\[ \hat{\boldsymbol{\phi}} \sim \mathrm{NM_p}(\phi, \nabla \mathrm{g}(\boldsymbol{\theta})^\top \mathrm{I_E}(\boldsymbol{\theta})^{-1}  \nabla \mathrm{g}(\boldsymbol{\theta})). \]
+\end{theorem}
+
+Pelo Teorema \ref{thm:deltadis}, podemos construir intervalos de confiança da mesma forma anterior, porém usando a nova matriz de variância e covariância ponderada pelo gradiente da função \(\mathrm{g}(\cdot)\), e assim passar de uma reparametrização para outra torna-se uma tarefa trivial. Apesar deste procedimento ser bastante útil, nem sempre é fácil encontrar uma transformação \(\mathrm{g}(\cdot)\) que torne a log-verossimilhança simétrica. A forma mais efetiva de construir intervalos de confiança para parâmetros de difícil estimação é o intervalo baseado em \textbf{perfil de verossimilhança}.
+
+Seja \(\boldsymbol{\theta} = (\boldsymbol{\phi}^\top, \boldsymbol{\lambda}^\top)^\top\), o vetor de parâmetros particionado nos vetores \(\boldsymbol{\phi}\) e \(\boldsymbol{\lambda}\), vamos chamar a primeira componente de interesse e a segunda de incômodo, no sentido que desejamos intervalos ou regiões de confiança para \(\boldsymbol{\phi}\), que pode ser apenas um escalar. Seja \(\mathrm{L}(\boldsymbol{\phi}, \boldsymbol{\lambda})\) a verossimilhança para \(\boldsymbol{\phi}\) e \(\boldsymbol{\lambda}\). Denota-se \(\hat{\boldsymbol{\lambda}}_{\phi}\) a estimativa de máxima verossimilhança de \(\boldsymbol{\lambda}\) para dado um valor para \(\boldsymbol{\phi}\).
+
+\begin{definition}
+\protect\hypertarget{def:perfilhada}{}\label{def:perfilhada}\textbf{Verossimilhança perfilhada} - A verossimilhança perfilhada de \(\boldsymbol{\phi}\) é definida por
+\[ \mathrm{L}(\boldsymbol{\phi}) = \mathrm{L}(\boldsymbol{\phi}, \hat{\boldsymbol{\lambda}}_{\phi}) \]
+\end{definition}
+
+A forma apresentada na definição \ref{def:perfilhada} sugere um procedimento de maximização em duas etapas. A primeira consiste em obter \(\hat{\boldsymbol{\lambda}}_{\phi}\) que maximiza \(\mathrm{l}(\boldsymbol{\phi}, \boldsymbol{\lambda}) = \log \mathrm{L}(\boldsymbol{\phi}, \boldsymbol{\lambda})\) com respeito a \(\boldsymbol{\lambda}\) supondo \(\boldsymbol{\phi}\) fixo.
+A seguir maximiza-se \(\mathrm{l}(\boldsymbol{\phi})\). Assim, uma região ou intervalo de confiança para \(\boldsymbol{\phi}\) pode ser obtida usando que
+\[ 
+\mathrm{D}(\boldsymbol{\phi}) = -2[\mathrm{l}(\boldsymbol{\phi})-\mathrm{l}(\hat{\boldsymbol{\phi}})] \sim \chi^2_d
+\]
+onde \(d\) é a dimensão de \(\boldsymbol{\phi}\). Note que esta forma de construção não usa a aproximação em séries de Taylor e portanto pode resultar em intervalos assimétricos. Porém, é cara computacionalmente, uma vez que precisamos resolver numéricamente uma equação não-linear que para cada avaliação necessita de um algoritmo numérico de maximização.
+
+Neste Capítulo apresentamos uma série de definições e propriedades do procedimento de inferência baseado na função de verossimilhança. Os exemplos de ilustração foram o mais simples possível, porém mesmo nestes casos a necessidade do uso de métodos numéricos ficou bastante evidente. No próximo capítulo vamos discutir uma série de exemplos que em geral tem soluções analiticas, porém vamos resolvê-los também numéricamente para ilustrar as principais ideias e desafios relacionados a obtenção de estimadores pontuais, intervalares e testes de hipóteses.
+
+\hypertarget{refs}{}
+\begin{CSLReferences}{1}{0}
+\leavevmode\vadjust pre{\hypertarget{ref-Royal:1997}{}}%
+Royall, R. 1997. \emph{Statistical Evidence}. Chapman; Hall.
+
+\end{CSLReferences}
+
+\end{document}

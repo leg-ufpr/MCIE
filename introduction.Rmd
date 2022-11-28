@@ -1,93 +1,35 @@
 # Introdução
 
-A abordagem estatística para análise e resumo de informações contidas 
-em um conjunto de dados, consiste na suposição de que existe um mecanismo 
-estocástico gerador do processo em análise. Este mecanismo é descrito 
-através de um modelo probabilístico, representado por uma distribuição de 
-probabilidade. Em situações reais a verdadeira distribuição de probabilidade 
-geradora do processo é desconhecida, sendo assim, distribuições de probabilidade 
-adequadas devem ser escolhidas de acordo com o tipo de fenômeno em análise. 
-Por exemplo, se o fenômeno em estudo consiste em medir uma característica numérica 
-de um grupo de indivíduos em uma escala contínua, distribuições com este 
-**suporte** devem ser escolhidas. O **suporte** de uma distribuição de probabilidade 
-informa qual o domínio da função, ou seja, quais são os valores que a variável 
-aleatória pode assumir. Considere o caso da distribuição Gaussiana, o **suporte** 
-é a reta real, no caso da distribuição gama o suporte é apenas os reais positivos. 
-Um cuidado adicional deve ser dado quando a variável de interesse é discreta, 
-por exemplo contagens, onde é comum atribuir uma distribuição de Poisson que 
-tem **suporte** nos naturais positivos.
+A abordagem estatística para análise e resumo de informações contidas em um conjunto de dados, consiste na suposição de que existe um mecanismo estocástico gerador do processo em análise. Este mecanismo é descrito por meio de um modelo probabilístico, representado por uma distribuição de probabilidade. Em situações reais a verdadeira distribuição de probabilidade geradora do processo é desconhecida, sendo assim, distribuições de probabilidade adequadas devem ser escolhidas de acordo com o tipo de fenômeno em análise. Por exemplo, se o fenômeno em estudo consiste em medir uma característica numérica de um grupo de indivíduos em uma escala contínua, distribuições com este **suporte** devem ser escolhidas. 
+O **suporte** de uma distribuição de probabilidade informa qual o domínio da função, ou seja, quais são os valores que a variável aleatória pode assumir. 
+Considere o caso da distribuição gaussiana, o **suporte** é a reta real, no caso da distribuição gama o suporte é apenas os reais positivos. 
+Um cuidado adicional deve ser dado quando a variável de interesse é discreta, por exemplo contagens, onde é comum atribuir uma distribuição de Poisson que tem **suporte** nos naturais positivos. 
 
-Em quase todos os problemas de modelagem estatística não existe uma única 
-distribuição de probabilidade que pode representar o fenômeno.
-Porém, na maioria das situações assume-se que a distribuição de probabilidade 
-geradora do processo é conhecida, com exceção dos valores de um ou mais 
-**parâmetros** que a indexam. Por exemplo, considere que o tempo de vida de um 
-tipo de componente eletrônico tem distribuição exponencial com **parâmetro** $\lambda$, 
-mas o valor exato de $\lambda$ é desconhecido. Se o tempo de vida de vários 
-componentes de mesmo tipo são observados, baseado nestas observações e qualquer 
-outra fonte relevante de informação que esteja disponível, é possível fazer 
-**inferência** sobre o valor desconhecido do parâmetro $\lambda$. 
-O processo de **inferência** consiste em encontrar um valor mais plausível para 
-$\lambda$, bem como, informar um intervalo o qual acredita-se conter o verdadeiro 
-valor de $\lambda$, além de decidir ou opinar se $\lambda$ é igual, maior ou menor 
-que algum valor previamente especificado. 
-Em alguns problemas há ainda interesse em fazer previsões sobre possíveis valores 
-do processo, por exemplo, em outros tempos ou locais.
+Em quase todos os problemas de modelagem estatística não existe uma única distribuição de probabilidade que pode representar o fenômeno. 
+Porém, na maioria das situações assume-se que a distribuição de probabilidade geradora do processo é conhecida, com exceção dos valores de um ou mais **parâmetros** que a indexam. 
+Por exemplo, considere que o tempo de vida de um tipo de componente eletrônico tem distribuição exponencial com **parâmetro** $\lambda$, mas o valor exato de $\lambda$ é desconhecido. Se o tempo de vida de vários componentes de mesmo tipo são observados, baseado nestas observações e qualquer outra fonte relevante de informação que esteja disponível, é possível fazer **inferência** sobre o valor desconhecido do parâmetro $\lambda$. 
+O processo de **inferência** consiste em encontrar um valor mais plausível para $\lambda$, bem como, informar um intervalo para o qual acredita-se conter o verdadeiro valor de $\lambda$, além de decidir ou opinar se $\lambda$ é igual, maior ou menor que algum valor previamente especificado. 
+Em alguns problemas há ainda interesse em fazer previsões sobre possíveis valores do processo, por exemplo, em outros tempos ou locais.
 
-Em implementações computacionais para inferência estatística, deve-se sempre 
-estar atento ao **espaço paramétrico** $(\Theta)$ de um modelo probabilístico. 
-No caso do tempo de vida de componentes eletrônicos, assumindo que a distribuição 
-exponencial é adequada e está sendo indexada pelo parâmetro $\lambda$, de acordo 
-com a construção do modelo exponencial, tem-se que o **espaço paramétrico** de 
-$\lambda$ é dado pelo conjunto dos reais positivos. Em um modelo Gaussiano, 
-com média $\mu$ e variância $\sigma^2$, o espaço paramétrico é $\Re \times \Re_{+}$ 
-ou seja, todo o conjunto dos reais para média $\mu$ enquanto que para $\sigma^2$ 
-o espaço paramétrico restringe-se aos reais positivos. Outro caso comum são 
-modelos em que o parâmetro representa alguma proporção $p$ e tem como espaço 
-paramétrico o intervalo $[0,1]$. Estas restrições precisam ser levadas em 
-consideração no processo de inferência e são de fundamental importância para o 
-sucesso de muitos algoritmos numéricos. Não raramente nas implementações 
-computacionais são feitas reparametrizações com novos parâmetros para os quais os 
-valores são projetados na reta real, com resultados transformados de volta ao 
-espaço original. Por exemplo, pode-se adotar $\psi = \log{\sigma}$ para variância 
-do modelo normal e $\psi = \log{p/(1-p)}$ para a proporção de sucesso em um 
-experimento binomial.
+Em implementações computacionais para inferência estatística, deve-se sempre estar atento ao **espaço paramétrico** $(\Theta)$ de um modelo probabilístico. No caso do tempo de vida de componentes eletrônicos, assumindo que a distribuição exponencial é adequada e está sendo indexada pelo parâmetro $\lambda$. De acordo com a construção do modelo exponencial, tem-se que o **espaço paramétrico** de $\lambda$ é dado pelo conjunto dos reais positivos. Em um modelo gaussiano, com média $\mu$ e variância $\sigma^2$, o espaço paramétrico é $\Re \times \Re_{+}$ ou seja, todo o conjunto dos reais para média $\mu$ enquanto que para $\sigma^2$ o espaço paramétrico restringe-se aos reais positivos. Outro caso comum são modelos em que o parâmetro representa alguma proporção $p$ e tem como espaço paramétrico o intervalo $(0,1)$.
+Estas restrições precisam ser levadas em consideração no processo de inferência e são de fundamental importância para o sucesso de muitos algoritmos de maximização numérica.
+Não raramente nas implementações computacionais são feitas reparametrizações 
+com novos parâmetros para os quais os valores são projetados na reta real, com resultados transformados de volta ao espaço original. Por exemplo, pode-se adotar $\psi = \log{\sigma}$ para variância do modelo normal e $\psi = \log{p/(1-p)}$ para a proporção de sucesso em um experimento binomial.
 
-Partindo destes conceitos, um fenômeno aleatório ou estocástico é descrito 
-minimamente por uma **distribuição de probabilidade**, que por sua vez é indexada 
-por seus parâmetros e respectivos campos de variação **espaço paramétrico**. 
-Além do campo de variação da própria variável aleatória que deve ser compatível 
-com o **suporte** da distribuição atribuída ao fenômeno. 
-Por exemplo, não é correto atribuir uma distribuição de Poisson para a altura 
-(medida contínua) de trabalhadores, uma vez que o campo de variação da variável 
-de interesse (resposta) não é compatível com o suporte da distribuição de probabilidade.
+Partindo destes conceitos, um fenômeno aleatório ou estocástico é descrito minimamente por uma **distribuição de probabilidade**, que por sua vez é indexada por seus parâmetros e respectivos campos de variação **espaço paramétrico**, além do campo de variação da própria variável aleatória que deve ser compatível com o **suporte** da distribuição atribuída ao fenômeno. Por exemplo, não é correto atribuir uma distribuição de Poisson para a altura (medida contínua) de trabalhadores, uma vez que o campo de variação da variável de interesse (resposta) não é compatível com o suporte da distribuição de probabilidade.
 
-Considere o caso onde deseja-se fazer uma pesquisa a respeito da intenção de voto 
-em um plebiscito. Suponha que $n$ eleitores selecionados aleatoriamente são questionados 
-sobre a sua intenção em votar a favor $(1)$ ou contra $(0)$ uma determinada mudança 
-na legislação. Deseja-se estimar a proporção $\theta$ de eleitores favoráveis à 
-mudança. Assume-se que o modelo Bernoulli seja adequado para a intenção de voto 
-de cada eleitor e portanto o número de favoráveis em uma amostra aleatória de 
-$n$ eleitores tem distribuição binomial ${\rm B}(n, \theta)$. 
-Este modelo tem como possíveis respostas para cada indivíduo da amostra os 
-valores $0$ e $1$ e como parâmetro indexador $\theta$ que representa a proporção 
-de favoráveis e tem o intervalo unitário como seu espaço paramétrico. 
-Com este conjunto de suposições e conhecimentos a respeito do modelo probabilístico, 
-tem-se total condições de fazer inferência sobre o parâmetro $\theta$ a partir 
-dos dados de uma amostra.
+Considere o caso onde deseja-se fazer uma pesquisa a respeito da intenção de voto em um plebiscito. Suponha que $n$ eleitores selecionados aleatoriamente são questionados sobre a sua intenção em votar a favor $(1)$ ou contra $(0)$ uma determinada mudança na legislação. Deseja-se estimar a proporção $\theta$ de eleitores favoráveis à mudança. Assume-se que o modelo Bernoulli seja adequado para a intenção de voto de cada eleitor e portanto o número de
+favoráveis em uma amostra aleatória de $n$ eleitores tem distribuição binomial ${\rm B}(n, \theta)$. Este modelo tem como possíveis respostas para cada indivíduo da amostra os valores $0$ e $1$ e como parâmetro indexador $\theta$ que representa a proporção de favoráveis e tem o intervalo unitário como seu espaço paramétrico. 
+Com este conjunto de suposições e conhecimentos a respeito do modelo probabilístico, tem-se total condições de fazer inferência sobre o parâmetro $\theta$ a partir dos dados de uma amostra.
 
-A Figura \@ref(fig:espacomodelo)(A) representa a região definida pelo modelo para 
-uma amostra aleatória de tamanho $100$.
-A superfície é obtida calculando-se os valores das probabilidades de se observar $y$ 
-favoráveis em uma amostra para cada um dos possíveis valores do parâmetro. 
-Para visualização omitimos os valores próximos às bordas $[0,1]$.
+A Figura \@ref(fig:espacomodelo)(A) representa a região definida pelo modelo para uma amostra aleatória de tamanho $100$.
+A superfície é obtida calculando-se os valores das probabilidades de se observar $y$ favoráveis em uma amostra para cada um dos possíveis valores do parâmetro. Para visualização omitimos os valores próximos às bordas $[0,1]$.
 Um corte da superfície de probabilidades em um particular valor do parâmetro 
 fornece uma **distribuição de probabilidades** para as possíveis respostas
 como ilustrado na  \@ref(fig:espacomodelo)(B) para $\theta=0,65$.
-Um corte para um valor de $y=60$, que poderia ser o obtido em uma determinada amostra, 
-fornece a **função de verossimilhança** denotada por $L(\theta|y)$ que é apresentada na
-Figura \@ref(fig:espacomodelo)(C). Tal função fornece uma medida de proximidade 
-entre cada possível valor do parâmetro e a amostra observada.
+Um corte para um valor de $y=60$, que poderia ser o obtido em uma determinada amostra, fornece a **função de verossimilhança** denotada por $\mathrm{L}(\theta|y)$ que é apresentada na
+Figura \@ref(fig:espacomodelo)(C). Tal função fornece uma medida de proximidade entre cada possível valor do parâmetro e a amostra observada.
+
 
 ```{r espacomodelo, echo = FALSE, fig.cap = 'Superfície de probabilidades (esquerda), distribuição de probabilidades (centro) e função de verossimilhança (direita) para um modelo binomial.', fig.height = 3, fig.width= 9}
 par(mfrow = c(1, 3), mar=c(2.6, 2.6, 1.2, 0.5), mgp = c(1.6, 0.6, 0))
@@ -111,26 +53,21 @@ plot(th,sX60, type="l", xlab=expression(theta), main = "(C)",
      ylab=expression(paste("L(", theta, "|", "y=60)")))
 ```
 
-Em outras palavras, no gráfico da função de verossimilhança $L(\theta|y)$, 
-a ordenada de cada ponto da curva é dada pela probabilidade do valor $y$ 
-observado na amostra, ter sido gerado por cada um dos possíveis valores de $\theta$. 
-Desta forma é intuitivo pensar que a melhor estimativa para o parâmetro, 
-baseada na amostra, é o valor do parâmetro que tem maior probabilidade de gerar 
-o resultado visto na amostra, portanto o valor que maximiza a função de 
-verossimilhança. Isto define o **estimador de máxima verossimilhança** $\hat{\theta}$.
+Em outras palavras, no gráfico da função de verossimilhança $\mathrm{L}(\theta|y)$, 
+a ordenada de cada ponto da curva é dada pela probabilidade do valor $y$ observado na amostra, ter sido gerado por cada um dos possíveis valores de $\theta$. Desta forma é intuitivo pensar que a melhor estimativa para o parâmetro, baseada na amostra, é o valor do parâmetro que tem maior probabilidade de gerar o resultado visto na amostra, portanto o valor 
+que maximiza a função de verossimilhança. Isto define o **estimador de máxima verossimilhança** $\hat{\theta}$.
 Também é intuitivo pensar que podemos definir uma "faixa" de valores
 que possuem uma probabilidade  "não muito distante e aceitável" da máxima
 probabilidade de gerar o resultado visto na amostra. 
-Tal faixa define um **estimador por intervalo** com valores inferior e superior $(\hat{\theta}_I, \hat{\theta}_S)$ que delimitam uma região no espaço paramétrico que possui 
-valores de verossimilhança que não estejam abaixo de um percentual pré-definido 
-do máximo possível valor da verossimilhança.
-Finalmente, pode-se verificar se um determinado valor de interesse, tal como 
-$\theta_0 = 0,5$ no exemplo considerado, é **compatível** com a amostra 
-comparando-se sua verossimilhança com a máxima possível. Este último caso permite 
-definir um **teste de hipótese** de interesse para guiar uma tomada de decisão.
+Tal faixa define um **estimador por intervalo** com valores inferior e superior $(\hat{\theta}_I, \hat{\theta}_S)$ que delimitam 
+uma região no espaço paramétrico que possui valores de verossimilhança
+que não estejam abaixo de um percentual pré-definido do máximo possível 
+valor da verossimilhança.
+Finalmente, pode-se verificar se um determinado valor de interesse, tal como $\theta_0 = 0,5$ no exemplo considerado, 
+é **compatível** com a amostra comparando-se sua verossimilhança
+com a máxima possível. Este último caso permite definir um **teste de hipótese** de interesse para guiar uma tomada de decisão.
 Na Figura \@ref(fig:model) redesenhamos o gráfico da função de verossimilhança 
-agora com a escala vertical com valores relativos ao máximo valor e os elementos 
-no gráfico ilustram os três objetivos centrais da inferência estatística.
+agora com a escala vertical com valores relativos ao máximo valor e os elementos no gráfico ilustram os três objetivos centrais da inferência estatística.
 
 ```{r model, echo = FALSE, fig.cap = 'Visualização da estimativa de máxima verossimilhança, estimativa intervalar e valor correspondente a uma hipótese na função de verossimilhança relativa (RL) para o modelo binomial.', fig.height = 5, fig.width = 6}
 par(mfrow = c(1, 1), mar=c(2.6, 2.6, 1.2, 0.5), mgp = c(1.6, 0.6, 0))
@@ -157,22 +94,9 @@ text(int, 0, c(expression(hat(theta)[I]),expression(hat(theta)[S])),
 text(0.28, LHIP, expression(L(theta[0])/L(hat(theta))), pos=3, cex=0.7, col="darkolivegreen", offset=0.2)
 ```
 
-Neste texto será dada ênfase na inferência baseada na verossimilhança, que 
-fornece **estimadores** e procedimentos com propriedades desejáveis para os 
-parâmetros desconhecidos de um modelo probabilístico. 
-A **função de verossimilhança** fornece todos os elementos necessários para a 
-obtenção de estimativas pontuais e intervalares, além da construção de testes 
-de hipóteses. Toda a metodologia será descrita através de exemplos abordando 
-diversos aspectos teóricos, com ênfase na implementação computacional para 
-estimação de parâmetros desconhecidos cobrindo desde modelos simples até modelos 
-altamente estruturados. A abordagem de inferência pela verossimilhança não é, 
-entretanto, a solução de todo e qualquer problema, podendo tornar-se intratável 
-analítica e/ou computacionalmente em certos modelos. Entretanto, os princípios 
-permanecem válidos e diversos procedimentos estendem, aproximam ou substituem a 
-verossimilhança quando necessário. Tais extensões estão fora do escopo deste texto 
-que concentra-se na obtenção da verossimilhança com ênfase em procedimentos 
-numéricos. Nossa intenção é reforçar a intuição para aspectos fundamentais e 
-básicos de inferência.
+Neste texto será dada ênfase na inferência baseada na verossimilhança, que fornece **estimadores** e procedimentos com propriedades desejáveis para os parâmetros desconhecidos de um modelo probabilístico. A **função de verossimilhança** fornece todos os elementos necessários 
+para a obtenção de estimativas pontuais e intervalares, além da construção de testes de hipóteses. Toda a metodologia será descrita através de exemplos abordando diversos aspectos teóricos, com ênfase na implementação computacional para estimação de parâmetros desconhecidos cobrindo desde modelos simples até modelos altamente estruturados. 
+A abordagem de inferência pela verossimilhança não é, entretanto, a solução de todo e qualquer problema, podendo tornar-se intratável analítica e/ou computacionalmente em certos modelos. Entretanto, os princípios permanecem válidos e diversos procedimentos estendem, aproximam ou substituem a verossimilhança quando necessário. Tais extensões estão fora do escopo deste texto que concentra-se na obtenção da verossimilhança com ênfase em procedimento numéricos. Nossa intenção é reforçar a intuição para aspectos fundamentais e básicos de inferência.
 
 ### Exercícios {-}
 
